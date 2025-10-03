@@ -1,4 +1,5 @@
-*/venv
+**/venv
+dev-docs/_build
 .env
 environment
 */media
