@@ -1,3 +1,11 @@
 sphinx==8.2.3
 sphinx-rtd-theme==3.0.2
 myst_parser==4.0.1
+Django==5.2.7
+djangorestframework==3.16.1
+psycopg2-binary==2.9.10
+python-dotenv==1.1.1
+django-cors-headers==4.9.0
+django-debug-toolbar==6.0.0
+djangorestframework-simplejwt==5.5.1
+pillow==11.3.0
