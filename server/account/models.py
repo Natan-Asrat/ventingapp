@@ -44,6 +44,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length = 255, blank=True, null=True)
     profile_picture = models.ImageField(upload_to="profile_pictures/", blank=True, null=True)
     connects = models.PositiveIntegerField(default=0)
+    email_verified = models.BooleanField(default=False)
+    otp_secret = models.CharField(max_length=16, blank=True, null=True)
 
     USERNAME_FIELD="email"
     REQUIRED_FIELDS = ["username"]

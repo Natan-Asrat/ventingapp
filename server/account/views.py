@@ -6,6 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
+from .utils import send_email_otp, verify_email_otp
+from rest_framework.permissions import AllowAny
 
 class UserViewset(GenericViewSet, CreateModelMixin):
     queryset = User.objects.all()
@@ -21,6 +23,7 @@ class UserViewset(GenericViewSet, CreateModelMixin):
         if serializer.is_valid():
             try:
                 user = serializer.save()
+                send_email_otp(user)
                 return Response(
                     UserSimpleSerializer(user).data,
                     status=status.HTTP_201_CREATED
@@ -33,6 +36,50 @@ class UserViewset(GenericViewSet, CreateModelMixin):
         return Response(
             serializer.errors, 
             status=status.HTTP_400_BAD_REQUEST
+        )
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def verify_email(self, request):
+        email = request.data.get('email')
+        otp = request.data.get('otp')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        if verify_email_otp(user, otp):
+            return Response(
+                {"message": "Email verified successfully"},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"error": "Invalid OTP"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def resend_otp(self, request):
+        email = request.data.get('email')
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        if user.email_verified:
+            return Response(
+                {"error": "Email already verified!"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        send_email_otp(user)
+        return Response(
+            {"message": "OTP sent successfully"},
+            status=status.HTTP_200_OK
         )
 
 

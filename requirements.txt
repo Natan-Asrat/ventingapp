@@ -9,3 +9,4 @@ django-cors-headers==4.9.0
 django-debug-toolbar==6.0.0
 djangorestframework-simplejwt==5.5.1
 pillow==11.3.0
+pyotp==2.9.0
