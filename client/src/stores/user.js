@@ -55,7 +55,25 @@ export const useUserStore = defineStore('user', () => {
       
       return { success: true };
     } catch (err) {
-      error.value = err.response?.data?.detail || 'Login failed';
+      // Handle specific field errors from the server
+      if (err.response?.data) {
+        const fieldErrors = {};
+        // Handle field errors (email, password, etc.)
+        Object.entries(err.response.data).forEach(([field, messages]) => {
+          if (Array.isArray(messages)) {
+            fieldErrors[field] = messages;
+          }
+        });
+        
+        // If we have field errors, use them, otherwise use the detail or default message
+        if (Object.keys(fieldErrors).length > 0) {
+          error.value = fieldErrors;
+        } else {
+          error.value = { general: [err.response.data.detail || 'Login failed'] };
+        }
+      } else {
+        error.value = { general: ['An unknown error occurred'] };
+      }
       return { success: false, error: error.value };
     } finally {
       loading.value = false;
@@ -73,7 +91,11 @@ export const useUserStore = defineStore('user', () => {
     error.value = null;
     
     try {
-      await api.post('account/users/', userData);
+      await api.post('account/users/', userData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
       return { success: true, email: userData.email };
     } catch (err) {
       error.value = err.response?.data || 'Registration failed';

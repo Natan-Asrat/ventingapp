@@ -84,10 +84,15 @@
           Profile Picture (Optional)
         </label>
         <div class="mt-1 flex items-center">
-          <span class="h-12 w-12 overflow-hidden rounded-full bg-gray-100">
-            <svg class="h-full w-full text-gray-300" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
+          <span class="h-12 w-12 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
+            <template v-if="previewUrl">
+              <img :src="previewUrl" alt="Profile preview" class="h-full w-full object-cover" />
+            </template>
+            <template v-else>
+              <svg class="h-8 w-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </template>
           </span>
           <input
             type="file"
@@ -106,7 +111,7 @@
       <button
         type="submit"
         :disabled="loading"
-        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         <span v-if="loading">
           <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -121,13 +126,14 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { message } from 'ant-design-vue';
 
 const userStore = useUserStore();
 const loading = ref(false);
 const fileInput = ref(null);
+const previewUrl = ref(null);
 
 const formData = ref({
   name: '',
@@ -143,9 +149,22 @@ const emit = defineEmits(['signupSuccess', 'switchToLogin']);
 const handleFileChange = (e) => {
   const file = e.target.files[0];
   if (file) {
+    // Revoke the previous object URL to avoid memory leaks
+    if (previewUrl.value) {
+      URL.revokeObjectURL(previewUrl.value);
+    }
+    
     formData.value.profile_picture = file;
+    previewUrl.value = URL.createObjectURL(file);
   }
 };
+
+// Clean up object URLs when component is unmounted
+onUnmounted(() => {
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value);
+  }
+});
 
 const handleSubmit = async () => {
   // Basic validation
@@ -162,17 +181,31 @@ const handleSubmit = async () => {
   loading.value = true;
   
   try {
-    const response = await userStore.register({
-      name: formData.value.name,
-      username: formData.value.username,
-      email: formData.value.email,
-      password1: formData.value.password1,
-      password2: formData.value.password2,
-      profile_picture: formData.value.profile_picture
+    const formDataObj = new FormData();
+    
+    // Append all form data
+    Object.entries(formData.value).forEach(([key, value]) => {
+      if (key === 'profile_picture' && value) {
+        // For the file, we need to append it directly
+        formDataObj.append(key, value, value.name);
+      } else if (value !== null && value !== undefined) {
+        // For all other fields, convert to string if not null/undefined
+        formDataObj.append(key, String(value));
+      }
     });
 
+    // Log the FormData entries for debugging
+    for (let pair of formDataObj.entries()) {
+      console.log(pair[0] + ': ', pair[1]);
+    }
+
+    const response = await userStore.register(formDataObj);
+
     if (response.success) {
-      emit('signupSuccess', response.email);
+      // Save email to localStorage for email verification
+      localStorage.setItem('pendingVerificationEmail', formData.value.email);
+      console.log("saved email", localStorage.getItem('pendingVerificationEmail'))
+      emit('signupSuccess', formData.value.email);
     } else {
       // Handle specific errors from the API
       if (response.error) {

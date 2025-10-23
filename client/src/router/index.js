@@ -3,6 +3,7 @@ import { useUserStore } from '@/stores/user';
 import LandingPage from '@/views/LandingPage.vue';
 import AuthPage from '@/views/auth/AuthPage.vue';
 import Dashboard from '@/views/Dashboard.vue';
+import ForgotPassword from '@/views/auth/ForgotPassword.vue';
 
 const routes = [
   {
@@ -21,6 +22,12 @@ const routes = [
     path: '/signup',
     name: 'Signup',
     component: AuthPage,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/forgot-password',
+    name: 'ForgotPassword',
+    component: ForgotPassword,
     meta: { requiresAuth: false }
   },
   {

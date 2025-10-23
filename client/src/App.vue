@@ -1,14 +1,5 @@
 <script setup>
 import { RouterView } from 'vue-router';
-import { useUserStore } from '@/stores/user';
-import { onMounted } from 'vue';
-
-const userStore = useUserStore();
-
-// Check authentication status when app loads
-onMounted(async () => {
-  await userStore.checkAuth();
-});
 </script>
 
 <template>

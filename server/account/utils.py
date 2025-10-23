@@ -3,7 +3,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import datetime, timedelta
 
-def send_email_otp(user):
+def send_email_otp(user, subject="Your Verification Code"):
     if not user.otp_secret:
         user.otp_secret = pyotp.random_base32()
         user.save()
@@ -12,7 +12,7 @@ def send_email_otp(user):
     otp = totp.now()
     
     send_mail(
-        subject='Your Verification Code',
+        subject=subject,
         message=f'Your OTP code is: {otp}',
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[user.email],

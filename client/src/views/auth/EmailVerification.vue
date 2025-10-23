@@ -2,7 +2,7 @@
   <div class="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
     <div class="text-center mb-6">
       <h2 class="text-2xl font-bold text-gray-900">Verify Your Email</h2>
-      <p class="mt-2 text-sm text-gray-600">
+      <p class="mt-2 text-sm text-gray-600" v-if="email">
         We've sent a verification code to <span class="font-medium">{{ email }}</span>
       </p>
     </div>
@@ -48,7 +48,7 @@
         <button
           @click="resendOtp"
           :disabled="resendCooldown > 0"
-          class="font-medium text-indigo-600 hover:text-indigo-500 disabled:text-gray-400 disabled:cursor-not-allowed"
+          class="font-medium text-indigo-600 hover:text-indigo-500 disabled:text-gray-400 disabled:cursor-not-allowed cursor-pointer"
         >
           <span v-if="resendCooldown > 0">Resend in {{ resendCooldown }}s</span>
           <span v-else>Resend Code</span>
@@ -68,14 +68,28 @@ import { useRouter } from 'vue-router';
 const props = defineProps({
   email: {
     type: String,
-    required: true
+    default: ''
+  }
+});
+
+const router = useRouter();
+const userStore = useUserStore();
+const email = ref('');
+
+onMounted(() => {
+  // Try to get email from localStorage if not provided via props
+  if (!props.email) {
+    email.value = localStorage.getItem('pendingVerificationEmail') || '';
+    if (!email.value) {
+      // If no email is found, redirect to signup
+      router.push('/signup');
+    }
+  } else {
+    email.value = props.email;
   }
 });
 
 const emit = defineEmits(['verified']);
-
-const userStore = useUserStore();
-const router = useRouter();
 
 const otp = ref('');
 const verifying = ref(false);
@@ -101,10 +115,11 @@ const verifyOtp = async () => {
   verifying.value = true;
   
   try {
-    const { success, error } = await userStore.verifyEmail(props.email, otp.value);
+    const { success, error } = await userStore.verifyEmail(email.value, otp.value);
     
     if (success) {
-      message.success('Email verified successfully!');
+      // Clear the pending verification email from localStorage
+      localStorage.removeItem('pendingVerificationEmail');
       emit('verified');
     } else {
       message.error(error || 'Verification failed. Please try again.');
@@ -121,7 +136,7 @@ const resendOtp = async () => {
   if (resendCooldown.value > 0) return;
   
   try {
-    const { success, error } = await userStore.resendOtp(props.email);
+    const { success, error } = await userStore.resendOtp(email.value);
     
     if (success) {
       message.success('Verification code resent successfully!');

@@ -161,8 +161,7 @@
                           Create Account
                         </router-link>
                         <p class="mt-3 text-center text-sm text-gray-600">
-                          Already have an account?{' '}
-                          <router-link to="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+                          Already have an account? <router-link to="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
                             Sign in
                           </router-link>
                         </p>

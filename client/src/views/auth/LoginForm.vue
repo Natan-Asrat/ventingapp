@@ -10,8 +10,17 @@
           type="email"
           autocomplete="email"
           required
-          class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          :class="[
+            'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm',
+            errors.email && errors.email.length > 0 ? 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+          ]"
+          @input="clearError('email')"
         />
+        <div v-if="errors.email" class="mt-2 space-y-1">
+          <p v-for="(error, index) in errors.email" :key="`email-error-${index}`" class="text-sm text-red-600">
+            {{ error }}
+          </p>
+        </div>
       </div>
     </div>
 
@@ -25,29 +34,26 @@
           type="password"
           autocomplete="current-password"
           required
-          class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          :class="[
+            'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm',
+            errors.password && errors.password.length > 0 ? 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+          ]"
+          @input="clearError('password')"
         />
+        <div v-if="errors.password" class="mt-2 space-y-1">
+          <p v-for="(error, index) in errors.password" :key="`password-error-${index}`" class="text-sm text-red-600">
+            {{ error }}
+          </p>
+        </div>
       </div>
     </div>
 
-    <div class="flex items-center justify-between">
-      <div class="flex items-center">
-        <input
-          id="remember-me"
-          v-model="rememberMe"
-          name="remember-me"
-          type="checkbox"
-          class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-        />
-        <label for="remember-me" class="ml-2 block text-sm text-gray-900">
-          Remember me
-        </label>
-      </div>
+    <div class="flex items-center justify-end">
 
       <div class="text-sm">
-        <a href="#" class="font-medium text-indigo-600 hover:text-indigo-500">
+        <router-link to="/forgot-password" class="font-medium text-indigo-600 hover:text-indigo-500">
           Forgot your password?
-        </a>
+        </router-link>
       </div>
     </div>
 
@@ -55,7 +61,7 @@
       <button
         type="submit"
         :disabled="loading"
-        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         <span v-if="loading">
           <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -80,8 +86,17 @@ const router = useRouter();
 
 const email = ref('');
 const password = ref('');
-const rememberMe = ref(false);
 const loading = ref(false);
+const errors = ref({
+  email: [],
+  password: []
+});
+
+const clearError = (field) => {
+  if (errors.value[field] && errors.value[field].length > 0) {
+    errors.value[field] = [];
+  }
+};
 
 const emit = defineEmits(['switchToSignup']);
 
@@ -94,14 +109,42 @@ const handleSubmit = async () => {
   loading.value = true;
   
   try {
-    const { success, error } = await userStore.login(email.value, password.value);
-    
-    if (success) {
-      message.success('Login successful!');
-      router.push('/dashboard');
-    } else {
-      message.error(error || 'Login failed. Please check your credentials.');
-    }
+      const { success, error } = await userStore.login(email.value, password.value);
+      
+      if (success) {
+        message.success('Login successful!');
+        router.push('/dashboard');
+      } else if (error) {
+        // Handle field-specific errors
+        if (typeof error === 'object') {
+          // Reset all errors
+          errors.value.email = [];
+          errors.value.password = [];
+          
+          // Set new errors
+          if (Array.isArray(error.email)) {
+            errors.value.email = [...error.email];
+          } else if (error.email) {
+            errors.value.email = [error.email];
+          }
+          
+          if (Array.isArray(error.password)) {
+            errors.value.password = [...error.password];
+          } else if (error.password) {
+            errors.value.password = [error.password];
+          }
+          
+          // Show general errors if no field-specific errors
+          if (error.general) {
+            const generalErrors = Array.isArray(error.general) ? error.general : [error.general];
+            generalErrors.forEach(msg => message.error(msg));
+          } else if (errors.value.email.length === 0 && errors.value.password.length === 0) {
+            message.error('Login failed. Please check your credentials.');
+          }
+        } else {
+          message.error('Login failed. Please check your credentials.');
+        }
+      }
   } catch (error) {
     message.error('An error occurred during login. Please try again.');
   } finally {
