@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="description" content="A safe space to express yourself, share your thoughts, and connect with others who understand." />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://ventingapp.com/" />
+    <meta property="og:title" content="VentingApp - Share Your Thoughts Anonymously" />
+    <meta property="og:description" content="A safe space to express yourself, share your thoughts, and connect with others who understand." />
+    <meta property="og:image" content="/og-image.jpg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://ventingapp.com/" />
+    <meta property="twitter:title" content="VentingApp - Share Your Thoughts Anonymously" />
+    <meta property="twitter:description" content="A safe space to express yourself, share your thoughts, and connect with others who understand." />
+    <meta property="twitter:image" content="/og-image.jpg" />
+
+    <title>VentingApp - Share Your Thoughts Anonymously</title>
+    
+    <!-- Preload critical CSS -->
+    <link rel="preload" href="/src/assets/main.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="/src/assets/main.css"></noscript>
+    
+    <!-- Preconnect to API -->
+    <link rel="preconnect" href="http://localhost:8000" />
+  </head>
+  <body class="bg-gray-50">
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

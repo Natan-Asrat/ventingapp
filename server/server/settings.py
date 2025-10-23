@@ -43,13 +43,15 @@ INSTALLED_APPS = [
     "account",
 
     "rest_framework",
-    "rest_framework_simplejwt"
+    "rest_framework_simplejwt",
+    "corsheaders"
 ]
 
 AUTH_USER_MODEL = "account.User"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -146,3 +148,5 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = os.getenv('GMAIL_ACCOUNT')
 EMAIL_HOST_PASSWORD = os.getenv('GMAIL_APP_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+CORS_ALLOW_ALL_ORIGINS = True
