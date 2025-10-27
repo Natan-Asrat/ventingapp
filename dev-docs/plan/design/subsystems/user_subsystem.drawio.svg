@@ -1,8 +1,8 @@
-<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="441px" height="201px" viewBox="-0.5 -0.5 441 201" content="&lt;mxfile&gt;&lt;diagram id=&quot;4e6dIBdhMQcVx38dawmp&quot; name=&quot;Page-1&quot;&gt;7Vddj5wgFP01vouomXlsp7vtyyabmLbPVG+VBMQgrjP99cWCX+A0u5u104d9MXC4wD3nXEEDfOLnz5I01YMogAVRWJwD/CmIoiRG+jkAFwPgMDVAKWlhIDQDGf0FFgwt2tEC2lWgEoIp2qzBXNQ15GqFESlFvw77Kdh614aU4AFZTpiPfqeFqgx6SMIZ/wK0rMadUWhHOBmDLdBWpBD9AsJ3AT5JIZRp8fMJ2KDdqIuZd39ldEpMQq2eMyEyE54I6yy3ry1IjWTdj/bSKuA2T3UZyeuUm6HZcXYvCdfNj31FFWQNyQe815ZrrFKc6R4ahq1GKA2HgVEZPPTs/iAVnK9yQJMyuqJAcFDyokPshKksbDWhUdx+9iaOLVYtfIlGW4ith3Jae5ZMN6xq2wriKwo6qi3keAPKCXYoHxOPMkIblJM3YBxvMv5GoW9B7Ux8enFuQTzZJH6SQHT1g6SE6ZNqb+tx6iiQ+tWO8E4KpJsKZJQ37HYKRPFGDeylwMFTwGMLdfFhuGR0rxY1rM9CEw2Fd8E47PWKopM5rF45RWQJalGMvkYLDZK/SCCBEUWf1kls6WJ3eBRUpzdbEDsWYEdak7ydtbx/3IWOTjUfnIUMZW+hPzZNtJ/l3PF/cS59d+5lzo3n+T+2LvGtwze1zj33Xmtd7H4w7Wgduol16bt1L7VOd+ffDhM+/7vhu98=&lt;/diagram&gt;&lt;/mxfile&gt;">
+<svg host="65bd71144e" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="441px" height="221px" viewBox="-0.5 -0.5 441 221" content="&lt;mxfile&gt;&lt;diagram id=&quot;4e6dIBdhMQcVx38dawmp&quot; name=&quot;Page-1&quot;&gt;7ZfNjpswFIWfhj1gYJJly0ymm0qVUNu1C7dgyWBkTEj69DW1+bNJi9qgdDGbCB8D9jnfjW0cFJeXV47r4iPLgDq+m10c9Oz4/gEd5G8vXJUQPIVKyDnJlORNQkJ+gBZdrbYkg2Zxo2CMClIvxZRVFaRioWHOWbe87Tujy1FrnIMlJCmmtvqVZKLQtkJ30j8AyYthZM/VPSUebtZCU+CMdTMJvTgo5owJdVVeYqB9dkMu6rnTjd5xYhwqseUBXz1wxrTV3j43wKWStN+aayOg1PMU18G8nHLdX7YlPXFcysv3XUEEJDVOe72TyKVWiJLKltd364y8yO07hmRQ37InrD2cgQu4zCRt4BVYCYJf5S26dywLXU3eEG43sQkCrRUzLiMFrOshH989RSYvdGrrCaIbCRqpzeK4g+UQGZaPoWXZ81Ysh3dwHKw6/kKga0DsbHxE9gjj4arxmAOW1Q+cYCpXqr3Ro8hIILKr3UM7JRCtJpCQsqaPS8APVmpgrwQOVgKWW6iyd/0mI1sVq2C5Ft7037CWp7D4hwnMcxCL2oNssTPZGc0yCH8TAQeKBTkv97O1XPQInxiR850QBAYCZESr3Oin5vuP+aKjUc0H40UqA+tFvzCNtjeROz6IXPRG7h/JDev5vuhCGx36v9CZ697fogvMA9OO6IbVfVd00Ru6HdAhm5RMM9FNG5XNUSon0g/wPB31DSJ/ZOv5NtxgneVmSFs3+2HsWfXG6pOSsMpKx6pa60izYnbzSdd/Wjnn3emkK5vTJ6cqlem7Hb38BA==&lt;/diagram&gt;&lt;/mxfile&gt;">
     <defs/>
     <g>
         <path d="M 0 0 L 160 0 L 160 15 L 150 30 L 0 30 Z" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
-        <path d="M 160 0 L 440 0 L 440 200 L 0 200 L 0 30" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
+        <path d="M 160 0 L 440 0 L 440 220 L 0 220 L 0 30" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="all"/>
         <g transform="translate(-0.5 -0.5)">
             <switch>
                 <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
@@ -14,7 +14,7 @@
                         </div>
                     </div>
                 </foreignObject>
-                <text x="80" y="18" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                <text x="80" y="19" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
                     User Subsystem
                 </text>
             </switch>
@@ -91,6 +91,24 @@
         <path d="M 120 118.33 L 150 128.33" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
         <path d="M 280 79.22 L 320 87.97" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
         <path d="M 280 129.69 L 320 117.19" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <path d="M 65 150 L 65 125" fill="none" stroke="rgb(0, 0, 0)" stroke-miterlimit="10" pointer-events="stroke"/>
+        <rect x="10" y="150" width="110" height="50" fill="rgb(255, 255, 255)" stroke="rgb(0, 0, 0)" pointer-events="all"/>
+        <g transform="translate(-0.5 -0.5)">
+            <switch>
+                <foreignObject pointer-events="none" width="100%" height="100%" requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility" style="overflow: visible; text-align: left;">
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="display: flex; align-items: unsafe center; justify-content: unsafe center; width: 1px; height: 1px; padding-top: 175px; margin-left: 65px;">
+                        <div data-drawio-colors="color: rgb(0, 0, 0); " style="box-sizing: border-box; font-size: 0px; text-align: center;">
+                            <div style="display: inline-block; font-size: 12px; font-family: Helvetica; color: rgb(0, 0, 0); line-height: 1.2; pointer-events: all; white-space: nowrap;">
+                                Connection
+                            </div>
+                        </div>
+                    </div>
+                </foreignObject>
+                <text x="65" y="179" fill="rgb(0, 0, 0)" font-family="Helvetica" font-size="12px" text-anchor="middle">
+                    Connection
+                </text>
+            </switch>
+        </g>
     </g>
     <switch>
         <g requiredFeatures="http://www.w3.org/TR/SVG11/feature#Extensibility"/>
