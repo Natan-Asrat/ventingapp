@@ -1,0 +1,53 @@
+from rest_framework import serializers
+from .models import Post, PaymentInfo, Comment, Like, Save
+
+class PaymentInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentInfo
+        fields = ['method', 'account', 'nameOnAccount']
+
+
+class PostCreateSerializer(serializers.ModelSerializer):
+    payment_info = PaymentInfoSerializer(many=True, required=False)
+
+    class Meta:
+        model = Post
+        fields = ['description', 'image', 'payment_info']
+
+    def create(self, validated_data):
+        payment_info_data = validated_data.pop('payment_info', [])
+        post = Post.objects.create(**validated_data)
+
+        if payment_info_data:
+            PaymentInfo.objects.bulk_create([
+                PaymentInfo(post=post, **info) for info in payment_info_data
+            ])
+
+        return post
+
+class PostSimpleSerializer(serializers.ModelSerializer):
+    payment_info_list = PaymentInfoSerializer(many=True, read_only=True)
+    class Meta:
+        model = Post
+        fields = ['id', 'description', 'image', 'likes', 'comments', 'saves', 'views', 'payment_info_list']
+
+class CommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comment
+        fields = ['message']
+    def validate_message(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("Message cannot be empty.")
+        return value
+
+class LikedPostsSerializer(serializers.ModelSerializer):
+    post = PostSimpleSerializer()
+    class Meta:
+        model = Like
+        fields = ['post']
+
+class SavedPostsSerializer(serializers.ModelSerializer):
+    post = PostSimpleSerializer()
+    class Meta:
+        model = Save
+        fields = ['post']
