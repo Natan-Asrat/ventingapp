@@ -17,15 +17,15 @@ from rest_framework.decorators import action
 from account.pagination import CustomPagination
 from .permissions import IsPostOwner
 
-class PostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
-    queryset = Post.objects.all()
-    serializer_class = PostCreateSerializer
+class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = Post.objects.filter(archived=False).prefetch_related("payment_info_list")
+    serializer_class = PostSimpleSerializer
     pagination_class = CustomPagination
 
     def get_serializer_class(self):
         if self.action == 'create':
             return PostCreateSerializer
-        # return PostListSerializer
+        return PostSimpleSerializer
 
     def get_permissions(self):
         if self.action in ['update', 'archive', 'unarchive', 'add_payment_info']:
