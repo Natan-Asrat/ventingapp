@@ -8,10 +8,12 @@ from .serializers import (
     CommentCreateSerializer, 
     LikedPostsSerializer, 
     PostSimpleSerializer, 
-    SavedPostsSerializer
+    SavedPostsSerializer,
+    CommentsOnPostSerializer
 )
 from rest_framework.decorators import action
 from account.pagination import CustomPagination
+from .permissions import IsPostOwner
 
 class PostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
     queryset = Post.objects.all()
@@ -22,6 +24,12 @@ class PostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         if self.action == 'create':
             return PostCreateSerializer
         # return PostListSerializer
+
+    def get_permissions(self):
+        if self.action in ['update', 'archive', 'unarchive']:
+            self.permission_classes = [IsPostOwner]
+        return super().get_permissions()
+
 
     def create(self, request, *args, **kwargs):
         serializer = PostCreateSerializer(data=request.data)
@@ -124,3 +132,31 @@ class PostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             serializer = PostSimpleSerializer(paginated_posts, many=True)
             return self.get_paginated_response(serializer.data)
         return Response(PostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=["post"])
+    def archive(self, request, pk=None):
+        post = self.get_object()
+        if post.archived:
+            return Response({'message': 'Post already archived'}, status=status.HTTP_400_BAD_REQUEST)
+        post.archived = True
+        post.save()
+        return Response({'message': 'Post archived successfully'}, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=["post"])
+    def unarchive(self, request, pk=None):
+        post = self.get_object()
+        if not post.archived:
+            return Response({'message': 'Post not archived'}, status=status.HTTP_400_BAD_REQUEST)
+        post.archived = False
+        post.save()
+        return Response({'message': 'Post unarchived successfully'}, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=["get"])
+    def comments(self, request, pk=None):
+        post = self.get_object()
+        comments = post.comments_list.filter(archived=False).prefetch_related("commented_by")
+        paginated_comments = self.paginate_queryset(comments)
+        if paginated_comments is not None:
+            serializer = CommentsOnPostSerializer(paginated_comments, many=True)
+            return self.get_paginated_response(serializer.data)
+        return Response(CommentsOnPostSerializer(comments, many=True).data, status=status.HTTP_200_OK)

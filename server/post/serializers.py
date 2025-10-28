@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Post, PaymentInfo, Comment, Like, Save
-
+from account.serializers import UserSimpleSerializer
 class PaymentInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentInfo
@@ -51,3 +51,9 @@ class SavedPostsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Save
         fields = ['post']
+
+class CommentsOnPostSerializer(serializers.ModelSerializer):
+    commented_by = UserSimpleSerializer()
+    class Meta:
+        model = Comment
+        fields = ['message', 'commented_by']
