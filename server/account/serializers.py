@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Connection
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate, get_user_model
@@ -57,4 +57,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["email", "username", "name", "connects", "profile_picture"]
+        fields = ["id", "email", "username", "name", "connects", "profile_picture"]
+
+class ConnectionListSerializer(serializers.ModelSerializer):
+    connected_user = UserSimpleSerializer()
+    iniating_user = UserSimpleSerializer()
+    class Meta:
+        model = Connection
+        fields = ["id", "iniating_user", "connected_user", "connectSpent", "created_at", "updated_at", "removed", "reported", "reconnection_count", "reconnection_rejected", "formatted_created_at", "formatted_updated_at"]

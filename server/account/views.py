@@ -1,7 +1,7 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import CreateModelMixin
-from .models import User
-from .serializers import UserCreateSerializer, UserSimpleSerializer
+from .models import User, Connection
+from .serializers import UserCreateSerializer, UserSimpleSerializer, ConnectionListSerializer, CustomTokenObtainPairSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -9,17 +9,18 @@ from rest_framework.decorators import action
 from .utils import send_email_otp, verify_email_otp
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from django.db.models import Q, F
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import CustomTokenObtainPairSerializer
+from .pagination import CustomPagination
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-class UserViewset(GenericViewSet, CreateModelMixin):
+class UserViewset(CreateModelMixin, GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSimpleSerializer
+    pagination_class = CustomPagination
 
     def get_permissions(self):
         if self.action == 'create':
@@ -154,4 +155,153 @@ class UserViewset(GenericViewSet, CreateModelMixin):
     @action(detail=False, methods=['get'])
     def me(self, request):
         serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def connect(self, request, pk=None):
+        user_to_connect = self.get_object()
+        initiating_user = request.user
+        message = request.data.get('message', '').strip() or None
+
+        # Check if active connection exists
+        if Connection.objects.filter(
+            Q(iniating_user=initiating_user, connected_user=user_to_connect) |
+            Q(iniating_user=user_to_connect, connected_user=initiating_user), 
+            removed=False
+        ).exists():
+            return Response(
+                {"error": "You are already connected to this user."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if removed connection exists
+        removed_qs = Connection.objects.filter(
+            Q(iniating_user=initiating_user, connected_user=user_to_connect) |
+            Q(iniating_user=user_to_connect, connected_user=initiating_user),
+            removed=True
+        )
+        if removed_qs.filter(reconnection_count__gt=5).exists():
+            return Response(
+                {"error": "Reconnection limit reached."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if removed_qs.filter(reconnection_requested=True).exists():
+            return Response(
+                {"error": "Reconnection request rejected."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if removed_qs.exists():
+            # Check if any reconnection has already been requested
+            if removed_qs.filter(reconnection_requested=True).exists():
+                return Response(
+                    {"error": "Reconnection already requested."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Update all removed connections with reconnection request
+            removed_qs.update(
+                reconnection_requested=True,
+                reconnection_requested_by=initiating_user,
+                message=message
+            )
+            return Response(
+                {"message": "Reconnection request sent successfully."},
+                status=status.HTTP_200_OK
+            )
+
+        # No existing connection — create new
+        Connection.objects.create(
+            iniating_user=initiating_user,
+            connected_user=user_to_connect,
+            message=message
+        )
+
+        initiating_user.connects += 1
+        user_to_connect.connections += 1
+        initiating_user.save()
+        user_to_connect.save()
+        return Response({"message": "Connection created successfully."}, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['post'])
+    def disconnect(self, request, pk=None):
+        user_to_disconnect = self.get_object()
+        initiating_user = request.user
+        if not Connection.objects.filter(
+            Q(iniating_user=initiating_user, connected_user=user_to_disconnect) |
+            Q(iniating_user=user_to_disconnect, connected_user=initiating_user),
+            removed=False
+        ).exists():
+            return Response({"error": "You are not connected to this user."}, status=status.HTTP_400_BAD_REQUEST)
+        Connection.objects.filter(
+            Q(iniating_user=initiating_user, connected_user=user_to_disconnect) |
+            Q(iniating_user=user_to_disconnect, connected_user=initiating_user),
+            removed=False
+        ).update(removed=True)
+        # dont decrement connection count here
+        return Response({"message": "Connection deleted successfully."}, status=status.HTTP_200_OK)
+
+
+    @action(detail=True, methods=['post'])
+    def accept_reconnection(self, request, pk=None):
+        user_to_reconnect = self.get_object()
+        initiating_user = request.user
+        if not Connection.objects.filter(
+            Q(iniating_user=initiating_user, connected_user=user_to_reconnect) |
+            Q(iniating_user=user_to_reconnect, connected_user=initiating_user),
+            removed=True,
+            reconnection_requested = True,
+            reconnection_requested_by = user_to_reconnect,
+            reconnection_rejected = False
+        ).exists():
+            return Response({"error": "There are no requests to reconnect that you can accept."}, status=status.HTTP_400_BAD_REQUEST)
+        Connection.objects.filter(
+            Q(iniating_user=initiating_user, connected_user=user_to_reconnect) |
+            Q(iniating_user=user_to_reconnect, connected_user=initiating_user),
+            removed=True,
+            reconnection_requested = True,
+            reconnection_requested_by = user_to_reconnect,
+            reconnection_rejected = False
+        ).update(removed=False, reconnection_count=F('reconnection_count') + 1, reconnection_requested=False, reconnection_requested_by=None)
+
+        # dont increment connection count here
+        return Response({"message": "Connection reconnected successfully."}, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'])
+    def reject_reconnection(self, request, pk=None):
+        user_to_reconnect = self.get_object()
+        initiating_user = request.user
+        if not Connection.objects.filter(
+            Q(iniating_user=initiating_user, connected_user=user_to_reconnect) |
+            Q(iniating_user=user_to_reconnect, connected_user=initiating_user),
+            removed=True,
+            reconnection_requested = True,
+            reconnection_requested_by = user_to_reconnect,
+            reconnection_rejected = False
+        ).exists():
+            return Response({"error": "There are no requests to reconnect that you can reject."}, status=status.HTTP_400_BAD_REQUEST)
+        Connection.objects.filter(
+            Q(iniating_user=initiating_user, connected_user=user_to_reconnect) |
+            Q(iniating_user=user_to_reconnect, connected_user=initiating_user),
+            removed=True,
+            reconnection_requested = True,
+            reconnection_requested_by = user_to_reconnect
+        ).update(reconnection_rejected=True)
+
+        # dont decrement connection count here
+        return Response({"message": "Reconnection rejected successfully."}, status=status.HTTP_200_OK)
+    
+    @action(detail=False, methods=['get'])
+    def my_connections(self, request):
+        user = request.user
+
+        qs = Connection.objects.filter(
+            Q(iniating_user=user) | Q(connected_user=user)
+        ).select_related('iniating_user', 'connected_user').order_by('-reconnection_count', '-updated_at')
+        paginated_queryset = self.paginate_queryset(qs)
+        if paginated_queryset is not None:
+            serializer = ConnectionListSerializer(paginated_queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = ConnectionListSerializer(qs, many=True)
         return Response(serializer.data)

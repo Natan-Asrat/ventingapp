@@ -3,7 +3,7 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-
+from server.utils import get_readable_time_since
 # Create your models here.
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, username, password=None, **extra_fields):
@@ -44,6 +44,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length = 255, blank=True, null=True)
     profile_picture = models.ImageField(upload_to="profile_pictures/", blank=True, null=True)
     connects = models.PositiveIntegerField(default=0)
+    connections = models.PositiveIntegerField(default=0)
+    connection_requests = models.PositiveIntegerField(default=0)
     email_verified = models.BooleanField(default=False)
     otp_secret = models.CharField(max_length=16, blank=True, null=True)
 
@@ -51,3 +53,27 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["username"]
 
     objects = CustomUserManager()
+
+class Connection(models.Model):
+    iniating_user = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='connections_list')
+    connected_user = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='connected_users')
+
+    reported = models.BooleanField(default=False)
+    removed = models.BooleanField(default=False)
+    connectSpent = models.IntegerField(default=0)
+
+    message = models.CharField(max_length=255, blank=True, null=True)
+    reconnection_requested = models.BooleanField(default=False)
+    reconnection_count = models.IntegerField(default=0)
+    reconnection_requested_by = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='reconnection_requests', blank=True, null=True)
+    reconnection_rejected = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    @property
+    def formatted_created_at(self):
+        return get_readable_time_since(self.created_at)
+
+    @property
+    def formatted_updated_at(self):
+        return get_readable_time_since(self.updated_at)
