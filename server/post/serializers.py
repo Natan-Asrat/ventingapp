@@ -29,7 +29,7 @@ class PostSimpleSerializer(serializers.ModelSerializer):
     payment_info_list = PaymentInfoSerializer(many=True, read_only=True)
     class Meta:
         model = Post
-        fields = ['id', 'description', 'image', 'likes', 'comments', 'saves', 'views', 'payment_info_list']
+        fields = ['id', 'description', 'image', 'likes', 'comments', 'saves', 'views', 'payment_info_list', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
 
 class CommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,16 +44,22 @@ class LikedPostsSerializer(serializers.ModelSerializer):
     post = PostSimpleSerializer()
     class Meta:
         model = Like
-        fields = ['post']
+        fields = ['post', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'active']
 
 class SavedPostsSerializer(serializers.ModelSerializer):
     post = PostSimpleSerializer()
     class Meta:
         model = Save
-        fields = ['post']
+        fields = ['post', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'active']
 
 class CommentsOnPostSerializer(serializers.ModelSerializer):
     commented_by = UserSimpleSerializer()
     class Meta:
         model = Comment
-        fields = ['message', 'commented_by']
+        fields = ['id', 'message', 'commented_by', 'likes', 'replies', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
+
+class RepliesSerializer(serializers.ModelSerializer):
+    commented_by = UserSimpleSerializer()
+    class Meta:
+        model = Comment
+        fields = ['id', 'message', 'commented_by', 'likes', 'replies', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']

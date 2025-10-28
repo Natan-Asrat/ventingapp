@@ -28,6 +28,7 @@ Essential features.
 
 - *FR2.1*: The system shall allow Users to post (text, images, payment details)
 - *FR2.2*: The system shall allow Users to archive their previous posts.
+- *FR2.3*: The system shall allow Users to add more payment details to any of their active posts but not delete or edit any of their previous payment details on a post.
 
 ### Interactions
 

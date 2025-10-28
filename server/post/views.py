@@ -2,14 +2,16 @@ from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Post, Like, Save
+from .models import Post, Like, Save, Comment, LikeComment
 from .serializers import (
     PostCreateSerializer, 
     CommentCreateSerializer, 
     LikedPostsSerializer, 
-    PostSimpleSerializer, 
+    PostSimpleSerializer,
+    RepliesSerializer, 
     SavedPostsSerializer,
-    CommentsOnPostSerializer
+    CommentsOnPostSerializer,
+    PaymentInfoSerializer
 )
 from rest_framework.decorators import action
 from account.pagination import CustomPagination
@@ -26,7 +28,7 @@ class PostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
         # return PostListSerializer
 
     def get_permissions(self):
-        if self.action in ['update', 'archive', 'unarchive']:
+        if self.action in ['update', 'archive', 'unarchive', 'add_payment_info']:
             self.permission_classes = [IsPostOwner]
         return super().get_permissions()
 
@@ -160,3 +162,65 @@ class PostViewSet(mixins.CreateModelMixin, viewsets.GenericViewSet):
             serializer = CommentsOnPostSerializer(paginated_comments, many=True)
             return self.get_paginated_response(serializer.data)
         return Response(CommentsOnPostSerializer(comments, many=True).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def add_payment_info(self, request, pk=None):
+        post = self.get_object()
+        serializer = PaymentInfoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(post=post)
+            return Response({'message': 'Payment info added successfully'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CommentViewSet(viewsets.GenericViewSet):
+    queryset = Comment.objects.all()
+    pagination_class = CustomPagination
+    serializer_class = RepliesSerializer
+
+    @action(detail=True, methods=["get"])
+    def replies(self, request, pk=None):
+        comment = self.get_object()
+        replies = comment.replies_list.filter(archived=False).prefetch_related("commented_by")
+        paginated_replies = self.paginate_queryset(replies)
+        if paginated_replies is not None:
+            serializer = RepliesSerializer(paginated_replies, many=True)
+            return self.get_paginated_response(serializer.data)
+        return Response(RepliesSerializer(replies, many=True).data, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'])
+    def reply(self, request, pk=None):
+        replying_to_comment = self.get_object() 
+        post = replying_to_comment.post
+        serializer = CommentCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(post=post, commented_by=request.user, reply_to=replying_to_comment)
+            replying_to_comment.replies += 1
+            replying_to_comment.save()
+            post.comments += 1
+            post.save()
+            return Response({'message': 'Comment added successfully', 'replies': replying_to_comment.replies, 'post_comments': post.comments}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['post'])
+    def like_comment(self, request, pk=None):
+        comment = self.get_object()
+        if not LikeComment.objects.filter(comment=comment, liked_by=request.user, active=True).exists():
+            like, created = LikeComment.objects.get_or_create(comment=comment, liked_by=request.user)
+            if not like.active:
+                like.active = True
+                like.save()
+            comment.likes += 1
+            comment.save()
+            return Response({'message': 'Comment liked successfully', 'likes': comment.likes}, status=status.HTTP_200_OK)
+        return Response({'message': 'Comment already liked'}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def unlike_comment(self, request, pk=None):
+        comment = self.get_object()
+        if LikeComment.objects.filter(comment=comment, liked_by=request.user, active=True).exists():
+            LikeComment.objects.filter(comment=comment, liked_by=request.user).update(active=False)
+            comment.likes -= 1
+            comment.save()
+            return Response({'message': 'Comment unliked successfully', 'likes': comment.likes}, status=status.HTTP_200_OK)
+        return Response({'message': 'Comment not liked'}, status=status.HTTP_400_BAD_REQUEST)
