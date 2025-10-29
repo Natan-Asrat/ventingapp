@@ -43,8 +43,7 @@
               'bg-green-100 text-green-700 hover:bg-green-200': post.connected,
               'bg-yellow-100 text-yellow-700': post.pending_connection && !post.rejected_connection,
               'bg-red-100 text-red-700': post.rejected_connection,
-              'bg-gray-100 text-gray-700 hover:bg-gray-200': !post.connected && !post.pending_connection && !post.rejected_connection && !post.removed_connection,
-              'bg-blue-50 text-blue-700 hover:bg-blue-100': post.removed_connection && !post.pending_connection && !post.rejected_connection,
+              'bg-gray-100 text-gray-700 hover:bg-gray-200': (!post.connected && !post.pending_connection && !post.rejected_connection) || post.removed_connection,
               'cursor-not-allowed': post.pending_connection || post.rejected_connection
             }"
             :disabled="post.pending_connection || post.rejected_connection"
@@ -61,10 +60,6 @@
             <template v-else-if="post.rejected_connection">
               <UserX :size="18" class="text-red-600" />
               <span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 border-2 border-white"></span>
-            </template>
-            <template v-else-if="post.removed_connection">
-              <UserPlus :size="18" class="text-blue-600" />
-              <span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-blue-500 border-2 border-white"></span>
             </template>
             <UserPlus v-else :size="18" class="text-gray-600" />
           </button>
@@ -186,7 +181,6 @@ const getFollowButtonTooltip = (post) => {
   if (post.connected) return 'Connected';
   if (post.pending_connection) return 'Connection Pending';
   if (post.rejected_connection) return 'Connection Rejected';
-  if (post.removed_connection) return 'Reconnect';
   return 'Follow User';
 };
 

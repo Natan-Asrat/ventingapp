@@ -322,9 +322,10 @@ const handleFollow = async (post) => {
         message.success(`You are now following ${post.posted_by.name || 'this user'}`);
       } else if (response.status === 200) {
         if (isConnected) {
-          // Disconnected successfully
+          // Disconnected successfully - reset all connection states
           posts.value[postIndex].connected = false;
           posts.value[postIndex].pending_connection = false;
+          posts.value[postIndex].rejected_connection = false;
           posts.value[postIndex].removed_connection = true;
           message.success(`You have unfollowed ${post.posted_by.name || 'this user'}`);
         } else {
