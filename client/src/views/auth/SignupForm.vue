@@ -84,16 +84,14 @@
           Profile Picture (Optional)
         </label>
         <div class="mt-1 flex items-center">
-          <span class="h-12 w-12 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
-            <template v-if="previewUrl">
-              <img :src="previewUrl" alt="Profile preview" class="h-full w-full object-cover" />
-            </template>
-            <template v-else>
-              <svg class="h-8 w-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </template>
-          </span>
+          <template v-if="previewUrl">
+            <img :src="previewUrl" alt="Profile preview" class="h-12 w-12 rounded-full object-cover" />
+          </template>
+          <template v-else>
+            <span class="h-12 w-12 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
+                <User class="h-8 w-8 text-gray-400" />
+            </span>
+          </template>
           <input
             type="file"
             id="profile_picture"
@@ -114,10 +112,7 @@
         class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         <span v-if="loading">
-          <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+          <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
         </span>
         <span v-else>Create Account</span>
       </button>
@@ -129,6 +124,7 @@
 import { ref, onUnmounted } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { message } from 'ant-design-vue';
+import { User, Loader2 } from 'lucide-vue-next';
 
 const userStore = useUserStore();
 const loading = ref(false);

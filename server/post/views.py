@@ -16,11 +16,44 @@ from .serializers import (
 from rest_framework.decorators import action
 from account.pagination import CustomPagination
 from .permissions import IsPostOwner
+from django.db.models import Exists, OuterRef, Q
+from account.models import Connection
 
 class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = Post.objects.filter(archived=False).prefetch_related("payment_info_list")
+    queryset = Post.objects.filter(archived=False).prefetch_related("payment_info_list").select_related("posted_by")
     serializer_class = PostSimpleSerializer
     pagination_class = CustomPagination
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return self.queryset.annotate(
+                liked=Exists(Like.objects.filter(post=OuterRef("pk"), liked_by=self.request.user, active=True)),
+                saved=Exists(Save.objects.filter(post=OuterRef("pk"), saved_by=self.request.user, active=True)),
+                connected=Exists(Connection.objects.filter(
+                    Q(iniating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(iniating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    removed=False
+                )),
+                pending_connection=Exists(Connection.objects.filter(
+                    Q(iniating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(iniating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    reconnection_requested=True,
+                    removed=True,
+                    reconnection_rejected=False
+                )),
+                rejected_connection=Exists(Connection.objects.filter(
+                    Q(iniating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(iniating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    removed=True,
+                    reconnection_rejected=True
+                )),
+                removed_connection=Exists(Connection.objects.filter(
+                    Q(iniating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(iniating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    removed=True,
+                )),
+            )
+        return super().get_queryset()
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -68,10 +101,10 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.Gener
         post = self.get_object()
         serializer = CommentCreateSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(post=post, commented_by=request.user)
+            new_comment = serializer.save(post=post, commented_by=request.user)
             post.comments += 1
             post.save()
-            return Response({'message': 'Comment added successfully', 'comments': post.comments}, status=status.HTTP_200_OK)
+            return Response(CommentsOnPostSerializer(new_comment).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=["post"])
@@ -99,7 +132,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.Gener
 
     @action(detail=False, methods=["get"])
     def liked_posts(self, request):
-        likes = Like.objects.filter(liked_by=request.user, active=True).prefetch_related("post", "post__payment_info_list")
+        likes = Like.objects.filter(liked_by=request.user, active=True).prefetch_related("post", "post__payment_info_list", "post__posted_by")
         paginated_likes = self.paginate_queryset(likes)
         if paginated_likes is not None:
             serializer = LikedPostsSerializer(paginated_likes, many=True)
@@ -108,7 +141,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.Gener
 
     @action(detail=False, methods=["get"])
     def saved_posts(self, request):
-        saves = Save.objects.filter(saved_by=request.user, active=True).prefetch_related("post", "post__payment_info_list")
+        saves = Save.objects.filter(saved_by=request.user, active=True).prefetch_related("post", "post__payment_info_list", "post__posted_by")
         paginated_saves = self.paginate_queryset(saves)
         if paginated_saves is not None:
             serializer = SavedPostsSerializer(paginated_saves, many=True)
@@ -118,7 +151,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.Gener
     
     @action(detail=False, methods=["get"])
     def my_posts(self, request):
-        posts = Post.objects.filter(posted_by=request.user, archived=False).prefetch_related("payment_info_list")
+        posts = Post.objects.filter(posted_by=request.user, archived=False).prefetch_related("payment_info_list").select_related("posted_by")
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:
             serializer = PostSimpleSerializer(paginated_posts, many=True)
@@ -128,7 +161,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.Gener
     
     @action(detail=False, methods=["get"])
     def my_archived_posts(self, request):
-        posts = Post.objects.filter(posted_by=request.user, archived=True).prefetch_related("payment_info_list")
+        posts = Post.objects.filter(posted_by=request.user, archived=True).prefetch_related("payment_info_list").select_related("posted_by")
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:
             serializer = PostSimpleSerializer(paginated_posts, many=True)
@@ -171,6 +204,17 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.Gener
             serializer.save(post=post)
             return Response({'message': 'Payment info added successfully'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    @action(detail=True, methods=["post"])
+    def bulk_add_payment_info(self, request, pk=None):
+        post = self.get_object()
+        print("data", request.data)
+        serializer = PaymentInfoSerializer(data=request.data, many=True)
+        if serializer.is_valid():
+            new_data = serializer.save(post=post)
+            new_post_data = Post.objects.get(id=post.id)
+            return Response({'message': 'Payment info added successfully', 'post': PostSimpleSerializer(new_post_data).data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class CommentViewSet(viewsets.GenericViewSet):

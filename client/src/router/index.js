@@ -2,13 +2,20 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import LandingPage from '@/views/LandingPage.vue';
 import AuthPage from '@/views/auth/AuthPage.vue';
-import Dashboard from '@/views/Dashboard.vue';
+import Feed from '@/views/Feed.vue';
+import NewPost from '@/views/NewPost.vue';
 import ForgotPassword from '@/views/auth/ForgotPassword.vue';
 
 const routes = [
   {
     path: '/',
     name: 'Home',
+    component: LandingPage,
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
     component: LandingPage,
     meta: { requiresAuth: false }
   },
@@ -31,9 +38,15 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: Dashboard,
+    path: '/home',
+    name: 'Feed',
+    component: Feed,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/new-post',
+    name: 'NewPost',
+    component: NewPost,
     meta: { requiresAuth: true }
   },
   // Add a catch-all route for 404s

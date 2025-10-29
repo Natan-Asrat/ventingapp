@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import User, Connection
-
+from urllib.parse import urljoin
+from django.conf import settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate, get_user_model
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -55,9 +56,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return user
 
 class UserSimpleSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
     class Meta:
         model = User
         fields = ["id", "email", "username", "name", "connects", "profile_picture"]
+    def get_profile_picture(self, obj):
+        if obj.profile_picture:
+            absolute_url =  urljoin(settings.BACKEND_URL, obj.profile_picture.url)
+            return absolute_url
+        return None
 
 class ConnectionListSerializer(serializers.ModelSerializer):
     connected_user = UserSimpleSerializer()

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Post, PaymentInfo, Comment, Like, Save
 from account.serializers import UserSimpleSerializer
+
 class PaymentInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentInfo
@@ -26,10 +27,17 @@ class PostCreateSerializer(serializers.ModelSerializer):
         return post
 
 class PostSimpleSerializer(serializers.ModelSerializer):
+    posted_by = UserSimpleSerializer()
     payment_info_list = PaymentInfoSerializer(many=True, read_only=True)
+    liked = serializers.BooleanField(read_only=True)
+    saved = serializers.BooleanField(read_only=True)
+    connected = serializers.BooleanField(read_only=True)
+    rejected_connection = serializers.BooleanField(read_only=True)
+    pending_connection = serializers.BooleanField(read_only=True)
+    removed_connection = serializers.BooleanField(read_only=True)
     class Meta:
         model = Post
-        fields = ['id', 'description', 'image', 'likes', 'comments', 'saves', 'views', 'payment_info_list', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
+        fields = ['id', 'posted_by', 'connected', 'rejected_connection', 'pending_connection', 'removed_connection', 'description', 'image', 'liked', 'saved', 'likes', 'comments', 'saves', 'views', 'payment_info_list', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
 
 class CommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
