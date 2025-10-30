@@ -44,7 +44,7 @@
             <button 
               @click="loadMore" 
               :disabled="loadingMore"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {{ loadingMore ? 'Loading...' : 'Load More' }}
             </button>
@@ -75,7 +75,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 import api from '@/api/axios';
@@ -88,6 +88,7 @@ import ConnectionRequestModal from '@/components/feed/ConnectionRequestModal.vue
 
 const userStore = useUserStore();
 const router = useRouter();
+const route = useRoute();
 
 // State
 const posts = ref([]);
@@ -139,11 +140,16 @@ const fetchPosts = async (url = '/post/posts/') => {
 const loadMore = () => {
   if (nextPage.value && !loadingMore.value) {
     loadingMore.value = true;
-    // Extract the relative URL from the next page URL
-    const url = new URL(nextPage.value);
-    fetchPosts(url.pathname + url.search);
+
+    const url = new URL(nextPage.value, window.location.origin);
+    // Remove the first path segment
+    const segments = url.pathname.split('/').filter(Boolean); // ["api", "post", "posts"]
+    const relativePath = '/' + segments.slice(1).join('/') + url.search; // "/post/posts/?page=2"
+
+    fetchPosts(relativePath);
   }
 };
+
 
 const openDonationModal = (post) => {
   selectedPost.value = post;
@@ -375,9 +381,41 @@ const logout = async () => {
   }
 };
 
+// Fetch a single post by ID
+const fetchPostById = async (postId) => {
+  try {
+    const response = await api.get(`/post/posts/${postId}/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    message.error('Failed to load post');
+    return null;
+  }
+};
+
+// Check URL for post ID and handle post loading
+const checkUrlForPost = async () => {
+  const postId = route.query.p;
+  if (!postId) return;
+
+  // Check if post is already in the feed
+  const existingPost = posts.value.find(p => String(p.id) === String(postId));
+  if (existingPost) return;
+
+  // If not, fetch the post
+  const post = await fetchPostById(postId);
+  if (post) {
+    // Add to the beginning of the posts array
+    posts.value.unshift(post);
+  }
+};
+
+
 // Lifecycle
-onMounted(() => {
-  fetchPosts();
+onMounted(async () => {
+  await fetchPosts();
+  // After loading posts, check if we need to load a specific post from URL
+  await checkUrlForPost();
 });
 </script>
 

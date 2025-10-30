@@ -19,7 +19,7 @@ from .permissions import IsPostOwner
 from django.db.models import Exists, OuterRef, Q
 from account.models import Connection
 
-class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Post.objects.filter(archived=False).prefetch_related("payment_info_list").select_related("posted_by")
     serializer_class = PostSimpleSerializer
     pagination_class = CustomPagination

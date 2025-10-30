@@ -1,5 +1,5 @@
 <template>
-  <TransitionRoot appear :show="modelValue" as="template">
+  <TransitionRoot appear :show="show" as="template">
     <Dialog as="div" class="relative z-50" @close="closeModal">
       <TransitionChild
         as="template"
@@ -31,7 +31,7 @@
             <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
               Comments
             </DialogTitle>
-            <button @click="closeModal" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+            <button @click="closeModal" class="text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
               <span class="sr-only">Close</span>
               <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -55,7 +55,7 @@
             </div>
             <div class="flex-1 min-w-0">
               <p class="font-medium text-sm">{{ post.posted_by?.name || 'Anonymous' }}</p>
-              <p class="text-sm text-gray-500">{{ post.description }}</p>
+              <ShowMore :text="post.description"/>
               <p class="text-xs text-gray-400 mt-1">{{ post.formatted_created_at }}</p>
               
               
@@ -120,7 +120,7 @@
         </div>
 
         <!-- Comments Section -->
-        <div class="h-96 overflow-y-auto px-4 py-3">
+        <div class="h-[50vh] overflow-y-auto px-4 py-3">
           <div v-if="loading" class="flex justify-center py-8">
             <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
           </div>
@@ -185,14 +185,16 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useUserStore } from '@/stores/user';
+import { useRouter, useRoute } from 'vue-router';
 import api from '@/api/axios';
 import { message } from 'ant-design-vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
+import ShowMore from '@/components/ShowMore.vue';
 
 const props = defineProps({
-  modelValue: {
+  show: {
     type: Boolean,
     default: false
   },
@@ -209,7 +211,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits([
-  'close ', 
+  'close',
   'comment-added',
   'like',
   'unlike',
@@ -218,7 +220,34 @@ const emit = defineEmits([
   'share'
 ]);
 
+const router = useRouter();
+const route = useRoute();
+
+// Handle browser back button
+const handlePopState = () => {
+  if (props.show) {
+    closeModal();
+  }
+};
+
+// Setup popstate listener when component mounts
+onMounted(() => {
+  window.addEventListener('popstate', handlePopState);
+});
+
+// Cleanup popstate listener when component unmounts
+onBeforeUnmount(() => {
+  window.removeEventListener('popstate', handlePopState);
+});
+
 const closeModal = () => {
+  // Remove the post ID from URL when closing
+  if (route.query.p) {
+    const query = { ...route.query };
+    delete query.p;
+    router.replace({ query });
+  }
+  
   emit('close');
 };
 
@@ -309,10 +338,21 @@ const addComment = async () => {
   }
 };
 
-// Fetch comments when modal is opened
-watch(() => props.modelValue, (newVal) => {
+// Handle URL and fetch comments when modal is opened/closed
+watch(() => props.show, (newVal) => {
   if (newVal) {
+    // Add post ID to URL when modal opens
+    if (props.post?.id && route.query.p !== String(props.post.id)) {
+      router.replace({
+        query: { ...route.query, p: props.post.id }
+      });
+    }
     fetchComments();
+  } else if (route.query.p) {
+    // Remove post ID from URL when modal closes
+    const query = { ...route.query };
+    delete query.p;
+    router.replace({ query });
   }
-});
+}, { immediate: true });
 </script>

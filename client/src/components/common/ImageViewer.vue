@@ -52,7 +52,7 @@
               <!-- Close Button -->
               <button
                 @click="close"
-                class="absolute top-4 left-4 p-2 bg-black bg-opacity-50 rounded-full text-white hover:bg-opacity-75 transition-all focus:outline-none focus:ring-2 focus:ring-white"
+                class="absolute top-4 left-4 p-2 bg-black bg-opacity-50 rounded-full text-white hover:bg-opacity-75 transition-all focus:outline-none focus:ring-2 focus:ring-white cursor-pointer"
                 title="Close (Esc)"
               >
                 <X :size="24" />
@@ -62,7 +62,7 @@
               <div class="absolute bottom-4 right-4 flex flex-col space-y-2">
                 <button
                   @click.stop="zoomIn"
-                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all"
+                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer"
                   title="Zoom In (Mouse Wheel Up)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,7 +71,7 @@
                 </button>
                 <button
                   @click.stop="zoomOut"
-                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all"
+                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer"
                   :class="{'opacity-50 cursor-not-allowed': zoomLevel <= 1}"
                   :disabled="zoomLevel <= 1"
                   title="Zoom Out (Mouse Wheel Down)"
@@ -82,7 +82,7 @@
                 </button>
                 <button
                   @click.stop="resetZoom"
-                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all"
+                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer"
                   :class="{'opacity-50 cursor-not-allowed': zoomLevel === 1}"
                   :disabled="zoomLevel === 1"
                   title="Reset Zoom (R)"

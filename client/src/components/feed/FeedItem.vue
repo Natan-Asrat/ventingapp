@@ -2,11 +2,17 @@
   <div class="bg-white shadow overflow-hidden rounded-lg">
     <!-- Comment Modal -->
     <CommentModal 
-      v-model="showCommentModal"
+      v-if="showCommentModal"
       :post="post"
       :show="showCommentModal"
       @close="closeCommentModal"
       @comment-added="handleCommentAdded"
+    />
+    <ShareModal
+      v-if="showShareModal"
+      :post="post"
+      :show="showShareModal"
+      @close="closeShareModal"
     />
     <!-- Post Header -->
     <div class="px-4 py-3 flex items-center justify-between border-b border-gray-200">
@@ -31,7 +37,7 @@
         <button 
           v-if="post.payment_info_list && post.payment_info_list.length > 0"
           @click="$emit('donate', post)"
-          class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center"
+          class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center cursor-pointer"
         >
           Donate
         </button>
@@ -69,7 +75,8 @@
     
     <!-- Post Content -->
     <div class="px-4 py-3">
-      <p class="text-gray-800 whitespace-pre-line">{{ post.description }}</p>
+      
+      <ShowMore :text="post.description"/>
       
       <!-- Post Image -->
       <div v-if="post.image" class="mt-3 rounded-lg overflow-hidden">
@@ -107,8 +114,8 @@
           @click="likePost" 
           class="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
           :class="[{
-            'text-red-500 hover:text-red-600': post.liked && !liking,
-            'text-gray-500 hover:text-gray-700': !post.liked && !liking,
+            'text-red-500 hover:text-red-600 cursor-pointer': post.liked && !liking,
+            'text-gray-500 hover:text-gray-700 cursor-pointer': !post.liked && !liking,
             'opacity-50 cursor-not-allowed': liking
           }]"
           :disabled="liking"
@@ -129,7 +136,7 @@
         
         <button 
           @click="handleCommentClick(post)" 
-          class="p-2 rounded-full hover:bg-gray-100 text-gray-700 hover:text-blue-500 transition-colors"
+          class="p-2 rounded-full hover:bg-gray-100 text-gray-700 hover:text-blue-500 transition-colors cursor-pointer"
           title="Comment"
         >
           <MessageCircle :size="20" class="w-5 h-5" />
@@ -139,8 +146,8 @@
           @click="savePost" 
           class="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
           :class="[{
-            'text-yellow-500 hover:text-yellow-600': post.saved && !saving,
-            'text-gray-500 hover:text-gray-700': !post.saved && !saving,
+            'text-yellow-500 hover:text-yellow-600 cursor-pointer': post.saved && !saving,
+            'text-gray-500 hover:text-gray-700 cursor-pointer': !post.saved && !saving,
             'opacity-50 cursor-not-allowed': saving
           }]"
           :disabled="saving"
@@ -160,8 +167,8 @@
         </button>
         
         <button 
-          @click="$emit('share', post)" 
-          class="p-2 rounded-full hover:bg-gray-100 text-gray-700 hover:text-green-500 transition-colors"
+          @click="handleShareClick(post)" 
+          class="p-2 rounded-full hover:bg-gray-100 text-gray-700 hover:text-green-500 transition-colors cursor-pointer"
           title="Share"
         >
           <Share2 :size="20" class="w-5 h-5" />
@@ -172,9 +179,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
 import CommentModal from './CommentModal.vue';
+import ShareModal from './ShareModal.vue';
 import ImageViewer from '@/components/common/ImageViewer.vue';
+import ShowMore from '@/components/ShowMore.vue';
 import { Heart, MessageCircle, Bookmark, Share2, Loader2, UserPlus, UserCheck, Clock, UserX, UserMinus } from 'lucide-vue-next';
 
 const getFollowButtonTooltip = (post) => {
@@ -205,8 +215,10 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['donate', 'image-loaded', 'comment', 'comment-added', 'save', 'share', 'like'])
+const emit = defineEmits(['donate', 'image-loaded', 'comment', 'comment-added', 'save', 'share', 'like']);
 const showCommentModal = ref(false);
+const showShareModal = ref(false);
+const route = useRoute();
 
 const handleCommentClick = (post) => {
   showCommentModal.value = true;
@@ -214,12 +226,38 @@ const handleCommentClick = (post) => {
 };
 const closeCommentModal = () => {
   showCommentModal.value = false;
-}
+};
+
+const closeShareModal = () => {
+  showShareModal.value = false;
+};
+
+const handleShareClick = (post) => {
+  showShareModal.value = true;
+  emit('share', post);
+};
 const handleCommentAdded = () => {
   emit('comment-added');
 };
 
 const showImageViewer = ref(false);
+
+// Watch for URL changes to handle direct comment modal opening
+watch(() => route.query.p, (newPostId) => {
+  if (newPostId && String(props.post.id) === String(newPostId)) {
+    handleCommentClick(props.post)
+  } else if (showCommentModal.value && !newPostId) {
+    showCommentModal.value = false;
+  }
+}, { immediate: true });
+
+// Handle initial load
+onMounted(() => {
+  if (route.query.p && String(props.post.id) === String(route.query.p)) {
+    showCommentModal.value = true;
+    emit('comment', props.post);
+  }
+});
 
 const openImageViewer = (e) => {
   if (!props.post.image) return;
