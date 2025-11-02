@@ -37,6 +37,7 @@
             @like="handleLike"
             @save="handleSave"
             @follow="handleFollowClick"
+            @update:post="handleUpdatePostObj"
           />
           
           <!-- Load More Button -->
@@ -102,7 +103,12 @@ const likingPostId = ref(null);
 const savingPostId = ref(null);
 const showConnectionModal = ref(false);
 const selectedUserForConnection = ref(null);
-
+const handleUpdatePostObj = (post) => {
+  const index = posts.value.findIndex(p => p.id === post.id);
+  if (index !== -1) {
+    posts.value[index] = post;
+  }
+}
 // Computed
 const user = computed(() => userStore.user);
 

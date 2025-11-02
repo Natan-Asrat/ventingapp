@@ -7,6 +7,7 @@
       :show="showCommentModal"
       @close="closeCommentModal"
       @comment-added="handleCommentAdded"
+      @update:post="$emit('update:post', $event)"
     />
     <ShareModal
       v-if="showShareModal"
@@ -215,7 +216,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['donate', 'image-loaded', 'comment', 'comment-added', 'save', 'share', 'like']);
+const emit = defineEmits(['donate', 'update:post', 'image-loaded', 'comment', 'comment-added', 'save', 'share', 'like']);
 const showCommentModal = ref(false);
 const showShareModal = ref(false);
 const route = useRoute();

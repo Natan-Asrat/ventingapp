@@ -104,7 +104,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
             new_comment = serializer.save(post=post, commented_by=request.user)
             post.comments += 1
             post.save()
-            return Response(CommentsOnPostSerializer(new_comment).data, status=status.HTTP_200_OK)
+            return Response({"post_comments": post.comments, "comment": CommentsOnPostSerializer(new_comment).data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=["post"])
@@ -189,7 +189,9 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     @action(detail=True, methods=["get"])
     def comments(self, request, pk=None):
         post = self.get_object()
-        comments = post.comments_list.filter(archived=False).prefetch_related("commented_by")
+        comments = post.comments_list.filter(archived=False).prefetch_related("commented_by").annotate(
+            liked=Exists(LikeComment.objects.filter(comment=OuterRef("pk"), liked_by=request.user, active=True))
+        )
         paginated_comments = self.paginate_queryset(comments)
         if paginated_comments is not None:
             serializer = CommentsOnPostSerializer(paginated_comments, many=True)
@@ -225,7 +227,9 @@ class CommentViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=["get"])
     def replies(self, request, pk=None):
         comment = self.get_object()
-        replies = comment.replies_list.filter(archived=False).prefetch_related("commented_by")
+        replies = comment.replies_list.filter(archived=False).prefetch_related("commented_by").annotate(
+            liked=Exists(LikeComment.objects.filter(comment=OuterRef("pk"), liked_by=request.user, active=True))
+        )
         paginated_replies = self.paginate_queryset(replies)
         if paginated_replies is not None:
             serializer = RepliesSerializer(paginated_replies, many=True)
@@ -238,12 +242,20 @@ class CommentViewSet(viewsets.GenericViewSet):
         post = replying_to_comment.post
         serializer = CommentCreateSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(post=post, commented_by=request.user, reply_to=replying_to_comment)
+            if replying_to_comment.reply_to:
+                replying_to_main = replying_to_comment.reply_to
+                replying_to_main.replies += 1
+                replying_to_main.save()
+            else:
+                replying_to_main = replying_to_comment
+
+            new_comment = serializer.save(post=post, commented_by=request.user, reply_to=replying_to_main, reply_to_username=replying_to_comment.commented_by.username)
             replying_to_comment.replies += 1
             replying_to_comment.save()
             post.comments += 1
             post.save()
-            return Response({'message': 'Comment added successfully', 'replies': replying_to_comment.replies, 'post_comments': post.comments}, status=status.HTTP_200_OK)
+            new_comment_data = RepliesSerializer(new_comment).data
+            return Response({'message': 'Comment added successfully', 'comment': new_comment_data, 'replies': replying_to_main.replies, 'post_comments': post.comments}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=['post'])

@@ -57,66 +57,64 @@
               <p class="font-medium text-sm">{{ post.posted_by?.name || 'Anonymous' }}</p>
               <ShowMore :text="post.description"/>
               <p class="text-xs text-gray-400 mt-1">{{ post.formatted_created_at }}</p>
-              
-              
             </div>
           </div>
           <!-- Action Buttons -->
-              <div class="flex items-center justify-between space-x-4 mt-2 pt-2 border-t border-gray-100">
-                <button 
-                  @click.stop="handleLike"
-                  class="flex items-center space-x-1 text-sm text-gray-500 hover:text-red-500 transition-colors"
-                  :class="{ 'text-red-500': post.liked }"
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    class="h-5 w-5" 
-                    :fill="post.liked ? 'currentColor' : 'none'" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      stroke-linecap="round" 
-                      stroke-linejoin="round" 
-                      stroke-width="2" 
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                    />
-                  </svg>
-                  <span>{{ post.likes || 0 }}</span>
-                </button>
-                
-                <button 
-                  @click.stop="handleSave"
-                  class="flex items-center space-x-1 text-sm text-gray-500 hover:text-yellow-500 transition-colors"
-                  :class="{ 'text-yellow-500': post.saved }"
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    class="h-5 w-5" 
-                    :fill="post.saved ? 'currentColor' : 'none'" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      stroke-linecap="round" 
-                      stroke-linejoin="round" 
-                      stroke-width="2" 
-                      d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" 
-                    />
-                  </svg>
-                  <span>Save</span>
-                </button>
-                
-                <button 
-                  @click.stop="handleShare"
-                  class="flex items-center space-x-1 text-sm text-gray-500 hover:text-blue-500 transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
-                  <span>Share</span>
-                </button>
-              </div>
+          <div class="flex items-center justify-between space-x-4 mt-2 pt-2 border-t border-gray-100">
+            <button 
+              @click.stop="handleLike"
+              class="flex items-center space-x-1 text-sm text-gray-500 hover:text-red-500 transition-colors"
+              :class="{ 'text-red-500': post.liked }"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                class="h-5 w-5" 
+                :fill="post.liked ? 'currentColor' : 'none'" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  stroke-linecap="round" 
+                  stroke-linejoin="round" 
+                  stroke-width="2" 
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                />
+              </svg>
+              <span>{{ post.likes || 0 }}</span>
+            </button>
+            
+            <button 
+              @click.stop="handleSave"
+              class="flex items-center space-x-1 text-sm text-gray-500 hover:text-yellow-500 transition-colors"
+              :class="{ 'text-yellow-500': post.saved }"
+            >
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                class="h-5 w-5" 
+                :fill="post.saved ? 'currentColor' : 'none'" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  stroke-linecap="round" 
+                  stroke-linejoin="round" 
+                  stroke-width="2" 
+                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" 
+                />
+              </svg>
+              <span>Save</span>
+            </button>
+            
+            <button 
+              @click.stop="handleShare"
+              class="flex items-center space-x-1 text-sm text-gray-500 hover:text-blue-500 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+              <span>Share</span>
+            </button>
+          </div>
         </div>
 
         <!-- Comments Section -->
@@ -130,23 +128,18 @@
           </div>
           
           <div v-else class="space-y-4">
-            <div v-for="comment in comments" :key="comment.id" class="flex space-x-3">
-              <div v-if="comment.commented_by?.profile_picture" class="flex-shrink-0 h-8 w-8 rounded-full overflow-hidden">
-                <img 
-                  :src="comment.commented_by.profile_picture" 
-                  :alt="comment.commented_by.name"
-                  class="h-full w-full object-cover"
-                />
-              </div>
-              <div v-else class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
-                {{ comment.commented_by?.name ? comment.commented_by.name.charAt(0).toUpperCase() : 'U' }}
-              </div>
-              <div class="bg-gray-100 rounded-lg px-3 py-2">
-                <p class="text-sm font-medium">{{ comment.commented_by?.name || 'Anonymous' }}</p>
-                <p class="text-sm">{{ comment.message }}</p>
-                <p class="text-xs text-gray-400 mt-1">{{ comment.formatted_created_at }}</p>
-              </div>
-            </div>
+            <CommentItem 
+              v-for="comment in comments" 
+              :key="comment.id" 
+              :comment="comment"
+              :show-replies="showReplies[comment.id] || false"
+              :loading-replies="loadingReplies[comment.id] || false"
+              :replies="commentReplies[comment.id] || []"
+              @like="handleCommentLike"
+              @reply="handleReply"
+              @toggle-replies="toggleReplies"
+              @reply-added="handleReplyAdded(comment.id, $event)"
+            />
           </div>
         </div>
 
@@ -185,13 +178,14 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { useRouter, useRoute } from 'vue-router';
 import api from '@/api/axios';
 import { message } from 'ant-design-vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import ShowMore from '@/components/ShowMore.vue';
+import CommentItem from './CommentItem.vue';
 
 const props = defineProps({
   show: {
@@ -212,6 +206,7 @@ const props = defineProps({
 
 const emit = defineEmits([
   'close',
+  'update:post',
   'comment-added',
   'like',
   'unlike',
@@ -296,6 +291,24 @@ const userStore = useUserStore();
 const comments = ref([]);
 const loading = ref(false);
 const newComment = ref('');
+const loadingReplies = ref({});
+const showReplies = ref({});
+const commentReplies = ref({});
+const commentRefs = ref({});
+
+// Scroll to a specific comment
+const scrollToComment = (id) => {
+  nextTick(() => {
+    const el = commentRefs.value[id]?.$el || commentRefs.value[id];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      el.classList.add('highlight-new');
+      setTimeout(() => {
+        el.classList.remove('highlight-new');
+      }, 1500);
+    }
+  });
+};
 
 const userInitials = computed(() => {
   if (!userStore.user?.name) return 'U';
@@ -321,6 +334,67 @@ const fetchComments = async () => {
   }
 };
 
+const handleCommentLike = (updatedComment) => {
+  // Update the comment in the comments list
+  const index = comments.value.findIndex(c => c.id === updatedComment.id);
+  if (index !== -1) {
+    comments.value[index] = { ...comments.value[index], ...updatedComment };
+  }
+  
+  // If this is a reply, update it in the replies list
+  for (const commentId in commentReplies.value) {
+    const replyIndex = commentReplies.value[commentId].findIndex(r => r.id === updatedComment.id);
+    if (replyIndex !== -1) {
+      commentReplies.value[commentId][replyIndex] = updatedComment;
+      break;
+    }
+  }
+};
+
+const handleReply = (commentId) => {
+  // This is handled within the CommentItem component now
+};
+
+const handleReplyAdded = (top_id, data) => {
+  if (!top_id) return; // safety check
+
+  const is_nested = data['is_reply'];
+  const newObj = data['data']['comment'];
+  const post_comments_count = data['data']['post_comments'];
+
+  // Ensure outer object exists
+  commentReplies.value ??= {};
+
+  // Ensure replies array exists for this comment (use shallow clone for reactivity)
+  if (!Array.isArray(commentReplies.value[top_id])) {
+    commentReplies.value = { ...commentReplies.value, [top_id]: [] };
+  }
+
+  if (is_nested) {
+    // Insert nested reply after parent
+    const insertIndex = data['index'] + 1;
+    commentReplies.value[top_id].splice(insertIndex, 0, newObj);
+  } else {
+    // Add new top-level reply at the front
+    commentReplies.value[top_id].unshift(newObj);
+  }
+
+  // Update replies count in parent comment
+  const comment = comments.value.find(c => c.id === top_id);
+  if (comment) {
+    comment.replies = (comment.replies || 0) + 1;
+  }
+
+  // Show replies section
+  showReplies.value[top_id] = true;
+
+  // Update post's total comment count
+  emit('update:post', {
+    ...props.post,
+    comments: post_comments_count
+  });
+};
+
 const addComment = async () => {
   if (!newComment.value.trim()) return;
   
@@ -328,13 +402,48 @@ const addComment = async () => {
     const response = await api.post(`/post/posts/${props.post.id}/comment/`, {
       message: newComment.value.trim()
     });
+    const post_comments_count = response.data.post_comments;
+    const new_comment_obj = response.data.comment;
     
-    comments.value = [response.data, ...comments.value];
+    // Add the new comment to the beginning of the list
+    comments.value = [new_comment_obj, ...comments.value];
     newComment.value = '';
-    emit('comment-added');
+    
+    // Scroll to the new comment after it's added
+    nextTick(() => {
+      scrollToComment(new_comment_obj.id);
+      emit('comment-added');
+    });
+    
+    emit('update:post', {
+      ...props.post,
+      comments: post_comments_count
+    });
   } catch (error) {
     console.error('Error adding comment:', error);
     message.error('Failed to add comment');
+  }
+};
+
+const toggleReplies = async (comment) => {
+  showReplies.value[comment.id] = !showReplies.value[comment.id];
+  
+  // If we're showing replies and haven't loaded them yet, fetch them
+  if (showReplies.value[comment.id] && !commentReplies.value[comment.id]) {
+    await fetchReplies(comment.id);
+  }
+};
+
+const fetchReplies = async (commentId) => {
+  try {
+    loadingReplies.value[commentId] = true;
+    const response = await api.get(`/post/comments/${commentId}/replies/`);
+    commentReplies.value[commentId] = response.data.results || [];
+  } catch (error) {
+    console.error('Error fetching replies:', error);
+    message.error('Failed to load replies');
+  } finally {
+    loadingReplies.value[commentId] = false;
   }
 };
 
@@ -356,3 +465,50 @@ watch(() => props.show, (newVal) => {
   }
 }, { immediate: true });
 </script>
+
+<style scoped>
+/* Animation for comments list */
+.comment-list-move,
+.comment-list-enter-active,
+.comment-list-leave-active {
+  transition: all 0.3s ease;
+}
+
+.comment-list-enter-from,
+.comment-list-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.comment-list-leave-active {
+  position: absolute;
+  width: 100%;
+}
+
+/* Highlight animation for new comments */
+@keyframes highlight {
+  0% { background-color: rgba(239, 246, 255, 0.5); }
+  100% { background-color: transparent; }
+}
+
+.highlight-new {
+  animation: highlight 1.5s ease-out;
+  border-radius: 0.5rem;
+}
+
+/* Smooth transition for the comment input */
+.comment-input-enter-active,
+.comment-input-leave-active {
+  transition: all 0.3s ease;
+  max-height: 100px;
+  overflow: hidden;
+}
+
+.comment-input-enter-from,
+.comment-input-leave-to {
+  opacity: 0;
+  max-height: 0;
+  margin: 0;
+  padding: 0;
+}
+</style>

@@ -62,12 +62,15 @@ class SavedPostsSerializer(serializers.ModelSerializer):
 
 class CommentsOnPostSerializer(serializers.ModelSerializer):
     commented_by = UserSimpleSerializer()
+    liked = serializers.BooleanField(read_only=True)
     class Meta:
         model = Comment
-        fields = ['id', 'message', 'commented_by', 'likes', 'replies', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
+        fields = ['id', 'message', 'liked',  'commented_by', 'likes', 'replies', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
 
 class RepliesSerializer(serializers.ModelSerializer):
     commented_by = UserSimpleSerializer()
+    liked = serializers.BooleanField(read_only=True, default=False)
+
     class Meta:
         model = Comment
-        fields = ['id', 'message', 'commented_by', 'likes', 'replies', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
+        fields = ['id', 'message', 'liked', 'reply_to_username', 'commented_by', 'likes', 'replies', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']

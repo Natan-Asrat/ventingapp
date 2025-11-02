@@ -44,6 +44,7 @@ class Comment(models.Model):
     commented_by = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='commented_posts')
     message = models.CharField(max_length=1000)
     reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies_list')
+    reply_to_username = models.CharField(max_length=255, null=True, blank=True)
     archived = models.BooleanField(default=False)
     likes = models.IntegerField(default=0)
     replies = models.IntegerField(default=0)
