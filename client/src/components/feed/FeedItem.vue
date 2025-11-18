@@ -5,6 +5,9 @@
       v-if="showCommentModal"
       :post="post"
       :show="showCommentModal"
+      @like="likePost"
+      @save="savePost"
+      @share="handleShareClick(post)"
       @close="closeCommentModal"
       @comment-added="handleCommentAdded"
       @update:post="$emit('update:post', $event)"
@@ -34,12 +37,14 @@
         </div>
       </div>
       
-      <div class="flex items-center space-x-2">
+      <div v-if="!isCurrentUserPost" class="flex items-center space-x-2">
         <button 
           v-if="post.payment_info_list && post.payment_info_list.length > 0"
-          @click="$emit('donate', post)"
-          class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center cursor-pointer"
+          @click="handleDonate(post)"
+          class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="processingDonation"
         >
+          <Loader2 v-if="processingDonation" class="w-3 h-3 mr-1.5 animate-spin" />
           Donate
         </button>
         <div class="relative">
@@ -51,9 +56,10 @@
               'bg-yellow-100 text-yellow-700': post.pending_connection && !post.rejected_connection,
               'bg-red-100 text-red-700': post.rejected_connection,
               'bg-gray-100 text-gray-700 hover:bg-gray-200': (!post.connected && !post.pending_connection && !post.rejected_connection) || post.removed_connection,
-              'cursor-not-allowed': post.pending_connection || post.rejected_connection
+              'cursor-not-allowed': post.rejected_connection,
+              'cursor-pointer': !post.rejected_connection
             }"
-            :disabled="post.pending_connection || post.rejected_connection"
+            :disabled="post.rejected_connection"
             :title="getFollowButtonTooltip(post)"
           >
             <template v-if="post.connected">
@@ -176,17 +182,40 @@
         </button>
       </div>
     </div>
+
+    <ConnectionModal 
+      v-if="showConnectionsModal" 
+      @close="showConnectionsModal = false" 
+      @connection-updated="handleConnectionsUpdated"
+      :show="showConnectionsModal" 
+      :connections="connections"
+      :loadingConnections="loadingConnections"
+    />
+    
+    <ConnectionPromptModal
+      v-if="showConnectionPrompt"
+      :show="showConnectionPrompt"
+      :user-name="post.posted_by?.name || 'this user'"
+      :is-pending="post.pending_connection"
+      :is-rejected="post.rejected_connection"
+      @connect="handleConnect"
+      @close="showConnectionPrompt = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue';
+import { ref, onMounted, watch, nextTick, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
+import api from '@/api/axios';
+import { useUserStore } from '@/stores/user';
 import CommentModal from './CommentModal.vue';
 import ShareModal from './ShareModal.vue';
+import ConnectionModal from '@/components/feed/ConnectionsModal.vue';
 import ImageViewer from '@/components/common/ImageViewer.vue';
 import ShowMore from '@/components/ShowMore.vue';
-import { Heart, MessageCircle, Bookmark, Share2, Loader2, UserPlus, UserCheck, Clock, UserX, UserMinus } from 'lucide-vue-next';
+import { Heart, MessageCircle, Bookmark, Share2, Loader2, UserPlus, UserCheck, Clock, UserX } from 'lucide-vue-next';
+import ConnectionPromptModal from './ConnectionPromptModal.vue';
 
 const getFollowButtonTooltip = (post) => {
   if (post.connected) return 'Connected';
@@ -196,11 +225,13 @@ const getFollowButtonTooltip = (post) => {
 };
 
 const handleFollowClick = () => {
-  if (!props.post.pending_connection && !props.post.rejected_connection) {
+  console.log("clicked follow")
+  if (props.post.pending_connection) {
+    fetchConnections();
+  } else if (!props.post.rejected_connection) {
     emit('follow', props.post);
   }
 };
-
 const props = defineProps({
   post: {
     type: Object,
@@ -216,7 +247,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['donate', 'update:post', 'image-loaded', 'comment', 'comment-added', 'save', 'share', 'like']);
+const emit = defineEmits(['donate', 'update:post', 'image-loaded', 'comment', 'comment-added', 'save', 'share', 'like', 'connection-updated']);
 const showCommentModal = ref(false);
 const showShareModal = ref(false);
 const route = useRoute();
@@ -241,7 +272,40 @@ const handleCommentAdded = () => {
   emit('comment-added');
 };
 
+const userStore = useUserStore();
 const showImageViewer = ref(false);
+const showConnectionsModal = ref(false);
+const showConnectionPrompt = ref(false);
+const connections = ref([]);
+const loadingConnections = ref(false);
+const processingDonation = ref(false);
+
+const fetchConnections = async () => {
+  if (!props.post?.posted_by?.id) return;
+  
+  try {
+    loadingConnections.value = true;
+    const response = await api.get(`/account/users/${props.post.posted_by.id}/our_connection/`);
+    connections.value = response.data;
+    showConnectionsModal.value = true;
+  } catch (error) {
+    console.error('Error fetching connections:', error);
+  } finally {
+    loadingConnections.value = false;
+  }
+};
+
+
+const handleConnectionsUpdated = async () => {
+  await fetchConnections()
+  emit('connection-updated')
+  showConnectionsModal.value = false;
+}
+
+// Check if the current post is made by the logged-in user
+const isCurrentUserPost = computed(() => {
+  return userStore.user && props.post.posted_by && userStore.user.id === props.post.posted_by.id;
+});
 
 // Watch for URL changes to handle direct comment modal opening
 watch(() => route.query.p, (newPostId) => {
@@ -271,6 +335,33 @@ const likePost = () => {
 
 const savePost = () => {
   emit('save', props.post);
+};
+
+const handleDonate = async (post) => {
+  if (post.connected) {
+    // If already connected, proceed with donation
+    emit('donate', post);
+  } else if (post.pending_connection || post.rejected_connection) {
+    // Show pending connection message
+    showConnectionPrompt.value = true;
+  } else {
+    // Show connection prompt
+    showConnectionPrompt.value = true;
+  }
+};
+
+const handleConnect = async () => {
+  if (!props.post?.posted_by?.id) return;
+  
+  try {
+    processingDonation.value = true;
+    await emit('follow', props.post, true);
+    showConnectionPrompt.value = false;
+  } catch (error) {
+    console.error('Error connecting:', error);
+  } finally {
+    processingDonation.value = false;
+  }
 };
 
 </script>

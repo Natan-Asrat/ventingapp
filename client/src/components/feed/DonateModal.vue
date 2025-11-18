@@ -3,7 +3,7 @@
     <div class="bg-white rounded-lg w-full max-w-md overflow-hidden">
       <div class="p-4 border-b border-gray-200 flex justify-between items-center">
         <h3 class="text-lg font-medium text-gray-900">Donation Methods</h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-500">
+        <button @click="close" class="text-gray-400 hover:text-gray-500 cursor-pointer">
           <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -14,7 +14,7 @@
         <div v-for="(method, index) in paymentMethods" :key="index" class="p-4">
           <button 
             @click="toggleAccordion(index)"
-            class="w-full flex justify-between items-center text-left"
+            class="w-full flex justify-between items-center text-left cursor-pointer"
           >
             <span class="font-medium">{{ method.method }}</span>
             <svg 
@@ -29,7 +29,7 @@
           </button>
           
           <div v-if="activeIndex === index" class="mt-3 space-y-3">
-            <div @click="copyToClipboard(method.account)" class="bg-gray-50 p-3 rounded-md flex justify-between items-center">
+            <div @click="copyToClipboard(method.account)" class="bg-gray-50 p-3 rounded-md flex justify-between items-center cursor-pointer">
               <div>
                 <p class="text-xs text-gray-500">Account Number</p>
                 <p class="font-mono">{{ method.account }}</p>
@@ -44,7 +44,7 @@
               </button>
             </div>
             
-            <div @click="copyToClipboard(method.nameOnAccount)" v-if="method.nameOnAccount" class="bg-gray-50 p-3 rounded-md flex justify-between items-center">
+            <div @click="copyToClipboard(method.nameOnAccount)" v-if="method.nameOnAccount" class="bg-gray-50 p-3 rounded-md flex justify-between items-center cursor-pointer">
               <div>
                 <p class="text-xs text-gray-500">Account Name</p>
                 <p>{{ method.nameOnAccount }}</p>

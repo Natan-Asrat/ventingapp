@@ -25,7 +25,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        if self.action == 'list':
+        if self.action in ['list', 'retrieve']:
             return self.queryset.annotate(
                 liked=Exists(Like.objects.filter(post=OuterRef("pk"), liked_by=self.request.user, active=True)),
                 saved=Exists(Save.objects.filter(post=OuterRef("pk"), saved_by=self.request.user, active=True)),
@@ -189,7 +189,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     @action(detail=True, methods=["get"])
     def comments(self, request, pk=None):
         post = self.get_object()
-        comments = post.comments_list.filter(archived=False).prefetch_related("commented_by").annotate(
+        comments = post.comments_list.filter(archived=False, reply_to=None).prefetch_related("commented_by").annotate(
             liked=Exists(LikeComment.objects.filter(comment=OuterRef("pk"), liked_by=request.user, active=True))
         )
         paginated_comments = self.paginate_queryset(comments)

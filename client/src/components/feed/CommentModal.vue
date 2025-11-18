@@ -146,7 +146,10 @@
         <!-- Comment Input -->
         <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
           <div class="flex items-center space-x-2">
-            <div class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
+            <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
+              <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
+            </div>
+            <div v-else class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
               {{ userInitials }}
             </div>
             <div class="flex-1 relative">
@@ -209,9 +212,7 @@ const emit = defineEmits([
   'update:post',
   'comment-added',
   'like',
-  'unlike',
   'save',
-  'unsave',
   'share'
 ]);
 
@@ -247,44 +248,15 @@ const closeModal = () => {
 };
 
 const handleLike = () => {
-  if (props.post.liked) {
-    emit('unlike', props.post.id);
-  } else {
-    emit('like', props.post.id);
-  }
-};
+  emit('like')
+}
 
 const handleSave = () => {
-  if (props.post.saved) {
-    emit('unsave', props.post.id);
-  } else {
-    emit('save', props.post.id);
-  }
+  emit('save')
 };
 
 const handleShare = async () => {
-  try {
-    const shareData = {
-      title: 'Check out this post',
-      text: props.post.description,
-      url: window.location.href,
-    };
-    
-    if (navigator.share) {
-      await navigator.share(shareData);
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      await navigator.clipboard.writeText(window.location.href);
-      message.success('Link copied to clipboard!');
-    }
-    
-    emit('share', props.post.id);
-  } catch (error) {
-    if (error.name !== 'AbortError') {
-      console.error('Error sharing:', error);
-      message.error('Failed to share post');
-    }
-  }
+  emit('share')
 };
 const userStore = useUserStore();
 
@@ -317,6 +289,10 @@ const userInitials = computed(() => {
     .map(n => n[0].toUpperCase())
     .join('')
     .substring(0, 2);
+});
+
+const profilePicture = computed(() => {
+  return userStore.user?.profile_picture;
 });
 
 const fetchComments = async () => {

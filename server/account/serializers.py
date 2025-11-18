@@ -59,7 +59,7 @@ class UserSimpleSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ["id", "email", "username", "name", "connects", "profile_picture"]
+        fields = ["id", "email", "username", "name", "connects", "profile_picture", "date_joined", "formatted_date_joined"]
     def get_profile_picture(self, obj):
         if obj.profile_picture:
             absolute_url =  urljoin(settings.BACKEND_URL, obj.profile_picture.url)
@@ -71,4 +71,4 @@ class ConnectionListSerializer(serializers.ModelSerializer):
     iniating_user = UserSimpleSerializer()
     class Meta:
         model = Connection
-        fields = ["id", "iniating_user", "connected_user", "connectSpent", "created_at", "updated_at", "removed", "reported", "reconnection_count", "reconnection_rejected", "formatted_created_at", "formatted_updated_at"]
+        fields = ["id", "iniating_user", "message", "connected_user", "connectSpent", "created_at", "updated_at", "removed", "reported", "reconnection_count", "reconnection_rejected", "reconnection_requested_by", "formatted_created_at", "formatted_updated_at"]

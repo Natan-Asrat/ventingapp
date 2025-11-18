@@ -305,3 +305,12 @@ class UserViewset(CreateModelMixin, GenericViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = ConnectionListSerializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def our_connection(self, request, pk=None):
+        user = self.get_object()
+        connection = Connection.objects.filter(
+            Q(iniating_user=user) | Q(connected_user=user)
+        ).select_related('iniating_user', 'connected_user').order_by('-reconnection_count', '-updated_at')
+        serializer = ConnectionListSerializer(connection, many=True)
+        return Response(serializer.data)

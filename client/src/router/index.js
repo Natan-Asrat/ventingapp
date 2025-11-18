@@ -5,6 +5,7 @@ import AuthPage from '@/views/auth/AuthPage.vue';
 import Feed from '@/views/Feed.vue';
 import NewPost from '@/views/NewPost.vue';
 import ForgotPassword from '@/views/auth/ForgotPassword.vue';
+import Profile from '@/views/Profile.vue';
 
 const routes = [
   {
@@ -16,8 +17,8 @@ const routes = [
   {
     path: '/profile',
     name: 'Profile',
-    component: LandingPage,
-    meta: { requiresAuth: false }
+    component: Profile,
+    meta: { requiresAuth: true }
   },
   {
     path: '/login',

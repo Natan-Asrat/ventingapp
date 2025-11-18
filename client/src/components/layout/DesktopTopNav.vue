@@ -29,12 +29,15 @@
             <div class="flex items-center space-x-4">
               <button
                 @click="toggleProfileMenu"
-                class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
                 id="user-menu"
                 aria-expanded="false"
                 aria-haspopup="true"
               >
-                <div class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
+                  <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
+                </div>
+                <div v-else class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
                   <span class="text-indigo-600 font-medium">{{ userInitials }}</span>
                 </div>
               </button>
@@ -63,8 +66,8 @@
                   Your Profile
                 </router-link>
                 <button
-                  @click="logout"
-                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  @click="handleLogout"
+                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                   role="menuitem"
                 >
                   Sign out
@@ -79,24 +82,42 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 
-const props = defineProps({
-  userInitials: {
-    type: String,
-    default: 'ME'
+const userStore = useUserStore();
+
+const userInitials = computed(() => {
+  if (!userStore.user) return 'ME';
+  const { first_name, last_name, email } = userStore.user;
+  if (first_name && last_name) {
+    return `${first_name[0]}${last_name[0]}`.toUpperCase();
   }
+  if (first_name) return first_name[0].toUpperCase();
+  if (email) return email[0].toUpperCase();
+  return 'ME';
+});
+
+const profilePicture = computed(() => {
+  return userStore.user?.profile_picture;
 });
 
 const emit = defineEmits(['logout']);
+const router = useRouter();
 const isProfileMenuOpen = ref(false);
 
 const toggleProfileMenu = () => {
   isProfileMenuOpen.value = !isProfileMenuOpen.value;
 };
 
-const handleLogout = () => {
-  emit('logout');
+const handleLogout = async () => {
+  try {
+    await userStore.logout();
+    router.push('/login');
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
 };
 
 // Handle click outside to close the dropdown

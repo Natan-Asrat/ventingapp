@@ -104,6 +104,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
 
 const props = defineProps({
   userInitials: {
@@ -118,15 +119,22 @@ const props = defineProps({
 
 const emit = defineEmits(['logout']);
 const router = useRouter();
+const userStore = useUserStore();
 const isMenuOpen = ref(false);
 
 const closeMenu = () => {
   isMenuOpen.value = false;
 };
 
-const handleLogout = () => {
+const handleLogout = async () => {
   closeMenu();
-  emit('logout');};
+  try {
+    await userStore.logout();
+    router.push('/login');
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
+};
 
 // Close menu when route changes
 router.afterEach(() => {

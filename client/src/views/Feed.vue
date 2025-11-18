@@ -38,6 +38,7 @@
             @save="handleSave"
             @follow="handleFollowClick"
             @update:post="handleUpdatePostObj"
+            @connection-updated="handleConnectionsUpdated(post.id)"
           />
           
           <!-- Load More Button -->
@@ -235,13 +236,13 @@ const handleSave = async (post) => {
   }
 };
 
-const handleFollowClick = (post) => {
+const handleFollowClick = (post, showDonate = false) => {
   if (post.removed_connection && !post.pending_connection && !post.rejected_connection) {
     // Show modal for reconnection request
     selectedUserForConnection.value = post;
     showConnectionModal.value = true;
   } else {
-    handleFollow(post);
+    handleFollow(post, showDonate);
   }
 };
 
@@ -304,8 +305,27 @@ const confirmConnectionRequest = async (messageText = '') => {
     message.error(errorMessage);
   }
 };
+const handleConnectionsUpdated = async (postId) => {
+  if (!postId) return;
 
-const handleFollow = async (post) => {
+  // Check if post is already in the feed
+  const newPostData = await fetchPostById(postId);
+  const existingPost = posts.value.find(p => String(p.id) === String(postId));
+  if (existingPost) {
+    const postIndex = posts.value.findIndex(p => p.id === postId);
+    if (postIndex !== -1) {
+      posts.value[postIndex] = newPostData;
+    }
+    return;
+  }
+
+  // If not, fetch the post
+  if (newPostData) {
+    // Add to the beginning of the posts array
+    posts.value.unshift(newPostData);
+  }
+};
+const handleFollow = async (post, showDonate = false) => {
   if (!post?.posted_by?.id || post.pending_connection || post.rejected_connection) {
     return;
   }
@@ -332,6 +352,9 @@ const handleFollow = async (post) => {
         posts.value[postIndex].pending_connection = false;
         posts.value[postIndex].removed_connection = false;
         message.success(`You are now following ${post.posted_by.name || 'this user'}`);
+        if(showDonate){
+          openDonationModal(post)
+        }
       } else if (response.status === 200) {
         if (isConnected) {
           // Disconnected successfully - reset all connection states

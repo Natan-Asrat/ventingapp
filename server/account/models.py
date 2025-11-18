@@ -48,11 +48,16 @@ class User(AbstractBaseUser, PermissionsMixin):
     connection_requests = models.PositiveIntegerField(default=0)
     email_verified = models.BooleanField(default=False)
     otp_secret = models.CharField(max_length=16, blank=True, null=True)
-
+    date_joined = models.DateTimeField(auto_now_add=True)
     USERNAME_FIELD="email"
     REQUIRED_FIELDS = ["username"]
 
     objects = CustomUserManager()
+
+    @property
+    def formatted_date_joined(self):
+        return get_readable_time_since(self.date_joined)
+
 
 class Connection(models.Model):
     iniating_user = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='connections_list')

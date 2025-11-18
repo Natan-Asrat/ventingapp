@@ -21,19 +21,19 @@ Essential features.
 
 ### Account Management
 
-- *FR1.1*: The system shall allow Users to register (with their profile picture, name, email, username, and password), and login with their email and password.
+- ✅ *FR1.1*: The system shall allow Users to register (with their profile picture, name, email, username, and password), and login with their email and password.
 - *FR1.2*: The system shall allow Users to manage their account (edit profile picture, name)
 
 ### Post
 
-- *FR2.1*: The system shall allow Users to post (text, images, payment details)
+- ✅ *FR2.1*: The system shall allow Users to post (text, images, payment details)
 - *FR2.2*: The system shall allow Users to archive their previous posts.
 - *FR2.3*: The system shall allow Users to add more payment details to any of their active posts but not delete or edit any of their previous payment details on a post.
 
 ### Interactions
 
-- *FR3.1*: The system shall allow Users to like, comment, share, save posts.
-- *FR3.2*: The system shall allow Users to like and comment on comments.
+- ✅ *FR3.1*: The system shall allow Users to like, comment, share, save posts.
+- ✅ *FR3.2*: The system shall allow Users to like and comment on comments.
 
 ### Analytics
 - *FR4.1*: The system shall allow Users to see their own Analytics summary (views, likes, comments).
@@ -50,9 +50,9 @@ Essential features.
 
 
 ### Connections
-- *FR7.1*: The system shall allow Users to connect with other users.
-- *FR7.2*: The system shall allow Users to see their connections' public payment details on their posts.
-- *FR7.3*: The system shall allow Users to donate to their connections.
+- ✅ *FR7.1*: The system shall allow Users to connect with other users.
+- ✅ *FR7.2*: The system shall allow Users to see their connections' public payment details on their posts.
+- ✅ *FR7.3*: The system shall allow Users to donate to their connections.
 - *FR7.4*: The system shall allow Users to chat with their connections.
 
 ### Connects History & Monthly Free Connects
@@ -69,7 +69,7 @@ Essential features.
 - *FR9.6*: The system shall allow Users to react (emojis), reply, forward (in the same conversation), report messages in a conversation.
 
 ### Feed & Search
-- *FR10.1*: The system shall allow Users to discover other posts in their feed.
+- ✅ *FR10.1*: The system shall allow Users to discover other posts in their feed.
 - *FR10.2*: The system shall allow Users to Search for posts.
 - *FR10.3*: The system shall allow Users to Search other users by their Username, visit their profile and view their previous posts.
 
