@@ -15,8 +15,11 @@
     
     <!-- Main Content -->
     <div class="pt-16 pb-16 md:pt-0 md:pb-0">
-      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="flex flex-col md:flex-row gap-6">
+          <!-- Left Column - User Profile -->
+          <div class="w-full md:w-1/3">
+            <div class="bg-white shadow sm:rounded-lg overflow-hidden sticky top-6">
           <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
             <h3 class="text-lg leading-6 font-medium text-gray-900">Profile Information</h3>
             <p class="mt-1 max-w-2xl text-sm text-gray-500">Your personal details and account information.</p>
@@ -118,6 +121,73 @@
                 </router-link>
               </div>
             </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Column - User Posts -->
+          <div class="w-full md:w-2/3">
+            <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+              <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Your Posts</h3>
+                <p class="mt-1 max-w-2xl text-sm text-gray-500">Posts you've shared with the community.</p>
+              </div>
+              
+              <!-- Loading State -->
+              <div v-if="loading" class="p-6 text-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+                <p class="mt-2 text-sm text-gray-500">Loading your posts...</p>
+              </div>
+              
+              <!-- Empty State -->
+              <div v-else-if="posts.length === 0" class="p-6 text-center">
+                <div class="mx-auto h-24 w-24 text-gray-400">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No posts yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Get started by creating your first post.</p>
+                <div class="mt-6">
+                  <router-link 
+                    to="/create-post"
+                    class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    <PlusIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+                    New Post
+                  </router-link>
+                </div>
+              </div>
+              
+              <!-- Posts List -->
+              <div v-else class="divide-y divide-gray-200">
+                <MyPostItem 
+                  v-for="post in posts" 
+                  :key="post.id" 
+                  :post="post"
+                  @update:post="handlePostUpdate"
+                  class="border-b border-gray-200 last:border-b-0"
+                />
+                
+                <!-- Load More Button -->
+                <div v-if="hasNextPage" class="p-4 text-center">
+                  <button
+                    @click="loadMorePosts"
+                    :disabled="loadingMore"
+                    class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  >
+                    <span v-if="loadingMore" class="flex items-center">
+                      <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Loading...
+                    </span>
+                    <span v-else>Load More</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -132,10 +202,11 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-import { PencilIcon, X } from 'lucide-vue-next';
+import { PencilIcon, X, PlusIcon } from 'lucide-vue-next';
 import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
+import MyPostItem from '@/components/feed/MyPostItem.vue';
 import api from '@/api/axios';
 import { message } from 'ant-design-vue';
 
@@ -147,6 +218,11 @@ const fileInput = ref(null);
 const isEditingName = ref(false);
 const editingName = ref('');
 const isSaving = ref(false);
+const loading = ref(true);
+const loadingMore = ref(false);
+const posts = ref([]);
+const nextPage = ref(null);
+const hasNextPage = computed(() => !!nextPage.value);
 
 // Get user data from the store
 const user = computed(() => userStore.user);
@@ -269,10 +345,57 @@ const handleLogout = () => {
   router.push('/login');
 };
 
-// Fetch user data when component mounts
+// Fetch user data and posts when component mounts
 onMounted(async () => {
   if (!user.value) {
     await userStore.checkAuth();
   }
+  await fetchUserPosts();
 });
+
+// Methods
+const fetchUserPosts = async (url = '/post/posts/my_posts/') => {
+  try {
+    loading.value = true;
+    const response = await api.get(url);
+    
+    if (url.includes('page=')) {
+      // Append to existing posts for pagination
+      posts.value = [...posts.value, ...response.data.results];
+    } else {
+      // Initial load
+      posts.value = response.data.results;
+    }
+    
+    nextPage.value = response.data.next;
+  } catch (error) {
+    console.error('Error fetching user posts:', error);
+    message.error('Failed to load your posts. Please try again.');
+  } finally {
+    loading.value = false;
+    loadingMore.value = false;
+  }
+};
+
+const loadMorePosts = async () => {
+  if (!nextPage.value || loadingMore.value) return;
+  
+  loadingMore.value = true;
+  try {
+    // Extract the path from the full URL
+    const url = new URL(nextPage.value);
+    await fetchUserPosts(url.pathname + url.search);
+  } catch (error) {
+    console.error('Error loading more posts:', error);
+    message.error('Failed to load more posts. Please try again.');
+    loadingMore.value = false;
+  }
+};
+
+const handlePostUpdate = (updatedPost) => {
+  const index = posts.value.findIndex(p => p.id === updatedPost.id);
+  if (index !== -1) {
+    posts.value.splice(index, 1, updatedPost);
+  }
+};
 </script>

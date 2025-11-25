@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Post, Like, Save, Comment, LikeComment
+from .models import Post, Like, Save, Comment, LikeComment, PaymentInfo
 from .serializers import (
     PostCreateSerializer, 
     CommentCreateSerializer, 
@@ -11,7 +11,9 @@ from .serializers import (
     RepliesSerializer, 
     SavedPostsSerializer,
     CommentsOnPostSerializer,
-    PaymentInfoSerializer
+    PaymentInfoSerializer,
+    MyPaymentInfoSerializer,
+    MyPostSimpleSerializer
 )
 from rest_framework.decorators import action
 from account.pagination import CustomPagination
@@ -154,9 +156,9 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         posts = Post.objects.filter(posted_by=request.user, archived=False).prefetch_related("payment_info_list").select_related("posted_by")
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:
-            serializer = PostSimpleSerializer(paginated_posts, many=True)
+            serializer = MyPostSimpleSerializer(paginated_posts, many=True)
             return self.get_paginated_response(serializer.data)
-        return Response(PostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
+        return Response(MyPostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
 
     
     @action(detail=False, methods=["get"])
@@ -201,10 +203,10 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     @action(detail=True, methods=["post"])
     def add_payment_info(self, request, pk=None):
         post = self.get_object()
-        serializer = PaymentInfoSerializer(data=request.data)
+        serializer = MyPaymentInfoSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(post=post)
-            return Response({'message': 'Payment info added successfully'}, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     @action(detail=True, methods=["post"])
     def bulk_add_payment_info(self, request, pk=None):
@@ -280,3 +282,8 @@ class CommentViewSet(viewsets.GenericViewSet):
             comment.save()
             return Response({'message': 'Comment unliked successfully', 'likes': comment.likes}, status=status.HTTP_200_OK)
         return Response({'message': 'Comment not liked'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentInfoViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    queryset = PaymentInfo.objects.all()
+    serializer_class = MyPaymentInfoSerializer
