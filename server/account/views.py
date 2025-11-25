@@ -1,7 +1,13 @@
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.mixins import CreateModelMixin
 from .models import User, Connection
-from .serializers import UserCreateSerializer, UserSimpleSerializer, ConnectionListSerializer, CustomTokenObtainPairSerializer
+from .serializers import (
+    UserCreateSerializer, 
+    UserSimpleSerializer, 
+    ConnectionListSerializer, 
+    CustomTokenObtainPairSerializer,
+    EditProfileSerializer
+)
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -156,6 +162,29 @@ class UserViewset(CreateModelMixin, GenericViewSet):
     def me(self, request):
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+    
+    @action(
+        detail=False,
+        methods=["patch"],
+        permission_classes=[IsAuthenticated],
+        url_path="edit_profile"
+    )
+    def edit_profile(self, request):
+        serializer = EditProfileSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save()
+        return Response(
+            UserSimpleSerializer(request.user).data,
+            status=status.HTTP_200_OK
+        )
+
 
     @action(detail=True, methods=['post'])
     def connect(self, request, pk=None):

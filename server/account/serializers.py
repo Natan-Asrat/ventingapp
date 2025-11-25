@@ -72,3 +72,37 @@ class ConnectionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Connection
         fields = ["id", "iniating_user", "message", "connected_user", "connectSpent", "created_at", "updated_at", "removed", "reported", "reconnection_count", "reconnection_rejected", "reconnection_requested_by", "formatted_created_at", "formatted_updated_at"]
+
+class EditProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["name", "profile_picture"]
+        extra_kwargs = {
+            "name": {"required": False},
+            "profile_picture": {"required": False},
+        }
+
+    def validate(self, attrs):
+        name = attrs.get("name")
+        picture = attrs.get("profile_picture")
+
+        if not name and not picture:
+            raise serializers.ValidationError("Provide either name or profile_picture.")
+
+        # Prevent updating both at once — UI sends only one at a time
+        if name and picture:
+            raise serializers.ValidationError("You can update only one field at a time.")
+
+        return attrs
+
+    def update(self, instance, validated_data):
+        name = validated_data.get("name")
+        picture = validated_data.get("profile_picture")
+
+        if name:
+            instance.name = name
+        if picture:
+            instance.profile_picture = picture
+
+        instance.save()
+        return instance
