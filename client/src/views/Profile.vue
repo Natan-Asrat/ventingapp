@@ -35,7 +35,7 @@
                   </div>
                   <button
                     @click="triggerFileInput"
-                    class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full text-xs font-medium text-indigo-600 shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full text-xs font-medium text-indigo-600 shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
                   >
                     Change
                   </button>
@@ -54,7 +54,7 @@
                       @click="startEditingName"
                       class="ml-2 p-1 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                     >
-                      <PencilIcon class="h-4 w-4" />
+                      <PencilIcon class="h-4 w-4 cursor-pointer" />
                     </button>
                   </div>
                   <div v-else class="flex items-center space-x-2">
@@ -83,7 +83,7 @@
                       class="p-1 text-gray-400 hover:text-gray-500 focus:outline-none"
                       :disabled="isSaving"
                     >
-                      <X class="h-4 w-4" />
+                      <X class="h-4 w-4 cursor-pointer" />
                     </button>
                   </div>
                   <p class="mt-1 text-sm text-gray-500">Member since {{ formattedJoinDate }}</p>
