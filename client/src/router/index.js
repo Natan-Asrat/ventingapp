@@ -6,7 +6,6 @@ import Feed from '@/views/Feed.vue';
 import NewPost from '@/views/NewPost.vue';
 import ForgotPassword from '@/views/auth/ForgotPassword.vue';
 import Profile from '@/views/Profile.vue';
-
 const routes = [
   {
     path: '/',
@@ -50,6 +49,16 @@ const routes = [
     component: NewPost,
     meta: { requiresAuth: true }
   },
+  {
+    path: '/success',
+    name: 'Success',
+    beforeEnter: () => {
+      // Reload the page (forces full SPA reload)
+      window.location.reload();
+      window.location.href = `/home?_v=${Date.now()}`;
+    }  
+  },
+
   // Add a catch-all route for 404s
   {
     path: '/:pathMatch(.*)*',

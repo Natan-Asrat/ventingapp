@@ -51,6 +51,8 @@ class Transaction(models.Model):
     approved = models.BooleanField(default=False)
     status = models.CharField(max_length=255)
     billing_name = models.TextField(blank=True, null=True)
+
+    celebrated = models.BooleanField(default=False)
     
 
     screenshot = models.ImageField(upload_to='screenshot/', blank=True, null=True)
@@ -62,3 +64,5 @@ class Transaction(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+from .signals import *

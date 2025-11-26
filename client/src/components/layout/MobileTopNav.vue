@@ -7,8 +7,18 @@
           <h1 class="text-xl font-bold text-indigo-600">VentingApp</h1>
         </div>
         
-        <!-- Mobile menu button -->
-        <div class="flex items-center">
+        <!-- Connects Counter -->
+        <div class="flex items-center space-x-2">
+          <button
+            @click="openConnectsModal"
+            class="flex items-center space-x-1 px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 cursor-pointer"
+          >
+            <Wallet class="h-5 w-5 text-amber-600" />
+            <span class="text-sm font-medium text-gray-700">{{ currentConnects }}</span>
+          </button>
+
+          <!-- Mobile menu button -->
+          <div class="flex items-center">
           <button
             @click="isMenuOpen = !isMenuOpen"
             class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
@@ -40,6 +50,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
+        </div>
         </div>
       </div>
     </div>
@@ -92,6 +103,16 @@
     </div>
   </nav>
   
+  <!-- Connects Modal -->
+  <ConnectsModal
+    :is-open="isConnectsModalOpen"
+    :current-connects="currentConnects"
+    :connects-data="connectsStore.connectsData"
+    :loading="connectsStore.isLoading"
+    @close="isConnectsModalOpen = false"
+    @purchase="connectsStore.handlePurchaseConnects"
+  />
+  
   <!-- Overlay when menu is open -->
   <div 
     v-if="isMenuOpen" 
@@ -102,9 +123,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
+import { Wallet } from 'lucide-vue-next';
+import ConnectsModal from '@/components/connects/ConnectsModal.vue';
+import api from '@/api/axios';
+import { useConnectsStore } from '@/stores/connect';
+const router = useRouter();
+const userStore = useUserStore();
+const isMenuOpen = ref(false);
+const isConnectsModalOpen = ref(false);
+const connectsStore = useConnectsStore();
+const currentConnects = computed(() => userStore?.user?.connects || 0);
 
 const props = defineProps({
   userInitials: {
@@ -118,9 +149,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['logout']);
-const router = useRouter();
-const userStore = useUserStore();
-const isMenuOpen = ref(false);
+
 
 const closeMenu = () => {
   isMenuOpen.value = false;
@@ -158,9 +187,17 @@ const handleEscape = (event) => {
   }
 };
 
+const openConnectsModal = async () => {
+  isConnectsModalOpen.value = true;
+  if (Object.keys(connectsStore.connectsData.value).length === 0) {
+    await connectsStore.fetchConnectsData();
+  }
+};
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside);
   document.addEventListener('keydown', handleEscape);
+  connectsStore.fetchConnectsData();
 });
 
 onBeforeUnmount(() => {

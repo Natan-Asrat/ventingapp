@@ -9,6 +9,7 @@ from django.conf import settings
 from .models import PaymentMethods
 from polar_sdk.webhooks import validate_event
 from .models import Subscription, Customer
+from server.utils import get_readable_time_since
 # Create your views here.
 def get_amount_by_product_id(product_id):
     for option in settings.POLAR_ORDER_OPTIONS.values():
@@ -24,17 +25,54 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def create_order(self, request):
         product = request.data.get('product')
         order_option = settings.POLAR_ORDER_OPTIONS.get(product)
+        current_url = request.data.get('current_url')
         if not order_option:
             return Response({"error": "Invalid product"}, status=400)
         checkout = polar.checkouts.create(request={
             "products": [order_option['product_id']],
+            "success_url": current_url
         })
         Transaction.objects.create(
             user=request.user,
             method=PaymentMethods.POLAR,
             transaction_id=checkout.id
         )
-        return Response({"checkout": checkout.url})
+        return Response({"checkout_url": checkout.url})
+    
+    @action(detail=False, methods=['get'])
+    def connect_options(self, request):
+        return Response(settings.POLAR_ORDER_OPTIONS)
+        
+    @action(detail=False, methods=['get'])
+    def recent_success(self, request):
+        # Get the most recent successful transaction for the current user
+        transaction = Transaction.objects.filter(
+            user=request.user,
+            celebrated=False,
+            approved=True,
+            connects__isnull=False
+        ).order_by('-created_at').first()
+        
+        if not transaction:
+            return Response({})
+            
+        return Response({
+            'connects': transaction.connects,
+            'subscription_id': transaction.subscription_id,
+            'formatted_created_at': get_readable_time_since(transaction.created_at)
+        })
+
+    @action(detail=False, methods=['post'])
+    def celebrated(self, request):
+        transactions_updated = Transaction.objects.filter(
+            user=request.user,
+            celebrated=False,
+            approved=True,
+            connects__isnull=False
+        ).update(
+            celebrated=True
+        )
+        return Response({"updated": transactions_updated}, status=200)
     
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def order_paid(self, request):

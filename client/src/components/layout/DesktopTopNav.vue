@@ -25,6 +25,17 @@
             New Post
           </router-link>
           
+          <!-- Connects Counter -->
+          <div class="relative">
+            <button
+              @click="openConnectsModal"
+              class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 cursor-pointer"
+            >
+              <Wallet class="h-5 w-5 text-amber-600" />
+              <span class="text-sm font-medium text-gray-700">{{ currentConnects }}</span>
+            </button>
+          </div>
+
           <div class="relative ml-3">
             <div class="flex items-center space-x-4">
               <button
@@ -78,6 +89,15 @@
         </div>
       </div>
     </div>
+    <!-- Connects Modal -->
+    <ConnectsModal
+      :is-open="isConnectsModalOpen"
+      :current-connects="currentConnects"
+      :connects-data="connectsStore.connectsData"
+      :loading="connectsStore.isLoading"
+      @close="isConnectsModalOpen = false"
+      @purchase="connectsStore.handlePurchaseConnects"
+    />
   </nav>
 </template>
 
@@ -85,8 +105,11 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-
+import { Wallet } from 'lucide-vue-next';
+import ConnectsModal from '@/components/connects/ConnectsModal.vue';
+import { useConnectsStore } from '@/stores/connect';
 const userStore = useUserStore();
+const connectsStore = useConnectsStore();
 
 const userInitials = computed(() => {
   if (!userStore.user) return 'ME';
@@ -105,7 +128,10 @@ const profilePicture = computed(() => {
 
 const emit = defineEmits(['logout']);
 const router = useRouter();
+
 const isProfileMenuOpen = ref(false);
+const isConnectsModalOpen = ref(false);
+const currentConnects = computed(() => userStore?.user.connects);
 
 const toggleProfileMenu = () => {
   isProfileMenuOpen.value = !isProfileMenuOpen.value;
@@ -128,7 +154,15 @@ const handleClickOutside = (event) => {
   }
 };
 
-onMounted(() => {
+
+const openConnectsModal = async () => {
+  isConnectsModalOpen.value = true;
+  if (Object.keys(connectsStore.connectsData).length === 0) {
+    await connectsStore.fetchConnectsData();
+  }
+};
+
+onMounted(async () => {
   document.addEventListener('click', handleClickOutside);
 });
 
