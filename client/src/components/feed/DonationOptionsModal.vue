@@ -14,6 +14,7 @@
               <div v-if="method.method" class="flex items-center">
                 <h4 class="text-base font-medium text-gray-900">{{ method.method }}</h4>
                 <button 
+                  v-if="!archived"
                   @click="toggleEditMode(index)"
                   class="ml-2 p-1 text-gray-400 hover:text-indigo-600 rounded-full hover:bg-gray-100"
                   :title="editingIndex === index ? 'Cancel' : 'Edit'"
@@ -68,7 +69,7 @@
                   <button
                     type="button"
                     @click="cancelEdit"
-                    class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -76,7 +77,7 @@
                     type="button"
                     @click="savePaymentMethod(index)"
                     :disabled="!isValidMethod"
-                    class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     Save
                   </button>
@@ -84,7 +85,7 @@
               </div>
             </div>
             <button
-              v-if="editingIndex !== index"
+              v-if="editingIndex !== index && !archived"
               @click="removePaymentMethod(index)"
               class="ml-4 p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-100"
               title="Remove payment method"
@@ -95,14 +96,17 @@
         </div>
         
         <!-- Add New Payment Method -->
-        <div class="p-4 border-t border-gray-200">
+        <div v-if="!archived" class="p-4 border-t border-gray-200">
           <button
             @click="addNewPaymentMethod"
-            class="w-full flex items-center justify-center px-4 py-2 border border-dashed border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            class="w-full flex items-center justify-center px-4 py-2 border border-dashed border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
           >
             <Plus class="h-4 w-4 mr-2" />
             Add Payment Method
           </button>
+        </div>
+        <div v-else-if="paymentMethods.length === 0" class="p-4 border-t border-gray-200">
+          <p class="text-sm text-gray-500">No payment methods added.</p>
         </div>
       </div>
       
@@ -110,9 +114,9 @@
       <div class="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
         <button
           @click="close"
-          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
         >
-          Done
+          {{archived ? "Close" : "Done"}}
         </button>
       </div>
     </div>
@@ -137,6 +141,10 @@ const props = defineProps({
   postId: {
     type: String,
     required: true
+  },
+  archived: {
+    type: Boolean,
+    default: false
   }
 });
 

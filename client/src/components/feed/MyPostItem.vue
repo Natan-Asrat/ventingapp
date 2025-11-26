@@ -34,6 +34,17 @@
           <p class="text-xs text-gray-500">@{{ post.posted_by?.username || 'user' }}</p>
         </div>
       </div>
+      <button 
+        @click="post.archived ? $emit('restore') : $emit('archive')"
+        class="text-gray-400 hover:text-green-500 transition-colors cursor-pointer"
+        :title="post.archived ? 'Restore post' : 'Archive post'"
+      >
+        <component 
+          :is="post.archived ? RotateCcw : Trash2" 
+          class="h-5 w-5" 
+          :class="{'hover:text-green-500': post.archived, 'hover:text-red-500': !post.archived}"
+        />
+      </button>
     </div>
     
     <!-- Post Content -->
@@ -41,9 +52,9 @@
       <ShowMore :text="post.description"/>
       
       <!-- Post Image -->
-      <div v-if="post.image" class="mt-3 rounded-lg overflow-hidden">
+      <div v-if="post.image_url" class="mt-3 rounded-lg overflow-hidden">
         <img 
-          :src="post.image" 
+          :src="post.image_url" 
           :alt="'Post by ' + (post.posted_by?.username || 'user')" 
           class="w-full h-auto object-cover cursor-zoom-in"
           @load="$emit('image-loaded')"
@@ -55,7 +66,7 @@
       <ImageViewer
         v-if="showImageViewer"
         v-model="showImageViewer"
-        :src="post.image"
+        :src="post.image_url"
         :alt="'Post by ' + (post.posted_by?.username || 'user')"
         @close="showImageViewer = false"
       />
@@ -81,6 +92,7 @@
         </button>
         
         <button 
+          v-if="!post.archived"
           @click="handleShareClick(post)" 
           class="p-2 rounded-full hover:bg-gray-100 text-gray-700 hover:text-green-500 transition-colors cursor-pointer"
           title="Share"
@@ -92,7 +104,7 @@
           <button 
         
             @click="showDonationOptions = true"
-            class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center"
+            class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center cursor-pointer"
           >
             Donation Options
           </button>
@@ -106,6 +118,7 @@
       :show="showDonationOptions"
       :payment-info-list="post.payment_info_list"
       :post-id="post.id"
+      :archived="post.archived"
       @close="showDonationOptions = false"
       @update:payment-info-list="handlePaymentInfoUpdate"
     />
@@ -114,7 +127,9 @@
 
 <script setup>
 import { ref } from 'vue';
-import { MessageCircle, Share2 } from 'lucide-vue-next';
+import { Trash2, MessageCircle, Share2, Heart, MoreHorizontal, X, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-vue-next';
+import { message } from 'ant-design-vue';
+import api from '@/api/axios';
 import CommentModal from '@/components/feed/CommentModal.vue';
 import ShareModal from '@/components/feed/ShareModal.vue';
 import ImageViewer from '@/components/common/ImageViewer.vue';
@@ -128,7 +143,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:post', 'image-loaded']);
+const emit = defineEmits(['update:post', 'image-loaded', 'archive']);
 
 // State
 const showCommentModal = ref(false);
@@ -170,7 +185,7 @@ const openImageViewer = (e) => {
 
 const handlePaymentInfoUpdate = (updatedPaymentInfo) => {
   emit('update:post', {
-    ...props.post,
+    ...post,
     payment_info_list: updatedPaymentInfo
   });
 };

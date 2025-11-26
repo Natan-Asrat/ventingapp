@@ -60,7 +60,7 @@
             </div>
           </div>
           <!-- Action Buttons -->
-          <div class="flex items-center justify-between space-x-4 mt-2 pt-2 border-t border-gray-100">
+          <div v-if="!post.archived" class="flex items-center justify-between space-x-4 mt-2 pt-2 border-t border-gray-100">
             <button 
               @click.stop="handleLike"
               class="flex items-center space-x-1 text-sm text-gray-500 hover:text-red-500 transition-colors"
@@ -144,7 +144,7 @@
         </div>
 
         <!-- Comment Input -->
-        <div class="bg-gray-50 px-4 py-3 border-t border-gray-200">
+        <div v-if="!post.archived" class="bg-gray-50 px-4 py-3 border-t border-gray-200">
           <div class="flex items-center space-x-2">
             <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
               <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />

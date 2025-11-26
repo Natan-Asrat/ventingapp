@@ -86,9 +86,9 @@
       <ShowMore :text="post.description"/>
       
       <!-- Post Image -->
-      <div v-if="post.image" class="mt-3 rounded-lg overflow-hidden">
+      <div v-if="post.image_url" class="mt-3 rounded-lg overflow-hidden">
         <img 
-          :src="post.image" 
+          :src="post.image_url" 
           :alt="'Post by ' + (post.posted_by?.username || 'user')" 
           class="w-full h-auto object-cover cursor-zoom-in"
           @load="$emit('image-loaded')"
@@ -100,7 +100,7 @@
       <ImageViewer
         v-if="showImageViewer"
         v-model="showImageViewer"
-        :src="post.image"
+        :src="post.image_url"
         :alt="'Post by ' + (post.posted_by?.username || 'user')"
         @close="showImageViewer = false"
       />
@@ -325,7 +325,7 @@ onMounted(() => {
 });
 
 const openImageViewer = (e) => {
-  if (!props.post.image) return;
+  if (!props.post.image_url) return;
   showImageViewer.value = true;
 };
 

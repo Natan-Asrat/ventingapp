@@ -55,6 +55,8 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
                     removed=True,
                 )),
             )
+        elif self.action in ['unarchive', 'comments']:
+            return Post.objects.all()
         return super().get_queryset()
 
     def get_serializer_class(self):
@@ -63,7 +65,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         return PostSimpleSerializer
 
     def get_permissions(self):
-        if self.action in ['update', 'archive', 'unarchive', 'add_payment_info']:
+        if self.action in ['update', 'archive', 'unarchive', 'add_payment_info', 'bulk_add_payment_info']:
             self.permission_classes = [IsPostOwner]
         return super().get_permissions()
 
@@ -166,9 +168,9 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         posts = Post.objects.filter(posted_by=request.user, archived=True).prefetch_related("payment_info_list").select_related("posted_by")
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:
-            serializer = PostSimpleSerializer(paginated_posts, many=True)
+            serializer = MyPostSimpleSerializer(paginated_posts, many=True)
             return self.get_paginated_response(serializer.data)
-        return Response(PostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
+        return Response(MyPostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
@@ -177,7 +179,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
             return Response({'message': 'Post already archived'}, status=status.HTTP_400_BAD_REQUEST)
         post.archived = True
         post.save()
-        return Response({'message': 'Post archived successfully'}, status=status.HTTP_200_OK)
+        return Response(MyPostSimpleSerializer(post).data, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=["post"])
     def unarchive(self, request, pk=None):
@@ -186,7 +188,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
             return Response({'message': 'Post not archived'}, status=status.HTTP_400_BAD_REQUEST)
         post.archived = False
         post.save()
-        return Response({'message': 'Post unarchived successfully'}, status=status.HTTP_200_OK)
+        return Response(MyPostSimpleSerializer(post).data, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=["get"])
     def comments(self, request, pk=None):

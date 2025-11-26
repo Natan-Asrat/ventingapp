@@ -60,9 +60,9 @@
                 <!-- <p class="mt-2 text-gray-800 whitespace-pre-line">{{ post.description }}</p> -->
                 <ShowMore :text="post.description"/>
                 <!-- Post Image -->
-                <div v-if="post.image" class="mt-3 rounded-lg overflow-hidden">
+                <div v-if="post.image_url" class="mt-3 rounded-lg overflow-hidden">
                   <img 
-                    :src="post.image" 
+                    :src="post.image_url" 
                     :alt="'Post by ' + (post.posted_by?.username || 'user')" 
                     class="w-full h-auto object-cover"
                   />

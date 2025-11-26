@@ -128,10 +128,35 @@
           <!-- Right Column - User Posts -->
           <div class="w-full md:w-2/3">
             <div class="bg-white shadow sm:rounded-lg overflow-hidden">
-              <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Your Posts</h3>
-                <p class="mt-1 max-w-2xl text-sm text-gray-500">Posts you've shared with the community.</p>
+              <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8 px-4" aria-label="Tabs">
+                  <button
+                    v-for="tab in tabs"
+                    :key="tab.name"
+                    @click="activeTab = tab.name"
+                    :class="[
+                      activeTab === tab.name
+                        ? 'border-indigo-500 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 cursor-pointer',
+                      'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2'
+                    ]"
+                    :aria-current="activeTab === tab.name ? 'page' : undefined"
+                  >
+                    <component :is="tab.icon" class="h-4 w-4" />
+                    {{ tab.name }}
+                    <span 
+                      v-if="tab.count !== undefined"
+                      :class="[
+                        activeTab === tab.name ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-900',
+                        'ml-2 py-0.5 px-2 rounded-full text-xs font-medium'
+                      ]"
+                    >
+                      {{ tab.count }}
+                    </span>
+                  </button>
+                </nav>
               </div>
+             
               
               <!-- Loading State -->
               <div v-if="loading" class="p-6 text-center">
@@ -140,7 +165,7 @@
               </div>
               
               <!-- Empty State -->
-              <div v-else-if="posts.length === 0" class="p-6 text-center">
+              <div v-else-if="posts.length === 0 && archivedPosts.length === 0" class="p-6 text-center">
                 <div class="mx-auto h-24 w-24 text-gray-400">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -150,7 +175,7 @@
                 <p class="mt-1 text-sm text-gray-500">Get started by creating your first post.</p>
                 <div class="mt-6">
                   <router-link 
-                    to="/create-post"
+                    :to="{ name: 'NewPost' }"
                     class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
                     <PlusIcon class="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
@@ -161,11 +186,20 @@
               
               <!-- Posts List -->
               <div v-else class="divide-y divide-gray-200">
+                <div v-if="filteredPosts.length === 0" class="p-8 text-center">
+                  <p class="text-gray-500">
+                    {{ activeTab === ARCHIVED_TAB ? 'No archived posts yet' : 'No active posts yet' }}
+                  </p>
+                </div>
                 <MyPostItem 
-                  v-for="post in posts" 
+                  v-else
+                  v-for="post in filteredPosts" 
                   :key="post.id" 
                   :post="post"
+                  :isArchiving="isArchivingId == post.id"
                   @update:post="handlePostUpdate"
+                  @archive="archivePost(post.id)"
+                  @restore="restorePost(post.id)"
                   class="border-b border-gray-200 last:border-b-0"
                 />
                 
@@ -201,8 +235,9 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { ClipboardList, Archive } from 'lucide-vue-next';
 import { useUserStore } from '@/stores/user';
-import { PencilIcon, X, PlusIcon } from 'lucide-vue-next';
+import { PencilIcon, X, PlusIcon, Trash2 } from 'lucide-vue-next';
 import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
@@ -221,8 +256,16 @@ const isSaving = ref(false);
 const loading = ref(true);
 const loadingMore = ref(false);
 const posts = ref([]);
-const nextPage = ref(null);
-const hasNextPage = computed(() => !!nextPage.value);
+const archivedPosts = ref([])
+const activeNextPage = ref(null);
+const archivedNextPage = ref(null);
+
+const ACTIVE_TAB = 'Active'
+const ARCHIVED_TAB = 'Archived'
+
+const hasNextPage = computed(() => activeTab.value == ACTIVE_TAB ? !!activeNextPage.value : !!archivedNextPage.value);
+const isArchivingId = ref(null);
+
 
 // Get user data from the store
 const user = computed(() => userStore.user);
@@ -345,18 +388,37 @@ const handleLogout = () => {
   router.push('/login');
 };
 
+// Tabs configuration
+const tabs = [
+  { name: ACTIVE_TAB, icon: ClipboardList, count: computed(() => posts.value.length) },
+  { name: ARCHIVED_TAB, icon: Archive, count: computed(() => archivedPosts.value.length) },
+];
+const activeTab = ref(ACTIVE_TAB);
+
+// Computed property to filter posts based on active tab
+const filteredPosts = computed(() => {
+  if (activeTab.value === ARCHIVED_TAB) {
+    return archivedPosts.value;
+  }
+  return posts.value;
+});
+
 // Fetch user data and posts when component mounts
 onMounted(async () => {
   if (!user.value) {
     await userStore.checkAuth();
   }
+  loading.value = true;
   await fetchUserPosts();
+  await fetchArchivedUserPosts();
+  loading.value = false;
+
+
 });
 
 // Methods
-const fetchUserPosts = async (url = '/post/posts/my_posts/') => {
+const fetchUserPosts = async (url = '/post/posts/my_posts/', page = 1) => {
   try {
-    loading.value = true;
     const response = await api.get(url);
     
     if (url.includes('page=')) {
@@ -367,24 +429,47 @@ const fetchUserPosts = async (url = '/post/posts/my_posts/') => {
       posts.value = response.data.results;
     }
     
-    nextPage.value = response.data.next;
+    activeNextPage.value = response.data.next;
   } catch (error) {
     console.error('Error fetching user posts:', error);
     message.error('Failed to load your posts. Please try again.');
-  } finally {
-    loading.value = false;
-    loadingMore.value = false;
+  }
+};
+const fetchArchivedUserPosts = async (url = '/post/posts/my_archived_posts/') => {
+  try {
+    const response = await api.get(url);
+    
+    if (url.includes('page=')) {
+      // Append to existing posts for pagination
+      archivedPosts.value = [...archivedPosts.value, ...response.data.results];
+    } else {
+      // Initial load
+      archivedPosts.value = response.data.results;
+    }
+    
+    archivedNextPage.value = response.data.next;
+  } catch (error) {
+    console.error('Error fetching user posts:', error);
+    message.error('Failed to load your posts. Please try again.');
   }
 };
 
 const loadMorePosts = async () => {
-  if (!nextPage.value || loadingMore.value) return;
+  if (
+    activeTab.value == ACTIVE_TAB && !activeNextPage.value
+    || activeTab.value == ARCHIVED_TAB && !archivedNextPage.value
+    ||
+    loadingMore.value
+  ) return;
   
   loadingMore.value = true;
   try {
     // Extract the path from the full URL
-    const url = new URL(nextPage.value);
-    await fetchUserPosts(url.pathname + url.search);
+    if(activeTab.value == ACTIVE_TAB) {
+      await fetchUserPosts(activeNextPage.value);
+    } else {
+      await fetchArchivedUserPosts(archivedNextPage.value);
+    }
   } catch (error) {
     console.error('Error loading more posts:', error);
     message.error('Failed to load more posts. Please try again.');
@@ -396,6 +481,35 @@ const handlePostUpdate = (updatedPost) => {
   const index = posts.value.findIndex(p => p.id === updatedPost.id);
   if (index !== -1) {
     posts.value.splice(index, 1, updatedPost);
+  }
+};
+
+const archivePost = async (postId) => {
+  try {
+    isArchivingId.value = postId;
+    const response = await api.post(`/post/posts/${postId}/archive/`);
+    archivedPosts.value.unshift(response.data);
+    posts.value = posts.value.filter(post => post.id !== postId);
+    message.success('Post deleted successfully');
+  } catch (error) {
+    console.error('Error archiving post:', error);
+    message.error(error.response?.data?.detail || 'Failed to delete post');
+  } finally {
+    isArchivingId.value = null;
+  }
+};
+const restorePost = async (postId) => {
+  try {
+    isArchivingId.value = postId;
+    const response = await api.post(`/post/posts/${postId}/unarchive/`);
+    archivedPosts.value = archivedPosts.value.filter(post => post.id !== postId);
+    posts.value.unshift(response.data);
+    message.success('Post restored successfully');
+  } catch (error) {
+    console.error('Error archiving post:', error);
+    message.error(error.response?.data?.detail || 'Failed to delete post');
+  } finally {
+    isArchivingId.value = null;
   }
 };
 </script>

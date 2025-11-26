@@ -22,13 +22,13 @@ Essential features.
 ### Account Management
 
 - ✅ *FR1.1*: The system shall allow Users to register (with their profile picture, name, email, username, and password), and login with their email and password.
-- *FR1.2*: The system shall allow Users to manage their account (edit profile picture, name)
+- ✅ *FR1.2*: The system shall allow Users to manage their account (edit profile picture, name)
 
 ### Post
 
 - ✅ *FR2.1*: The system shall allow Users to post (text, images, payment details)
-- *FR2.2*: The system shall allow Users to archive their previous posts.
-- *FR2.3*: The system shall allow Users to add more payment details to any of their active posts but not delete or edit any of their previous payment details on a post.
+- ✅ *FR2.2*: The system shall allow Users to archive their previous posts.
+- ✅ *FR2.3*: The system shall allow Users to add more payment details to any of their active posts but not delete or edit any of their previous payment details on a post.
 
 ### Interactions
 
