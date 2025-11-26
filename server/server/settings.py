@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
     "account",
     "post",
+    "transaction",
 
     "rest_framework",
     "rest_framework_simplejwt",
@@ -154,7 +155,41 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 CORS_ALLOW_ALL_ORIGINS = True
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
+POLAR_ACCESS_TOKEN = os.getenv('POLAR_ACCESS_TOKEN')
+POLAR_SERVER = os.getenv('POLAR_SERVER')
+if not POLAR_ACCESS_TOKEN or not POLAR_SERVER:
+    raise ValueError("POLAR_ACCESS_TOKEN and POLAR_SERVER must be set in the environment")
+CONNECTS_PRODUCT_ID_5_CONNECTS = os.getenv('CONNECTS_PRODUCT_ID_5_CONNECTS')
+CONNECTS_PRODUCT_ID_20_CONNECTS = os.getenv('CONNECTS_PRODUCT_ID_20_CONNECTS')
+CONNECTS_PRODUCT_ID_100_CONNECTS = os.getenv('CONNECTS_PRODUCT_ID_100_CONNECTS')
+CONNECTS_PRODUCT_ID_10_SUBS = os.getenv('CONNECTS_PRODUCT_ID_10_SUBS')
+POLAR_ORDER_PAID_WEBHOOK_SECRET = os.getenv('POLAR_ORDER_PAID_WEBHOOK_SECRET', '')
+POLAR_ORDER_OPTIONS={
+    "C5": {
+        "product_id": CONNECTS_PRODUCT_ID_5_CONNECTS,
+        "connects": 5,
+        "price": 5,
+        "is_sub": False
+    },
+    "C20": {
+        "product_id": CONNECTS_PRODUCT_ID_20_CONNECTS,
+        "connects": 20,
+        "price": 20,
+        "is_sub": False
+    },
+    "C100": {
+        "product_id": CONNECTS_PRODUCT_ID_100_CONNECTS,
+        "connects": 100,
+        "price": 100,
+        "is_sub": False
+    },
+    "S10": {
+        "product_id": CONNECTS_PRODUCT_ID_10_SUBS,
+        "connects": 20,
+        "price": 10,
+        "is_sub": True
+    }
+}
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),   # make access token last 1 hour
