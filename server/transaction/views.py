@@ -2,12 +2,17 @@ from polar_sdk.models import SubscriptionStatus
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from .models import Transaction
-from .serializers import TransactionsSimpleSerializer, SubscriptionsSimpleSerializer
+from decimal import Decimal
+from .serializers import (
+    TransactionsSimpleSerializer, 
+    SubscriptionsSimpleSerializer,
+    ManualPaymentOptionSerializer
+)
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .polar import polar
 from django.conf import settings
-from .models import PaymentMethods
+from .models import PaymentMethods, ManualPaymentOption
 from polar_sdk.webhooks import validate_event
 from .models import Subscription, Customer
 from server.utils import get_readable_time_since
@@ -72,6 +77,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
             result[code] = sanitized_option
 
         return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def manual_payment_options(self, request):
+        options = ManualPaymentOption.objects.filter(active=True)
+        serializer = ManualPaymentOptionSerializer(options, many=True)
+        return Response(serializer.data)
+    
         
     @action(detail=False, methods=['get'])
     def recent_success(self, request):
@@ -146,6 +158,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         
 
         transaction.approved = event.data.paid
+        transaction.requires_approval = not event.data.paid
         customer_obj = None
         if event.data.customer_id:
             try:
@@ -210,3 +223,48 @@ class TransactionViewSet(viewsets.ModelViewSet):
         serializer = SubscriptionsSimpleSerializer(subscriptions, many=True)
         return Response(serializer.data)
     
+
+class ManualPaymentViewSet(viewsets.ModelViewSet):
+    queryset = ManualPaymentOption.objects.filter(active=True)
+    serializer_class = ManualPaymentOptionSerializer
+
+    @action(detail=True, methods=['post'])
+    def submit_payment(self, request, pk=None):
+        amount_transferred = Decimal(request.data.get('amount_transferred'))
+        connects_to_buy = Decimal(request.data.get('connects_to_buy'))        
+        manual_payment_option = self.get_object()
+        print("connects to buy", connects_to_buy)
+        print("amount transferred", amount_transferred)
+        screenshot = request.FILES.get('screenshot')
+        if not screenshot:
+            return Response({"error": "Screenshot is required"}, status=400)
+        exchange_rate = manual_payment_option.exchange_rate
+        print("exchange rate", exchange_rate)
+        print("what should be ", int(exchange_rate * amount_transferred))
+        print("what is ", int(connects_to_buy))
+        if int(exchange_rate * connects_to_buy) != int( amount_transferred):
+            return Response({"error": "Amount transferred is not equal to connects to buy"}, status=400)
+        currency = manual_payment_option.currency
+        method = manual_payment_option.method
+
+        transaction = Transaction.objects.create(
+            user=request.user,
+            currency=currency,
+            method=method,
+
+            product_name="Connects - Manual Payment",
+
+            subtotal_amount=amount_transferred,
+            total_amount=amount_transferred,
+            net_amount=amount_transferred,
+
+            requires_approval=True,
+            approved=False,
+            screenshot=screenshot,
+            
+            connects=connects_to_buy,
+            manual_payment_option=manual_payment_option,
+            status="pending"
+        )
+    
+        return Response(status=200)

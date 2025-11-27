@@ -6,6 +6,7 @@ import Feed from '@/views/Feed.vue';
 import NewPost from '@/views/NewPost.vue';
 import ForgotPassword from '@/views/auth/ForgotPassword.vue';
 import Profile from '@/views/Profile.vue';
+import ManualPayment from '@/views/ManualPayment.vue';
 const routes = [
   {
     path: '/',
@@ -47,6 +48,12 @@ const routes = [
     path: '/new-post',
     name: 'NewPost',
     component: NewPost,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/pay_manually',
+    name: 'ManualPayment',
+    component: ManualPayment,
     meta: { requiresAuth: true }
   },
   {

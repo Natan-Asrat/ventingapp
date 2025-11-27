@@ -55,11 +55,29 @@ class Subscription(models.Model):
         return get_readable_time_since(self.current_period_end)
 
 
+class ManualPaymentOption(models.Model):
+    created_by = models.ForeignKey('account.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='manual_payment_option_created')
+    logo = models.ImageField(upload_to='manual_payment_option/logo/', blank=True, null=True)
+    method = models.CharField(max_length=255)
+    account = models.CharField(max_length=255)
+    nameOnAccount = models.CharField(max_length=255)
+    active = models.BooleanField(default=True)
+    currency = models.CharField(max_length=255, blank=True, null=True)
+    exchange_rate = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.method
+    
 class Transaction(models.Model):
     user = models.ForeignKey('account.User', on_delete=models.CASCADE)
     subscription = models.ForeignKey('transaction.Subscription', on_delete=models.SET_NULL, blank=True, null=True)
     customer = models.ForeignKey('transaction.Customer', on_delete=models.SET_NULL, blank=True, null=True)
     method = models.CharField(max_length=255)
+
+    manual_payment_option = models.ForeignKey('transaction.ManualPaymentOption', on_delete=models.SET_NULL, blank=True, null=True)
 
     subtotal_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)

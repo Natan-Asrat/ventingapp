@@ -108,6 +108,19 @@
                           </div>
                         </div>
                       </div>
+                      
+                      <!-- Pay by Transfer Button -->
+                      <div class="mt-6 pt-6 border-t border-gray-200">
+                        <RouterLink
+                          :to="{ name: 'ManualPayment' }"
+                          class="w-full flex items-center justify-center px-4 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                        >
+                          <svg class="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                          </svg>
+                          Or Pay by Bank Transfer
+                        </RouterLink>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -124,7 +137,7 @@
 import { ref, defineProps, defineEmits } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { X, BadgeDollarSign, Wallet, Loader2 } from 'lucide-vue-next';
-
+import { RouterLink } from 'vue-router';
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -144,7 +157,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['close', 'purchase']);
+const emit = defineEmits(['close', 'purchase', 'transfer']);
 
 const closeModal = () => {
   emit('close');
@@ -152,5 +165,9 @@ const closeModal = () => {
 
 const purchaseConnects = (packageKey) => {
   emit('purchase', packageKey);
+};
+
+const handleTransferPayment = () => {
+  emit('transfer');
 };
 </script>
