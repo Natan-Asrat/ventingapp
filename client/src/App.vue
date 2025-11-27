@@ -10,6 +10,7 @@ const recentTransaction = ref(null);
 const userStore = useUserStore();
 
 const checkForSuccess = async () => {
+  if(!userStore.isAuthenticated) return;
   console.log("checking for success")
     try {
       const response = await api.get('/transaction/transactions/recent_success/');
@@ -26,16 +27,13 @@ const checkForSuccess = async () => {
 
 // Check when route changes
 watch(() => route.query, () => {
+  userStore.checkAuth();
+  console.log("waiting a second... before checking success")
   setTimeout(() => {
     checkForSuccess();
   }, 1000);
 }, { immediate: true });
-watch(
-  () => route.query,
-  () => {
-   checkForSuccess();
-  }
-);
+
 window.addEventListener("pageshow", (event) => {
   if (event.persisted) {
     window.location.reload(); // forces full reload
@@ -46,16 +44,15 @@ const handleVisibilityChange = () => {
   if (!document.hidden) {
     // User has returned to the tab
     console.log('User returned to the page!');
-    checkForSuccess();
-    // Example: force full reload (bypass SPA cache)
-    // window.location.reload();
-
-    // Or call any function to refresh your data
-    // refreshData();
+    setTimeout(() => {
+      checkForSuccess();
+    }, 1000);
   }
 };
 
 onMounted(() => {
+  userStore.checkAuth();
+
   document.addEventListener('visibilitychange', handleVisibilityChange);
 });
 

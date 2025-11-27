@@ -21,6 +21,7 @@ export const useConnectsStore = defineStore('connects', () => {
 
   const handlePurchaseConnects = async (packageKey) => {
     try {
+      const popup = window.open('', '_blank');
       const packageData = connectsData.value[packageKey];
       if (!packageData) return;
       isLoading.value = true;
@@ -31,7 +32,7 @@ export const useConnectsStore = defineStore('connects', () => {
       });
 
       // Open checkout in new tab
-      window.open(response.data.checkout_url, '_blank', 'noopener,noreferrer');
+      popup.location.href = response.data.checkout_url;
 
     } catch (error) {
       console.error('Error purchasing connects:', error);
