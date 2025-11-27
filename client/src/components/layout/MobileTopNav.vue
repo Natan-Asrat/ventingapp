@@ -189,9 +189,7 @@ const handleEscape = (event) => {
 
 const openConnectsModal = async () => {
   isConnectsModalOpen.value = true;
-  if (Object.keys(connectsStore.connectsData).length === 0) {
-    await connectsStore.fetchConnectsData();
-  }
+  await connectsStore.fetchConnectsData();
 };
 
 onMounted(() => {

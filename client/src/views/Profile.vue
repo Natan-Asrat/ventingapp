@@ -106,7 +106,44 @@
                   </div>
                   <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
                     <dt class="text-sm font-medium text-gray-500">Account created</dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ formattedJoinDate }}</dd>
+                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{{ formattedJoinDate }}</dd>
+                  </div>
+                  <!-- Subscriptions Section -->
+                  <div class="py-4">
+                    <h3 class="text-sm font-medium text-gray-500 mb-3">Subscriptions</h3>
+                    <div v-if="subscriptions.length > 0" class="space-y-4">
+                      <div v-for="(sub, index) in subscriptions" :key="index" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div class="flex justify-between items-start">
+                          <div>
+                            <h4 class="font-medium text-gray-900">{{ sub.product_name }}</h4>
+                            <p class="text-sm text-gray-500 mt-1">
+                              {{ formatAmount(sub.amount) }} per {{ formatInterval(sub) }}
+                            </p>
+                          </div>
+                          <span v-if="sub.is_active" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Active
+                          </span>
+                          <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Inactive
+                          </span>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600">
+                          <p class="flex items-center">
+                            <svg class="h-4 w-4 text-gray-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            Renews on {{ sub.formatted_current_period_end }}
+                          </p>
+                          <p class="mt-1 flex items-center text-indigo-600">
+                            <svg class="h-4 w-4 text-indigo-400 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {{ sub.days_left }}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p v-else class="text-sm text-gray-500">No active subscriptions</p>
                   </div>
                 </dl>
               </div>
@@ -235,8 +272,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { ClipboardList, Archive } from 'lucide-vue-next';
 import { useUserStore } from '@/stores/user';
+import { ClipboardList, Archive } from 'lucide-vue-next';
 import { PencilIcon, X, PlusIcon, Trash2 } from 'lucide-vue-next';
 import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
@@ -359,6 +396,30 @@ const saveName = async () => {
   } finally {
     isSaving.value = false;
   }
+};
+
+// Get user subscriptions
+const subscriptions = computed(() => userStore.subscriptions || []);
+
+// Format amount with currency
+const formatAmount = (amount) => {
+  if (!amount) return '$0.00';
+  return `$${parseFloat(amount).toFixed(2)}`;
+};
+
+// Format subscription interval
+const formatInterval = (subscription) => {
+  if (!subscription) return '';
+  const { recurring_interval, recurring_interval_count } = subscription;
+  if (!recurring_interval || !recurring_interval_count) return '';
+  
+  const interval = recurring_interval_count > 1 
+    ? `${recurring_interval}s` 
+    : recurring_interval;
+  
+  return recurring_interval_count > 1 
+    ? `${recurring_interval_count} ${interval}`
+    : interval;
 };
 
 // Format user initials for avatar

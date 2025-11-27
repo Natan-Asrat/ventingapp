@@ -40,16 +40,23 @@
             <div class="flex items-center space-x-4">
               <button
                 @click="toggleProfileMenu"
-                class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                class="relative flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
                 id="user-menu"
                 aria-expanded="false"
                 aria-haspopup="true"
               >
-                <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
-                  <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
-                </div>
-                <div v-else class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <span class="text-indigo-600 font-medium">{{ userInitials }}</span>
+                <div class="relative">
+                  <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
+                    <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
+                  </div>
+                  <div v-else class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <span class="text-indigo-600 font-medium">{{ userInitials }}</span>
+                  </div>
+                  <BadgeCheck 
+                    v-if="hasActiveSubscription"
+                    class="h-4 w-4 text-white absolute -top-1 -right-1.5 bg-white rounded-full"
+                    fill="#4f39f6"
+                  />
                 </div>
               </button>
             </div>
@@ -105,7 +112,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-import { Wallet } from 'lucide-vue-next';
+import { Wallet, BadgeCheck } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import { useConnectsStore } from '@/stores/connect';
 const userStore = useUserStore();
@@ -133,6 +140,11 @@ const isProfileMenuOpen = ref(false);
 const isConnectsModalOpen = ref(false);
 const currentConnects = computed(() => userStore?.user.connects);
 
+const hasActiveSubscription = computed(() => {
+  if (!userStore.subscriptions || userStore.subscriptions.length === 0) return false;
+  return userStore.subscriptions.some(sub => sub.is_active);
+});
+
 const toggleProfileMenu = () => {
   isProfileMenuOpen.value = !isProfileMenuOpen.value;
 };
@@ -157,9 +169,7 @@ const handleClickOutside = (event) => {
 
 const openConnectsModal = async () => {
   isConnectsModalOpen.value = true;
-  if (Object.keys(connectsStore.connectsData).length === 0) {
-    await connectsStore.fetchConnectsData();
-  }
+  await connectsStore.fetchConnectsData();
 };
 
 onMounted(async () => {

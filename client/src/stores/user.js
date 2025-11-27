@@ -6,6 +6,7 @@ export const useUserStore = defineStore('user', () => {
   const user = ref(null);
   const loading = ref(false);
   const error = ref(null);
+  const subscriptions = ref([]);
 
   const isAuthenticated = computed(() => !!user.value);
 
@@ -24,6 +25,15 @@ export const useUserStore = defineStore('user', () => {
     user.value = null;
   };
 
+  const fetch_subscriptions = async () => {
+    try {
+      const response = await api.get('transaction/transactions/my_subscriptions/');
+      subscriptions.value = response.data;
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+      return null;
+    }
+  };
   // Check if user is authenticated on app load
   const checkAuth = async () => {
     const accessToken = localStorage.getItem('access_token');
@@ -32,6 +42,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const response = await api.get('account/users/me/');
       user.value = response.data;
+      await fetch_subscriptions();
       return true;
     } catch (error) {
       clearAuth();
@@ -201,6 +212,7 @@ export const useUserStore = defineStore('user', () => {
     register,
     verifyEmail,
     resendOtp,
-    checkAuth
+    checkAuth,
+    subscriptions
   };
 });

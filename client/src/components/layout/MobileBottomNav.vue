@@ -19,19 +19,35 @@
         <span class="text-xs text-gray-600">New Post</span>
       </router-link>
       
-      <router-link 
-        :to="{name: 'Profile'}" 
-        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-indigo-600 transition-colors"
-      >
-        <div class="h-6 w-6 flex items-center justify-center">
-          <UserIcon class="h-6 w-6 text-indigo-600" />
-        </div>
-        <span class="text-xs mt-1">Profile</span>
-      </router-link>
+      <div class="relative flex-1">
+        <router-link 
+          :to="{name: 'Profile'}" 
+          class="flex flex-col items-center justify-center h-full text-gray-600 hover:text-indigo-600 transition-colors"
+        >
+          <div class="relative h-6 w-6 flex items-center justify-center">
+            <UserIcon class="h-6 w-6 text-indigo-600" />
+            <BadgeCheck 
+              v-if="hasActiveSubscription"
+              class="h-4 w-4 text-white absolute -top-1 -right-1.5 bg-white rounded-full"
+              fill="#4f39f6"
+            />
+          </div>
+          <span class="text-xs mt-1">Profile</span>
+        </router-link>
+      </div>
     </div>
   </nav>
 </template>
 
 <script setup>
-import { Home, Plus, UserIcon } from 'lucide-vue-next';
+import { Home, Plus, UserIcon, BadgeCheck } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { useUserStore } from '@/stores/user';
+
+const userStore = useUserStore();
+
+const hasActiveSubscription = computed(() => {
+  if (!userStore.subscriptions || userStore.subscriptions.length === 0) return false;
+  return userStore.subscriptions.some(sub => sub.is_active);
+});
 </script>

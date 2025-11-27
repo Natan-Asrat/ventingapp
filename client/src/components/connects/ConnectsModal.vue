@@ -62,30 +62,48 @@
                         <div 
                           v-for="(item, key) in connectsData" 
                           :key="key"
-                          @click="purchaseConnects(key)"
-                          class="relative rounded-lg border border-gray-300 bg-white px-6 py-8 shadow-sm flex items-center space-x-3 hover:border-indigo-500 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 cursor-pointer transition-colors"
+                          @click="!item.subscribed && purchaseConnects(key)"
+                          :class="[
+                            'relative rounded-lg border px-6 py-8 shadow-sm flex items-center space-x-3 transition-colors',
+                            item.subscribed 
+                              ? 'bg-indigo-50 border-indigo-200 cursor-not-allowed' 
+                              : 'bg-white border-gray-300 hover:border-indigo-500 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500 cursor-pointer'
+                          ]"
                         >
                           <div class="flex-shrink-0">
-                            <div class="h-10 w-10 rounded-full bg-amber-100 flex items-center justify-center">
-                              <BadgeDollarSign class="h-5 w-5 text-amber-600" />
+                            <div :class="[
+                              'h-10 w-10 rounded-full flex items-center justify-center',
+                              item.subscribed ? 'bg-indigo-100' : 'bg-amber-100'
+                            ]">
+                              <BadgeDollarSign class="h-5 w-5" :class="item.subscribed ? 'text-indigo-600' : 'text-amber-600'" />
                             </div>
                           </div>
                           <div class="flex-1 min-w-0">
                             <div class="focus:outline-none">
-                              <p class="text-sm font-medium text-gray-900">
+                              <p :class="[
+                                'text-sm font-medium',
+                                item.subscribed ? 'text-indigo-600' : 'text-gray-900'
+                              ]">
                                 {{ item.connects }} Connects{{ item.is_sub ? '/mo' : '' }}
+                                <span v-if="item.subscribed" class="text-xs text-indigo-400 ml-1">(active)</span>
                               </p>
-                              <p class="text-sm text-gray-500">
+                              <p :class="[
+                                'text-sm',
+                                item.subscribed ? 'text-indigo-500' : 'text-gray-500'
+                              ]">
                                 ${{ item.price }}{{ item.is_sub ? '/mo' : '' }}
-                                <span v-if="item.connects > 1" class="text-xs text-gray-400 ml-1">
+                                <span v-if="item.connects > 1" class="text-xs ml-1" :class="item.subscribed ? 'text-indigo-300' : 'text-gray-400'">
                                   (${{ (item.price / item.connects).toFixed(2) }}/connect)
                                 </span>
                               </p>
                             </div>
                           </div>
                           <div v-if="item.is_sub" class="absolute top-1 right-1">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                              Subscription
+                            <span v-if="item.subscribed" class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                              Subscribed
+                            </span>
+                            <span v-else class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                              Subscribe
                             </span>
                           </div>
                         </div>

@@ -1,7 +1,8 @@
+from polar_sdk.models import SubscriptionStatus
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
 from .models import Transaction
-from .serializers import TransactionsSimpleSerializer
+from .serializers import TransactionsSimpleSerializer, SubscriptionsSimpleSerializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .polar import polar
@@ -10,12 +11,23 @@ from .models import PaymentMethods
 from polar_sdk.webhooks import validate_event
 from .models import Subscription, Customer
 from server.utils import get_readable_time_since
+from django.utils import timezone
+
 # Create your views here.
 def get_amount_by_product_id(product_id):
     for option in settings.POLAR_ORDER_OPTIONS.values():
         if option["product_id"] == product_id:
-            return option["price"]
+            return option["connects"]
     return None
+
+def get_key_by_product_id(product_id):
+    for key, value in settings.POLAR_ORDER_OPTIONS.items():
+        if value['product_id'] == product_id:
+            return key
+    return None  # if not found
+
+def get_polar_amount_in_dollar(amount):
+    return amount / 100
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
@@ -41,7 +53,25 @@ class TransactionViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def connect_options(self, request):
-        return Response(settings.POLAR_ORDER_OPTIONS)
+        user = request.user
+        result = {}
+
+        for code, option in settings.POLAR_ORDER_OPTIONS.items():
+            # Copy option but exclude product_id
+            sanitized_option = {k: v for k, v in option.items() if k != "product_id"}
+
+            # If it's a subscription product, check if user is subscribed
+            if option.get("is_sub"):
+                subscribed = Subscription.objects.filter(
+                    user=user,
+                    is_active=True,
+                    product_code_internal=code
+                ).exists()
+                sanitized_option["subscribed"] = subscribed
+
+            result[code] = sanitized_option
+
+        return Response(result)
         
     @action(detail=False, methods=['get'])
     def recent_success(self, request):
@@ -83,18 +113,22 @@ class TransactionViewSet(viewsets.ModelViewSet):
         )
         if not event:
             return Response({"error": "Invalid event"}, status=400)
+        print("event", event.model_dump_json())
+        product_id = event.data.product_id
+        product_code_internal = get_key_by_product_id(product_id)
+        print("prod code", product_code_internal)
         connects = get_amount_by_product_id(event.data.product_id)
         if not connects:
             return Response({"error": "Invalid product"}, status=400)
         transaction = Transaction.objects.get(transaction_id=event.data.checkout_id)
         ## finance
-        transaction.subtotal_amount = event.data.subtotal_amount
-        transaction.total_amount = event.data.total_amount
-        transaction.net_amount = event.data.net_amount
-        transaction.tax_amount = event.data.tax_amount
-        transaction.discount_amount = event.data.discount_amount
-        transaction.refunded_amount = event.data.refunded_amount
-        transaction.refunded_tax_amount = event.data.refunded_tax_amount
+        transaction.subtotal_amount = get_polar_amount_in_dollar(event.data.subtotal_amount)
+        transaction.total_amount = get_polar_amount_in_dollar(event.data.total_amount)
+        transaction.net_amount = get_polar_amount_in_dollar(event.data.net_amount)
+        transaction.tax_amount = get_polar_amount_in_dollar(event.data.tax_amount)
+        transaction.discount_amount = get_polar_amount_in_dollar(event.data.discount_amount)
+        transaction.refunded_amount = get_polar_amount_in_dollar(event.data.refunded_amount)
+        transaction.refunded_tax_amount = get_polar_amount_in_dollar(event.data.refunded_tax_amount)
 
 
         transaction.discount_id = event.data.discount_id
@@ -133,13 +167,46 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 subscription_obj = Subscription.objects.create(
                     user=transaction.user,
                     customer=customer_obj,
-                    subscription_id=event.data.subscription_id
+                    subscription_id=event.data.subscription_id,
+                    amount=get_polar_amount_in_dollar(event.data.subscription.amount),
+                    current_period_start=event.data.subscription.current_period_start,
+                    current_period_end=event.data.subscription.current_period_end,
+                    trial_start=event.data.subscription.trial_start,
+                    trial_end=event.data.subscription.trial_end,
+                    product_id =event.data.product.id,
+                    product_code_internal = product_code_internal,
+                    product_name = event.data.product.name,
+                    recurring_interval_count = event.data.subscription.recurring_interval_count,
+                    recurring_interval = event.data.subscription.recurring_interval,
+                    is_active=event.data.subscription.status == SubscriptionStatus.ACTIVE
                 )
         
         transaction.customer = customer_obj
         transaction.subscription = subscription_obj
         transaction.billing_name = event.data.billing_name
+        transaction.product_code_internal = product_code_internal
+        transaction.reason = event.data.billing_reason
         transaction.save()
         return Response(status=200)
     
+    @action(detail=False, methods=['get'])
+    def my_subscriptions(self, request):
+        subscriptions = Subscription.objects.filter(user=request.user).order_by('-is_active', '-created_at', 'current_period_end')
+        now = timezone.now()
+
+        for sub in subscriptions:
+            sub_id = sub.subscription_id
+            if sub.current_period_end < now and sub.is_active:
+                print("expired sub", sub_id)
+                res = polar.subscriptions.get(id=sub_id)
+                print("sub data", res.model_dump_json())
+                sub.current_period_end = res.current_period_end
+                sub.current_period_start = res.current_period_start
+                sub.trial_start = res.trial_start
+                sub.trial_end = res.trial_end
+                sub.is_active = res.status == SubscriptionStatus.ACTIVE
+                sub.save()
+
+        serializer = SubscriptionsSimpleSerializer(subscriptions, many=True)
+        return Response(serializer.data)
     
