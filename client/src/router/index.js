@@ -54,6 +54,7 @@ const routes = [
     name: 'Success',
     beforeEnter: () => {
       // Reload the page (forces full SPA reload)
+      console.log("redirecting")
       window.location.reload();
       window.location.href = `/home?_v=${Date.now()}`;
     }  

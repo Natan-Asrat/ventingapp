@@ -33,9 +33,15 @@ watch(() => route.query, () => {
 watch(
   () => route.query,
   () => {
-   console.log("checkingg")
+   checkForSuccess();
   }
 );
+window.addEventListener("pageshow", (event) => {
+  if (event.persisted) {
+    window.location.reload(); // forces full reload
+  }
+});
+
 const handleVisibilityChange = () => {
   if (!document.hidden) {
     // User has returned to the tab
