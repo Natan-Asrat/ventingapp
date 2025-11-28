@@ -39,13 +39,13 @@ Essential features.
 - *FR4.1*: The system shall allow Users to see their own Analytics summary (views, likes, comments).
 
 ### Buying Connects
-- *FR5.1*: The system shall allow Users to buy connects either with card or manual payments (transfers).
-- *FR5.2*: The system shall provide multiple options for manual payments.
-- *FR5.3*: The system shall allow Users to select their preferred payment method, currency, amount of connects to buy, and the amount to send (in their preferred currency) - lead users to contact support if they don't find their preferred payment method.
+- ✅ *FR5.1*: The system shall allow Users to buy connects either with card or manual payments (transfers).
+- ✅ *FR5.2*: The system shall provide multiple options for manual payments.
+- ✅ *FR5.3*: The system shall allow Users to select their preferred payment method, currency, amount of connects to buy, and the amount to send (in their preferred currency) - lead users to contact support if they don't find their preferred payment method.
 
 ### Manual payments & Appeals
 - *FR6.1*: The system shall allow Users to see their pending, approved, and rejected manual payments.
-- *FR6.2*: The system shall allow Users to submit an appeal for rejected payments.
+- ✅ *FR6.2*: The system shall allow Users to submit an appeal for rejected payments.
 - *FR6.3*: The system shall allow Users to view pending, approved (automatically approves the manual payment), and rejected (final) appeals.
 
 
@@ -79,12 +79,12 @@ Essential features.
 
 ### Support
 
-- *FR12.1*: The system shall allow Users to contact support (whatsapp, chat) and view all admins.
+- ✅ *FR12.1*: The system shall allow Users to contact support (whatsapp, chat) and view all admins.
 
 ### Manual Payments Management
 
-- *FR13.1*: The system shall allow admins to view, approve or reject manual payments for connects.
-- *FR13.2*: The system shall allow admins to see all manual payments.
+- ✅ *FR13.1*: The system shall allow admins to view, approve or reject manual payments for connects.
+- ✅ *FR13.2*: The system shall allow admins to see all manual payments.
 
 ### Reports Management
 
@@ -94,14 +94,14 @@ Essential features.
 - *FR14.4*: The system shall allow Users to see banned Users.
 - *FR14.5*: The system shall allow admins to view reported messages.
 - *FR14.6*: The system shall allow admins to remove a connection (permanently) based on a reported message.
-- *FR14.7*: The system shall allow admins to view, approve and reject appeals.
-- *FR14.8*: The system shall allow admins to dismiss reports.
+- ✅ *FR14.7*: The system shall allow admins to view, approve and reject appeals.
+- ✅ *FR14.8*: The system shall allow admins to dismiss reports.
 - *FR14.9*: The system shall allow admins to see dismissed reports.
 - *FR14.10*: The system shall allow admins to restore dismissed reports.
 
 ### Track Admin Actions
 
-- *FR15.1*: The system shall track admin actions.
+- ✅ *FR15.1*: The system shall track admin actions.
 
 ## Non-Functional Requirements
 

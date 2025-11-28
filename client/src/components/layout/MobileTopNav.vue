@@ -17,6 +17,14 @@
             <span class="text-sm font-medium text-gray-700">{{ currentConnects }}</span>
           </button>
 
+          <!-- Support Button -->
+          <button
+            @click.stop="supportStore.open()"
+            class="p-2 rounded-full text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <Headset class="h-5 w-5" />
+          </button>
+
           <!-- Mobile menu button -->
           <div class="flex items-center">
           <button
@@ -113,6 +121,7 @@
     @purchase="connectsStore.handlePurchaseConnects"
   />
   
+  
   <!-- Overlay when menu is open -->
   <div 
     v-if="isMenuOpen" 
@@ -126,12 +135,14 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-import { Wallet } from 'lucide-vue-next';
+import { useSupportStore } from '@/stores/support';
+import { Wallet, Headset } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import api from '@/api/axios';
 import { useConnectsStore } from '@/stores/connect';
 const router = useRouter();
 const userStore = useUserStore();
+const supportStore = useSupportStore();
 const isMenuOpen = ref(false);
 const isConnectsModalOpen = ref(false);
 const connectsStore = useConnectsStore();

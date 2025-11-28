@@ -8,7 +8,8 @@ urlpatterns = [
     path("api/post/", include("post.urls")),
     path("api/transaction/", include("transaction.urls")),
     path("api/notification/", include("notification.urls")),
-    path("api/report/", include("report.urls"))
+    path("api/report/", include("report.urls")),
+    path("api/support/", include("support.urls"))
 ]
 
 if settings.DEBUG:

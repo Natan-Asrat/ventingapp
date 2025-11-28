@@ -120,6 +120,12 @@
                           </svg>
                           Or Pay by Bank Transfer
                         </RouterLink>
+                        <button
+                          @click="supportStore.open()"
+                          class="mt-4 w-full cursor-pointer text-center text-sm text-gray-500 hover:text-indigo-600 hover:underline focus:outline-none"
+                        >
+                          Contact Support
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -138,6 +144,8 @@ import { ref, defineProps, defineEmits } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { X, BadgeDollarSign, Wallet, Loader2 } from 'lucide-vue-next';
 import { RouterLink } from 'vue-router';
+import { useSupportStore } from '@/stores/support';
+const supportStore = useSupportStore(); 
 const props = defineProps({
   isOpen: {
     type: Boolean,

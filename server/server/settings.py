@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "transaction",
     "report",
     "notification",
+    "support",
 
     "rest_framework",
     "rest_framework_simplejwt",

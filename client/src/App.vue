@@ -2,13 +2,16 @@
 import { RouterView, useRoute } from 'vue-router';
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
 import api from '@/api/axios';
+import SupportModal from '@/components/common/SupportModal.vue';
+
 import CelebrationModal from '@/components/transaction/CelebrationModal.vue';
 import { useUserStore } from '@/stores/user';
+import { useSupportStore } from '@/stores/support';
 const route = useRoute();
 const showCelebration = ref(false);
 const recentTransaction = ref(null);
 const userStore = useUserStore();
-
+const supportStore = useSupportStore();
 const checkForSuccess = async () => {
   if(!userStore.isAuthenticated) return;
   console.log("checking for success")
@@ -85,6 +88,12 @@ onBeforeUnmount(() => {
       :is-open="showCelebration" 
       :transaction="recentTransaction"
       @close="showCelebration = false"
+    />
+    <!-- Support Contacts Modal -->
+    <SupportModal 
+      v-if="supportStore.isOpen"
+      :is-open="supportStore.isOpen"
+      @close="supportStore.close"
     />
   </div>
 </template>

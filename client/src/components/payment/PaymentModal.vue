@@ -151,6 +151,13 @@
                     >
                       Submit Payment
                     </button>
+
+                        <button
+                          @click="supportStore.open()"
+                          class="mt-4 w-full cursor-pointer text-center text-sm text-gray-500 hover:text-indigo-600 hover:underline focus:outline-none"
+                        >
+                          Contact Support
+                        </button>
                   </div>
                 </div>
               </div>
@@ -167,7 +174,8 @@ import { ref, computed, watch } from 'vue';
 import { Dialog, DialogOverlay, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { X } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
-
+import { useSupportStore } from '@/stores/support';
+const supportStore = useSupportStore();
 const props = defineProps({
   isOpen: {
     type: Boolean,

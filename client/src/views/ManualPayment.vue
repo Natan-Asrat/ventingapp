@@ -19,6 +19,12 @@
         <div class="text-center mb-8">
           <h1 class="text-2xl font-bold text-gray-900">Manual Payment Options</h1>
           <p class="mt-2 text-sm text-gray-600">Choose your preferred payment method and follow the instructions</p>
+          <button
+            @click="supportStore.open()"
+            class="mt-4 w-full cursor-pointer text-center text-sm text-gray-500 hover:text-indigo-600 hover:underline focus:outline-none"
+          >
+            Contact Support
+          </button>
         </div>
 
         <div v-if="loading" class="flex justify-center py-12">
@@ -88,7 +94,8 @@ import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
 import { useUserStore } from '@/stores/user';
-
+import { useSupportStore } from '@/stores/support';
+const supportStore = useSupportStore();
 const userStore = useUserStore();
 const router = useRouter();
 

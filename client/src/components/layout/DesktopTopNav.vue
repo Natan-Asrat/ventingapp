@@ -34,6 +34,14 @@
             New Post
           </router-link>
           
+          <!-- Support Button -->
+          <button
+            @click.stop="supportStore.open()"
+            class="p-2 cursor-pointer rounded-full text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <Headset class="h-5 w-5" />
+          </button>
+
           <!-- Connects Counter -->
           <div class="relative">
             <button
@@ -121,12 +129,13 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-import { Wallet, BadgeCheck, Bell } from 'lucide-vue-next';
+import { useSupportStore } from '@/stores/support';
+import { Wallet, BadgeCheck, Bell, Headset } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import { useConnectsStore } from '@/stores/connect';
 const userStore = useUserStore();
 const connectsStore = useConnectsStore();
-
+const supportStore = useSupportStore();
 const userInitials = computed(() => {
   if (!userStore.user) return 'ME';
   const { first_name, last_name, email } = userStore.user;
