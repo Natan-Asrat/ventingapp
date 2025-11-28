@@ -1,22 +1,29 @@
 from polar_sdk.models import SubscriptionStatus
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
-from .models import Transaction
+from .models import (
+    ManualTransactionStatus, 
+    Transaction,
+    ManualPaymentDecision,
+    PaymentMethods, 
+    ManualPaymentOption,
+    Subscription, 
+    Customer
+)
 from decimal import Decimal
 from .serializers import (
     TransactionsSimpleSerializer, 
     SubscriptionsSimpleSerializer,
     ManualPaymentOptionSerializer
 )
-from rest_framework.decorators import action
+from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
 from .polar import polar
 from django.conf import settings
-from .models import PaymentMethods, ManualPaymentOption
 from polar_sdk.webhooks import validate_event
-from .models import Subscription, Customer
 from server.utils import get_readable_time_since
 from django.utils import timezone
+from rest_framework.permissions import IsAdminUser
 
 # Create your views here.
 def get_amount_by_product_id(product_id):
@@ -52,7 +59,8 @@ class TransactionViewSet(viewsets.ModelViewSet):
         Transaction.objects.create(
             user=request.user,
             method=PaymentMethods.POLAR,
-            transaction_id=checkout.id
+            transaction_id=checkout.id,
+            requires_approval=False
         )
         return Response({"checkout_url": checkout.url})
     
@@ -222,6 +230,51 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         serializer = SubscriptionsSimpleSerializer(subscriptions, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
+    def pending_transactions(self, request):
+        transactions = Transaction.objects.filter(requires_approval=True, approved=False, rejected=False).order_by('-created_at')
+        serializer = TransactionsSimpleSerializer(transactions, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def approve_transaction(self, request, pk=None):
+        transaction = self.get_object()
+        transaction.approved = True
+        transaction.rejected = False
+        transaction.status = ManualTransactionStatus.APPROVED
+        transaction.status = "Admin Approved Valid Manual Payment"
+        transaction.save()
+
+        ManualPaymentDecision.objects.create(
+            transaction=transaction,
+            decision_maker=request.user,
+            approved=True,
+            rejected=False,
+            reason="Admin Approved Valid Manual Payment"
+        )
+
+        return Response(status=200)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def reject_transaction(self, request, pk=None):
+        transaction = self.get_object()
+        reason = request.data.get('reason')
+        transaction.reason = reason
+        transaction.status = ManualTransactionStatus.REJECTED
+        transaction.approved = False
+        transaction.rejected = True
+        transaction.save()
+
+        ManualPaymentDecision.objects.create(
+            transaction=transaction,
+            decision_maker=request.user,
+            approved=False,
+            rejected=True,
+            reason=reason
+        )
+
+        return Response(status=200)
     
 
 class ManualPaymentViewSet(viewsets.ModelViewSet):

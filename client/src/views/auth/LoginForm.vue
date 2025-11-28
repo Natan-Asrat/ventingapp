@@ -111,7 +111,10 @@ const handleSubmit = async () => {
       
       if (success) {
         message.success('Login successful!');
-        router.push({name: 'Feed'});
+        const redirectTo = userStore.user?.is_staff 
+          ? '/admin' 
+          : router.currentRoute.value.query.redirect || '/';
+        await router.push(redirectTo);
       } else if (error) {
         // Handle field-specific errors
         if (typeof error === 'object') {

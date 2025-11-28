@@ -8,6 +8,15 @@
         <Home class="h-6 w-6" />
         <span class="text-xs mt-1">Home</span>
       </router-link>
+
+      <!-- just to balance the right side -->
+      <router-link 
+        :to="{name: 'Notifications'}" 
+        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-indigo-600 transition-colors"
+      >
+        <Bell class="h-6 w-6" />
+        <span class="text-xs mt-1">Notifications</span>
+      </router-link>
       
       <router-link 
         :to="{name: 'NewPost'}" 
@@ -17,6 +26,14 @@
           <Plus class="h-6 w-6" />
         </div>
         <span class="text-xs text-gray-600">New Post</span>
+      </router-link>
+      
+      <router-link 
+        :to="{name: 'Notifications'}" 
+        class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-indigo-600 transition-colors"
+      >
+        <Bell class="h-6 w-6" />
+        <span class="text-xs mt-1">Notifications</span>
       </router-link>
       
       <div class="relative flex-1">
@@ -40,7 +57,7 @@
 </template>
 
 <script setup>
-import { Home, Plus, UserIcon, BadgeCheck } from 'lucide-vue-next';
+import { Home, Plus, UserIcon, BadgeCheck, Bell } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useUserStore } from '@/stores/user';
 

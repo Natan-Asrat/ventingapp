@@ -7,6 +7,9 @@ import NewPost from '@/views/NewPost.vue';
 import ForgotPassword from '@/views/auth/ForgotPassword.vue';
 import Profile from '@/views/Profile.vue';
 import ManualPayment from '@/views/ManualPayment.vue';
+import AdminLayout from '@/layouts/AdminLayout.vue';
+import AdminDashboard from '@/views/admin/DashboardView.vue';
+
 const routes = [
   {
     path: '/',
@@ -51,9 +54,15 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/pay_manually',
+    path: '/manual-payment',
     name: 'ManualPayment',
     component: ManualPayment,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('@/views/NotificationsView.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -66,7 +75,33 @@ const routes = [
       window.location.href = `/home?_v=${Date.now()}`;
     }  
   },
-
+  // Admin routes
+  {
+    path: '/admin',
+    component: AdminLayout,
+    meta: { requiresAuth: true, requiresStaff: true },
+    children: [
+      {
+        path: '',
+        name: 'AdminDashboard',
+        component: AdminDashboard,
+        meta: { title: 'Dashboard' }
+      },
+      {
+        path: 'payments',
+        name: 'AdminPayments',
+        component: () => import('@/views/admin/PaymentsView.vue'),
+        meta: { title: 'Pending Payments' }
+      },
+      {
+        path: 'reports',
+        name: 'AdminReports',
+        component: () => import('@/views/admin/ReportsView.vue'),
+        meta: { title: 'Reports' }
+      },
+      // Add more admin routes here as needed
+    ]
+  },
   // Add a catch-all route for 404s
   {
     path: '/:pathMatch(.*)*',
@@ -83,25 +118,46 @@ const router = createRouter({
   },
 });
 
-// Navigation guard to check authentication
+// Navigation guard to check authentication and permissions
 router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore();
   
-  // Check if the route requires authentication
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    // Check if user is authenticated
-    const isAuthenticated = await userStore.checkAuth();
-    
-    if (!isAuthenticated) {
-      // Redirect to login if not authenticated
-      return next({ 
-        name: 'Login',
-        query: { redirect: to.fullPath } // Save the original path for redirect after login
-      });
+  // Check if we need to verify authentication state
+  if (!userStore.user && localStorage.getItem('access_token')) {
+    try {
+      // Try to refresh the user data if we have a token
+      await userStore.checkAuth();
+    } catch (error) {
+      // If refresh fails, clear auth and redirect to login
+      userStore.clearAuth();
+      if (to.meta.requiresAuth) {
+        next({ name: 'Login', query: { redirect: to.fullPath } });
+        return;
+      }
     }
   }
   
-  next();
+  // Check if the route requires authentication
+  if (to.matched.some(record => record.meta.requiresAuth)) {
+    // Check if user is not authenticated
+    if (!userStore.isAuthenticated) {
+      next({ name: 'Login', query: { redirect: to.fullPath } });
+      return;
+    }
+    
+    // Check if the route requires staff access
+    if (to.matched.some(record => record.meta.requiresStaff)) {
+      if (!userStore.user?.is_staff) {
+        // Redirect to home if not staff
+        next({ name: 'Feed' });
+        return;
+      }
+    }
+    
+    next();
+  } else {
+    next();
+  }
 });
 
 export default router;

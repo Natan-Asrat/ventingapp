@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     "account",
     "post",
     "transaction",
+    "report",
+    "notification",
 
     "rest_framework",
     "rest_framework_simplejwt",

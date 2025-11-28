@@ -16,6 +16,15 @@
           </router-link>
           
           <router-link
+            :to="{name: 'Notifications'}"
+            class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors flex items-center"
+            active-class="text-indigo-600 border-b-2 border-indigo-600"
+          >
+            <Bell class="h-5 w-5 mr-1" />
+            Notifications
+          </router-link>
+          
+          <router-link
             :to="{name: 'NewPost'}"
             class="flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
           >
@@ -112,7 +121,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-import { Wallet, BadgeCheck } from 'lucide-vue-next';
+import { Wallet, BadgeCheck, Bell } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import { useConnectsStore } from '@/stores/connect';
 const userStore = useUserStore();
@@ -138,7 +147,7 @@ const router = useRouter();
 
 const isProfileMenuOpen = ref(false);
 const isConnectsModalOpen = ref(false);
-const currentConnects = computed(() => userStore?.user.connects);
+const currentConnects = computed(() => userStore?.user?.connects);
 
 const hasActiveSubscription = computed(() => {
   if (!userStore.subscriptions || userStore.subscriptions.length === 0) return false;

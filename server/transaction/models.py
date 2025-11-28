@@ -5,6 +5,10 @@ class PaymentMethods:
     POLAR = "POLAR"
     STRIPE = "STRIPE"
 
+class ManualTransactionStatus:
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 class Customer(models.Model):
     user = models.ForeignKey('account.User', on_delete=models.SET_NULL, null=True, blank=True)
@@ -98,6 +102,7 @@ class Transaction(models.Model):
     
     requires_approval = models.BooleanField(default=True)
     approved = models.BooleanField(default=False)
+    rejected = models.BooleanField(default=False)
     status = models.CharField(max_length=255)
     billing_name = models.TextField(blank=True, null=True)
 
@@ -116,5 +121,27 @@ class Transaction(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def formatted_created_at(self):
+        return self.created_at.strftime("%B %d, %Y")
+    @property
+    def time_ago(self):
+        return get_readable_time_since(self.created_at)
+
+    def __str__(self):
+        return f"Transaction #{self.pk} by {self.user} - {self.product_name} - Amount: {self.total_amount} - Connects: {self.connects}"
+
+class ManualPaymentDecision(models.Model):
+    decision_maker = models.ForeignKey('account.User', on_delete=models.SET_NULL, null=True, blank=True)
+    transaction = models.ForeignKey('transaction.Transaction', on_delete=models.SET_NULL, null=True, blank=True)
+    approved = models.BooleanField(default=False)
+    rejected = models.BooleanField(default=False)
+    reason = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Manual Payment Decision #{self.pk} by {self.decision_maker} - {self.transaction}"
 
 from .signals import *

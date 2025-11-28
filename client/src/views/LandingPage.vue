@@ -46,12 +46,30 @@
         </p>
         <div class="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
           <div class="rounded-md shadow">
-            <router-link
-              to="/signup"
-              class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
-            >
-              Join the Community
-            </router-link>
+            <template v-if="!userStore.isAuthenticated">
+              <RouterLink 
+                to="/login"
+                class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+              >
+                Get Started
+              </RouterLink>
+            </template>
+            <template v-else>
+              <RouterLink 
+                v-if="userStore.user?.is_staff"
+                to="/admin"
+                class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+              >
+                Go to Admin Dashboard
+              </RouterLink>
+              <RouterLink 
+                v-else
+                to="/home"
+                class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+              >
+                Go to Home
+              </RouterLink>
+            </template>
           </div>
           <div class="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
             <a
