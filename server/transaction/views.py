@@ -1,6 +1,8 @@
 from polar_sdk.models import SubscriptionStatus
 from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+
+from .utils import add_monthly_free_connects
 from .models import (
     ManualTransactionStatus, 
     Transaction,
@@ -23,6 +25,9 @@ from django.conf import settings
 from polar_sdk.webhooks import validate_event
 from server.utils import get_readable_time_since
 from django.utils import timezone
+from datetime import timedelta
+from django.db import transaction as db_transaction, OperationalError
+
 from rest_framework.permissions import IsAdminUser
 from account.pagination import CustomPagination
 
@@ -287,6 +292,27 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
         serializer = TransactionsSimpleSerializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def check_monthly_free_connects(self, request):
+        now = timezone.now()
+        last_free_connect_date = request.user.last_month_free_connects_date
+
+        try:
+            with db_transaction.atomic():
+                # Lock the user row to prevent race conditions
+                user = type(request.user).objects.select_for_update(nowait=True).get(pk=request.user.pk)
+                last_free_connect_date = user.last_month_free_connects_date
+
+                if not last_free_connect_date or (now - last_free_connect_date) >= timedelta(days=30):
+                    add_monthly_free_connects(user)
+                    return Response({"message": "It's time!"})
+
+                return Response({"message": "Not yet..."})
+
+        except OperationalError:
+            # This triggers if the row is locked by another transaction
+            return Response({"message": "Please try again shortly, another process is updating your free connects."}, status=200)
     
 
 class ManualPaymentViewSet(viewsets.ModelViewSet):

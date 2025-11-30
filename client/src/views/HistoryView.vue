@@ -28,19 +28,32 @@
                   activeTab === tab.id
                     ? 'border-indigo-500 text-indigo-600'
                     : 'cursor-pointer border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
-                  'w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm'
+                  'w-1/3 py-4 px-1 text-center border-b-2 font-medium text-sm'
                 ]"
               >
-                {{ tab.name }}
-                <span 
-                  v-if="tab.count > 0"
-                  :class="[
-                    activeTab === tab.id ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600',
-                    'ml-2 py-0.5 px-2 rounded-full text-xs font-medium'
-                  ]"
-                >
-                  {{ tab.count }}
-                </span>
+                <div class="flex flex-col items-center">
+                  <div class="flex items-center">
+                    <span>{{ tab.name }}</span>
+                    <span 
+                      v-if="tab.count > 0"
+                      :class="[
+                        activeTab === tab.id ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600',
+                        'ml-2 py-0.5 px-2 rounded-full text-xs font-medium hidden md:block'
+                      ]"
+                    >
+                      {{ tab.count }}
+                    </span>
+                  </div>
+                  <span 
+                    v-if="tab.count > 0"
+                    :class="[
+                      activeTab === tab.id ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-600',
+                      'mt-1 py-0.5 px-2 rounded-full text-xs font-medium md:hidden'
+                    ]"
+                  >
+                    {{ tab.count }}
+                  </span>
+                </div>
               </button>
             </nav>
           </div>
@@ -60,17 +73,18 @@
               <div v-else class="space-y-4">
                 <div v-for="transaction in transactions" :key="transaction.pk" class="border rounded-lg overflow-hidden">
                   <div class="p-4">
-                    <div class="flex justify-between items-start">
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start">
                       <div>
                         <h3 class="font-medium text-gray-900">
-                          {{ transaction.product_name }}
+                          {{ transaction.product_name || 'Transaction' }}
                         </h3>
                         <p class="text-sm text-gray-500">
                           {{ transaction.formatted_created_at }} • {{ transaction.time_ago }}
                         </p>
                       </div>
                       <span 
-                        class="px-2 py-1 text-xs font-medium rounded-full"
+                        v-if="transaction.status"
+                        class="mt-2 sm:mt-0 px-2 py-1 text-xs font-medium rounded-full self-start"
                         :class="{
                           'bg-green-100 text-green-800': transaction.approved,
                           'bg-yellow-100 text-yellow-800': !transaction.approved && !transaction.status.includes('rejected'),
@@ -79,22 +93,32 @@
                       >
                         {{ transaction.status }}
                       </span>
+                      <span 
+                        v-else
+                        class="mt-2 sm:mt-0 px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full self-start"
+                      >
+                        Pending
+                      </span>
                     </div>
                     
-                    <div class="mt-2 flex justify-between items-center">
-                      <div class="text-sm">
-                        <span class="font-medium">{{ transaction.connects }} Connects</span>
-                        <span class="text-gray-500 mx-2">•</span>
-                        <span class="text-gray-900">
-                          {{ Number(transaction.total_amount).toLocaleString() }} {{ transaction.currency.toUpperCase() }}
+                    <div v-if="transaction.product_name" class="mt-3 pt-3 border-t border-gray-100">
+                      <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-500">Connects:</span>
+                        <span class="font-medium text-gray-900">
+                          {{ transaction.connects || 'N/A' }}
                         </span>
                       </div>
-                      
+                      <div class="flex items-center justify-between mt-1 text-sm">
+                        <span class="text-gray-500">Amount:</span>
+                        <span class="font-medium text-gray-900">
+                          {{ transaction.total_amount ? `${Number(transaction.total_amount).toLocaleString()} ${(transaction.currency || '').toUpperCase()}` : 'N/A' }}
+                        </span>
+                      </div>
                       <a 
                         v-if="transaction.screenshot_url" 
                         :href="transaction.screenshot_url" 
                         target="_blank"
-                        class="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                        class="inline-block mt-2 text-indigo-600 hover:text-indigo-800 text-sm font-medium"
                       >
                         View Receipt
                       </a>
@@ -117,7 +141,7 @@
             </div>
             
             <!-- Connections Tab -->
-            <div v-else class="space-y-4">
+            <div v-else-if="activeTab === 'connections'" class="space-y-4">
               <div v-if="loading.connections" class="flex justify-center py-8">
                 <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
               </div>
@@ -213,6 +237,138 @@
                 </div>
               </div>
             </div>
+            
+            <!-- Usage Tab -->
+            <div v-else-if="activeTab === 'usage'" class="space-y-4">
+              <div v-if="loading.usage" class="flex justify-center py-8">
+                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+              </div>
+              
+              <div v-else-if="usages.length === 0" class="text-center py-12 text-gray-500">
+                No usage history found.
+              </div>
+              
+              <div v-else class="space-y-4">
+                <div v-for="usage in usages" :key="usage.id" class="border rounded-lg overflow-hidden">
+                  <div class="p-4">
+                    <div class="flex flex-col md:flex-row md:justify-between md:items-start">
+                      <div>
+                        <h3 class="font-medium text-gray-900">
+                          {{ usage.connection ? 'Connection' : usage.transaction ? 'Transaction' : 'Connect Usage' }}
+                        </h3>
+                        <p class="text-sm text-gray-500">
+                          {{ new Date(usage.created_at).toLocaleDateString() }} • 
+                          {{ new Date(usage.created_at).toLocaleTimeString() }}
+                        </p>
+                      </div>
+                      <div class="mt-2 md:mt-0">
+                        <span 
+                          class="px-2 py-1 text-xs font-medium rounded-full"
+                          :class="{
+                            'bg-green-100 text-green-800': (usage.connectsAfter - usage.connectsBefore) > 0,
+                            'bg-red-100 text-red-800': (usage.connectsAfter - usage.connectsBefore) < 0,
+                            'bg-gray-100 text-gray-800': (usage.connectsAfter - usage.connectsBefore) === 0
+                          }"
+                        >
+                          {{ (usage.connectsAfter - usage.connectsBefore) < 0 ? '-' : '' }}{{ Math.abs(usage.connectsAfter - usage.connectsBefore) }}
+                          {{ Math.abs(usage.connectsAfter - usage.connectsBefore) === 1 ? 'Connect' : 'Connects' }}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div class="mt-2 text-sm">
+                      <p>
+                        <span class="font-medium">Before:</span> {{ usage.connectsBefore }} Connects •
+                        <span class="font-medium">After:</span> {{ usage.connectsAfter }} Connects
+                      </p>
+                      <div v-if="usage.connection && usage.connection?.connected_user" class="mt-2 p-2 bg-gray-50 rounded-md">
+                        <p class="font-medium text-gray-700">Connection Details:</p>
+                        <div class="flex items-center mt-1">
+                          <div v-if="usage.connection.connected_user?.profile_picture" 
+                               class="h-8 w-8 rounded-full overflow-hidden mr-2">
+                            <img :src="usage.connection.connected_user.profile_picture" 
+                                 :alt="usage.connection.connected_user.name" 
+                                 class="h-full w-full object-cover">
+                          </div>
+                          <div v-else class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center mr-2">
+                            <span class="text-sm text-indigo-600">
+                              {{ usage.connection.connected_user?.name?.charAt(0) || 'U' }}
+                            </span>
+                          </div>
+                          <div>
+                            <p class="text-sm font-medium text-gray-900">
+                              {{ usage.connection.connected_user?.name || 'User' }}
+                              <span class="text-xs text-gray-500">@{{ usage.connection.connected_user?.username }}</span>
+                            </p>
+                            <p class="text-xs text-gray-500">
+                              {{ usage.connection.formatted_created_at }}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else-if="usage.transaction" class="mt-2 p-2 bg-gray-50 rounded-md">
+                        <p class="font-medium text-gray-700">Transaction Details:</p>
+                        <div class="mt-2">
+                          <template v-if="!usage.transaction.product_name && !usage.transaction.status">
+                            <p class="text-sm text-gray-500">Transaction not fulfilled</p>
+                          </template>
+                          <template v-else>
+                            <div class="flex items-center justify-between">
+                              <span class="text-sm text-gray-500">Product:</span>
+                              <span class="text-sm font-medium text-gray-900">
+                                {{ usage.transaction.product_name || 'N/A' }}
+                              </span>
+                            </div>
+                            <div class="flex items-center justify-between mt-1">
+                              <span class="text-sm text-gray-500">Status:</span>
+                              <span 
+                                v-if="usage.transaction.status"
+                                class="px-2 py-0.5 text-xs font-medium rounded-full"
+                                :class="{
+                                  'bg-green-100 text-green-800': usage.transaction.approved,
+                                  'bg-yellow-100 text-yellow-800': !usage.transaction.approved && usage.transaction.status && !usage.transaction.status.includes('rejected'),
+                                  'bg-red-100 text-red-800': usage.transaction.status && usage.transaction.status.includes('rejected')
+                                }"
+                              >
+                                {{ usage.transaction.status }}
+                              </span>
+                              <span v-else class="text-sm text-gray-500">Pending</span>
+                            </div>
+                            <div v-if="usage.transaction.total_amount !== null" class="flex items-center justify-between mt-1">
+                              <span class="text-sm text-gray-500">Amount:</span>
+                              <span class="text-sm font-medium text-gray-900">
+                                {{ Number(usage.transaction.total_amount).toLocaleString() }} {{ (usage.transaction.currency || '').toUpperCase() }}
+                              </span>
+                            </div>
+                          </template>
+                          <div v-if="usage.transaction.screenshot_url" class="mt-2">
+                            <a 
+                              :href="usage.transaction.screenshot_url" 
+                              target="_blank"
+                              class="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                            >
+                              View Receipt
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Load More Button -->
+                <div v-if="usagesNextUrl" class="flex justify-center mt-6">
+                  <button
+                    @click="loadMoreUsages"
+                    :disabled="loading.moreUsages"
+                    class="px-4 py-2 cursor-pointer border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  >
+                    <span v-if="loading.moreUsages">Loading...</span>
+                    <span v-else>Load More</span>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -224,7 +380,7 @@
     <!-- Report Modal -->
     <ReportModal 
       v-if="reportModalOpen" 
-      :show="reportModalOpen" 
+      :is-open="reportModalOpen" 
       @close="reportModalOpen = false"
       @submit="handleReport"
     />
@@ -253,10 +409,11 @@ const reportModalOpen = ref(false);
 const selectedConnection = ref(null);
 // Tabs
 const activeTab = ref('transactions');
-const tabs = [
+const tabs = ref([
   { id: 'transactions', name: 'Transactions', count: 0 },
   { id: 'connections', name: 'Connections', count: 0 },
-];
+  { id: 'usage', name: 'Usage', count: 0 },
+]);
 
 // User initials for avatar
 const userInitials = computed(() => {
@@ -282,7 +439,9 @@ const loading = ref({
   transactions: false,
   moreTransactions: false,
   connections: false,
-  moreConnections: false
+  moreConnections: false,
+  usage: false,
+  moreUsages: false
 });
 
 // Fetch transactions
@@ -297,7 +456,7 @@ const fetchTransactions = async (url = '/transaction/transactions/my_transaction
       transactions.value = response.data.results;
     }
     transactionsNextUrl.value = response.data.next;
-    tabs[0].count = response.data.count;
+    tabs.value[0].count = response.data.count;
   } catch (error) {
     console.error('Error fetching transactions:', error);
   } finally {
@@ -331,7 +490,7 @@ const fetchConnections = async (url = '/account/users/connections/') => {
       connections.value = response.data.results;
     }
     connectionsNextUrl.value = response.data.next;
-    tabs[1].count = response.data.count;
+    tabs.value[1].count = response.data.count;
   } catch (error) {
     console.error('Error fetching connections:', error);
   } finally {
@@ -419,12 +578,46 @@ const handleAction = async (connection, action) => {
   }
 };
 
+// Usage
+const usages = ref([]);
+const usagesNextUrl = ref(null);
+
+// Fetch usages
+const fetchUsages = async (url = '/usage/connect-usages/') => {
+  try {
+    loading.value.usage = true;
+    const response = await api.get(url);
+    if (url.includes('page=')) {
+      // Append new usages if loading more
+      usages.value = [...usages.value, ...response.data.results];
+    } else {
+      usages.value = response.data.results;
+    }
+    usagesNextUrl.value = response.data.next;
+    tabs.value[2].count = response.data.count;
+  } catch (error) {
+    console.error('Error fetching usages:', error);
+  } finally {
+    loading.value.usage = false;
+    loading.value.moreUsages = false;
+  }
+};
+
+// Load more usages
+const loadMoreUsages = () => {
+  if (!usagesNextUrl.value) return;
+  loading.value.moreUsages = true;
+  fetchUsages(usagesNextUrl.value);
+};
+
 // Watch for tab changes
 watch(activeTab, (newTab) => {
   if (newTab === 'transactions' && transactions.value.length === 0) {
     fetchTransactions();
   } else if (newTab === 'connections' && connections.value.length === 0) {
     fetchConnections();
+  } else if (newTab === 'usage' && usages.value.length === 0) {
+    fetchUsages();
   }
 });
 
@@ -432,6 +625,7 @@ watch(activeTab, (newTab) => {
 onMounted(() => {
   fetchTransactions();
   fetchConnections();
+  fetchUsages();
 });
 </script>
 

@@ -56,10 +56,10 @@
               'bg-yellow-100 text-yellow-700': post.pending_connection && !post.rejected_connection,
               'bg-red-100 text-red-700': post.rejected_connection,
               'bg-gray-100 text-gray-700 hover:bg-gray-200': (!post.connected && !post.pending_connection && !post.rejected_connection) || post.removed_connection,
-              'cursor-not-allowed': post.rejected_connection,
-              'cursor-pointer': !post.rejected_connection
+              'cursor-not-allowed': post.rejected_connection || post.banned_connection,
+              'cursor-pointer': !post.rejected_connection && !post.banned_connection
             }"
-            :disabled="post.rejected_connection"
+            :disabled="post.rejected_connection || post.banned_connection"
             :title="getFollowButtonTooltip(post)"
           >
             <template v-if="post.connected">
@@ -69,6 +69,9 @@
             <template v-else-if="post.pending_connection">
               <Clock :size="18" class="text-yellow-600" />
               <span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-yellow-500 border-2 border-white"></span>
+            </template>
+            <template v-else-if="post.banned_connection">
+              <UserX :size="18" class="text-yellow-600" />
             </template>
             <template v-else-if="post.rejected_connection">
               <UserX :size="18" class="text-red-600" />

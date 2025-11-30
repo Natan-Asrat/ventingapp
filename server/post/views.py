@@ -49,6 +49,11 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
                     removed=True,
                     reconnection_rejected=True
                 )),
+                banned_connection=Exists(Connection.objects.filter(
+                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    banned=True
+                )),
                 removed_connection=Exists(Connection.objects.filter(
                     Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
                     Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),

@@ -47,9 +47,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     connections = models.PositiveIntegerField(default=0)
     connection_requests = models.PositiveIntegerField(default=0)
     email_verified = models.BooleanField(default=False)
-    otp_secret = models.CharField(max_length=16, blank=True, null=True)
+    otp_secret = models.CharField(max_length=32, blank=True, null=True)
     date_joined = models.DateTimeField(auto_now_add=True)
 
+    connects_needed_for_connection = models.PositiveIntegerField(default=1)
+    last_month_free_connects_date = models.DateTimeField(null=True, blank=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True) 

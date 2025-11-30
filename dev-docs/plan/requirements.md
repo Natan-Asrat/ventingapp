@@ -56,9 +56,9 @@ Essential features.
 - *FR7.4*: The system shall allow Users to chat with their connections.
 
 ### Connects History & Monthly Free Connects
-- *FR8.1*: The system shall allow Users to receive connects from incoming connections.
-- *FR8.2*: The system shall give free connects to users every month.
-- *FR8.3*: The system shall allow Users to view their connects history (buy, spend, receive).
+- ✅ *FR8.1*: The system shall allow Users to receive connects from incoming connections.
+- ✅ *FR8.2*: The system shall give free connects to users every month.
+- ✅ *FR8.3*: The system shall allow Users to view their connects history (buy, spend, receive).
 
 ### Chat
 

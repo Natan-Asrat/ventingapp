@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "report",
     "notification",
     "support",
+    "usage",
 
     "rest_framework",
     "rest_framework_simplejwt",
@@ -162,6 +163,8 @@ POLAR_ACCESS_TOKEN = os.getenv('POLAR_ACCESS_TOKEN')
 POLAR_SERVER = os.getenv('POLAR_SERVER')
 if not POLAR_ACCESS_TOKEN or not POLAR_SERVER:
     raise ValueError("POLAR_ACCESS_TOKEN and POLAR_SERVER must be set in the environment")
+SIGNUP_FREE_CONNECTS = int(os.getenv('SIGNUP_FREE_CONNECTS', 5))
+MONTHLY_FREE_CONNECTS = int(os.getenv('MONTHLY_FREE_CONNECTS', 5))
 CONNECTS_PRODUCT_ID_5_CONNECTS = os.getenv('CONNECTS_PRODUCT_ID_5_CONNECTS')
 CONNECTS_PRODUCT_ID_20_CONNECTS = os.getenv('CONNECTS_PRODUCT_ID_20_CONNECTS')
 CONNECTS_PRODUCT_ID_100_CONNECTS = os.getenv('CONNECTS_PRODUCT_ID_100_CONNECTS')

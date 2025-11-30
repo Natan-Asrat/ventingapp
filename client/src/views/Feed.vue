@@ -72,6 +72,16 @@
     
     <!-- Mobile Bottom Navigation -->
     <MobileBottomNav :user-initials="userInitials" />
+
+    <!-- Connects Modal -->
+    <ConnectsModal
+      :is-open="isConnectsModalOpen"
+      :current-connects="currentConnects"
+      :connects-data="connectsStore.connectsData"
+      :loading="connectsStore.isLoading"
+      @close="isConnectsModalOpen = false"
+      @purchase="connectsStore.handlePurchaseConnects"
+    />
   </div>
 </template>
 
@@ -87,7 +97,10 @@ import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
 import FeedItem from '@/components/feed/FeedItem.vue';
 import DonateModal from '@/components/feed/DonateModal.vue';
 import ConnectionRequestModal from '@/components/feed/ConnectionRequestModal.vue';
+import ConnectsModal from '@/components/connects/ConnectsModal.vue';
+import { useConnectsStore } from '@/stores/connect';
 
+const connectsStore = useConnectsStore();
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
@@ -325,6 +338,14 @@ const handleConnectionsUpdated = async (postId) => {
     posts.value.unshift(newPostData);
   }
 };
+const isConnectsModalOpen = ref(false);
+const currentConnects = computed(() => userStore.user?.connects || 0);
+
+const openConnectsModal = async () => {
+  isConnectsModalOpen.value = true;
+  await connectsStore.fetchConnectsData();
+};
+
 const handleFollow = async (post, showDonate = false) => {
   if (!post?.posted_by?.id || post.pending_connection || post.rejected_connection) {
     return;
@@ -370,6 +391,7 @@ const handleFollow = async (post, showDonate = false) => {
         }
       }
     }
+    await userStore.checkAuth();
   } catch (error) {
     console.error(`Error ${isConnected ? 'unfollowing' : 'following'} user:`, error);
     
@@ -381,21 +403,17 @@ const handleFollow = async (post, showDonate = false) => {
     
     let errorMessage = `Failed to ${isConnected ? 'unfollow' : 'follow'} user. Please try again.`;
     
-    if (error.response?.status === 400) {
-      if (error.response?.data?.detail?.includes('already connected')) {
-        errorMessage = 'You are already following this user';
-      } else if (error.response?.data?.detail?.includes('not connected')) {
-        errorMessage = 'You are not connected to this user';
-      } else if (error.response?.data?.detail?.includes('pending')) {
-        errorMessage = 'Connection request already pending';
-        // Update UI to show pending state
-        if (postIndex !== -1) {
-          posts.value[postIndex].pending_connection = true;
-        }
-      }
+    if (error.response?.data?.error) errorMessage = error.response?.data?.error;
+    else if (error.response?.data?.message) errorMessage = error.response?.data?.message;  
+
+      message.error(errorMessage);
+    if (error.response?.status === 402) {
+      // Not enough connects - open the connects modal
+      openConnectsModal();
+      return; // Don't show error message as we're handling it with the modal
+    } else {
+      message.error(errorMessage);
     }
-    
-    message.error(errorMessage);
   }
 };
 

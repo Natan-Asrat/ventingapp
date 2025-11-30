@@ -34,6 +34,14 @@ export const useUserStore = defineStore('user', () => {
       return null;
     }
   };
+  const check_monthly_free_connects = async () => {
+    try {
+      const response = await api.get('transaction/transactions/check_monthly_free_connects/');
+      console.log("monthly connects status:", response.data.message)
+    } catch (error) {
+      console.error('Error fetching subscriptions:', error);
+    }
+  };
   // Check if user is authenticated on app load
   const checkAuth = async () => {
     const accessToken = localStorage.getItem('access_token');
@@ -43,6 +51,7 @@ export const useUserStore = defineStore('user', () => {
       const response = await api.get('account/users/me/');
       user.value = response.data;
       await fetch_subscriptions();
+      await check_monthly_free_connects();
       return true;
     } catch (error) {
       clearAuth();

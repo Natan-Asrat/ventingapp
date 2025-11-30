@@ -64,6 +64,8 @@ def create_notification(sender, instance, created, **kwargs):
 
 @receiver(pre_save, sender=Post)
 def post_banned(sender, instance, **kwargs):
+    if not instance.pk:
+        return
     try:
         previous = sender.objects.get(pk=instance.pk)
         prev_banned = previous.banned
@@ -89,6 +91,8 @@ def post_banned(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Post)
 def post_unbanned(sender, instance, **kwargs):
+    if not instance.pk:
+        return
     try:
         previous = sender.objects.get(pk=instance.pk)
         prev_banned = previous.banned
@@ -113,6 +117,8 @@ def post_unbanned(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Connection)
 def connection_banned(sender, instance, **kwargs):
+    if not instance.pk:
+        return
     try:
         previous = sender.objects.get(pk=instance.pk)
         prev_banned = previous.banned
@@ -137,6 +143,8 @@ def connection_banned(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Connection)
 def connection_unbanned(sender, instance, **kwargs):
+    if not instance.pk:
+        return
     try:
         previous = sender.objects.get(pk=instance.pk)
         prev_banned = previous.banned
