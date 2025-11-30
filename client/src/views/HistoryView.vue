@@ -126,52 +126,60 @@
                 No connections found.
               </div>
               
-              <div v-else class="space-y-4">
+              <div class="space-y-4">
                 <div v-for="connection in connections" :key="connection.id" class="border rounded-lg overflow-hidden">
                   <div class="p-4">
-                    <div class="flex items-center space-x-4">
-                      <!-- Connection's Profile Picture -->
-                      <div 
-                        v-if="connectionStore.getOtherUser(connection, userStore.user)?.profile_picture" 
-                        class="h-12 w-12 rounded-full overflow-hidden bg-gray-200"
-                      >
-                        <img 
-                          :src="connectionStore.getOtherUser(connection, userStore.user)?.profile_picture" 
-                          :alt="connectionStore.getOtherUser(connection, userStore.user)?.name || 'User'"
-                          class="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div v-else class="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <span class="text-lg font-medium text-indigo-600">
-                          {{ connectionStore.getOtherUser(connection, userStore.user)?.name ? connectionStore.getOtherUser(connection, userStore.user)?.name.charAt(0).toUpperCase() : 'U' }}
-                        </span>
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                      <!-- Profile Section -->
+                      <div class="flex items-center flex-1 min-w-0">
+                        <!-- Profile Picture -->
+                        <div 
+                          v-if="connectionStore.getOtherUser(connection, userStore.user)?.profile_picture" 
+                          class="flex-shrink-0 h-12 w-12 rounded-full overflow-hidden bg-gray-200"
+                        >
+                          <img 
+                            :src="connectionStore.getOtherUser(connection, userStore.user)?.profile_picture" 
+                            :alt="connectionStore.getOtherUser(connection, userStore.user)?.name || 'User'"
+                            class="h-full w-full object-cover"
+                          />
+                        </div>
+                        <div v-else class="flex-shrink-0 h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <span class="text-lg font-medium text-indigo-600">
+                            {{ connectionStore.getOtherUser(connection, userStore.user)?.name ? connectionStore.getOtherUser(connection, userStore.user)?.name.charAt(0).toUpperCase() : 'U' }}
+                          </span>
+                        </div>
+                        
+                        <!-- User Info -->
+                        <div class="ml-3 min-w-0">
+                          <p class="text-sm font-medium text-gray-900 truncate">
+                            {{ connectionStore.getOtherUser(connection, userStore.user)?.name || connectionStore.getOtherUser(connection, userStore.user)?.username || 'Unknown User' }}
+                          </p>
+                          <p class="text-xs text-gray-500">
+                            Connected {{ connection.formatted_created_at }}
+                          </p>
+                        </div>
                       </div>
                       
-                      <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-900 truncate">
-                          {{ connectionStore.getOtherUser(connection, userStore.user)?.name || connectionStore.getOtherUser(connection, userStore.user)?.username || 'Unknown User' }}
-                        </p>
-                        <p class="text-xs text-gray-500">
-                          Connected {{ connection.formatted_created_at }}
-                        </p>
-                      </div>
-                      
-                      <div class="flex-shrink-0 flex items-center space-x-2">
+                      <!-- Status and Actions -->
+                      <div class="flex items-center justify-between sm:justify-end gap-2 mt-2 sm:mt-0">
+                        <div class="flex-shrink-0 flex items-center gap-2">
+                          <span
+                            v-if="connection.banned"
+                            class="px-2.5 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium whitespace-nowrap"
+                          >
+                            Banned
+                          </span>
+                          <button
+                            v-else-if="isNotInitiator(connection) && (!connection.removed || (connection.reconnection_requested_by && connection.reconnection_requested_by !== userStore.user.id))"
+                            @click="reportUser(connection)"
+                            class="whitespace-nowrap inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                          >
+                            Report
+                          </button>
+                        </div>
+                        
                         <span
-                          v-if="connection.banned"
-                          class="px-2.5 py-0.5 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium"
-                        >
-                          Banned
-                        </span>
-                        <button
-                          v-else-if="isNotInitiator(connection) && (!connection.removed || (connection.reconnection_requested_by && connection.reconnection_requested_by !== userStore.user.id))"
-                          @click="reportUser(connection)"
-                          class="inline-flex cursor-pointer items-center px-2.5 py-0.5 rounded-md text-xs font-medium text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                        >
-                          Report
-                        </button>
-                        <span
-                          class="px-2.5 py-0.5 rounded-full text-xs font-medium"
+                          class="px-2.5 py-0.5 rounded-full text-xs font-medium whitespace-nowrap"
                           :class="{
                             'bg-green-100 text-green-800': !connection.removed && !connection.reconnection_requested_by,
                             'bg-yellow-100 text-yellow-800': connection.reconnection_requested_by && !connection.reconnection_rejected,
@@ -181,7 +189,6 @@
                         >
                           {{ getConnectionStatusText(connection) }}
                         </span>
-                        
                       </div>
                     </div>
                     

@@ -44,9 +44,9 @@ Essential features.
 - ✅ *FR5.3*: The system shall allow Users to select their preferred payment method, currency, amount of connects to buy, and the amount to send (in their preferred currency) - lead users to contact support if they don't find their preferred payment method.
 
 ### Manual payments & Appeals
-- *FR6.1*: The system shall allow Users to see their pending, approved, and rejected manual payments.
+- ✅ *FR6.1*: The system shall allow Users to see their pending, approved, and rejected manual payments.
 - ✅ *FR6.2*: The system shall allow Users to submit an appeal for rejected payments.
-- *FR6.3*: The system shall allow Users to view pending, approved (automatically approves the manual payment), and rejected (final) appeals.
+- ✅ *FR6.3*: The system shall allow Users to view pending, approved (automatically approves the manual payment), and rejected (final) appeals - IMPLEMENTED IN THE NOTIFICATIONS.
 
 
 ### Connections

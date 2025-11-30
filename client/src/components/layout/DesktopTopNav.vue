@@ -25,6 +25,15 @@
           </router-link>
           
           <router-link
+            :to="{name: 'History'}"
+            class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors flex items-center"
+            active-class="text-indigo-600 border-b-2 border-indigo-600"
+          >
+            <Clock class="h-5 w-5 mr-1" />
+            History
+          </router-link>
+          
+          <router-link
             :to="{name: 'NewPost'}"
             class="flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
           >
@@ -130,7 +139,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
-import { Wallet, BadgeCheck, Bell, Headset } from 'lucide-vue-next';
+import { Wallet, BadgeCheck, Bell, Headset, Clock } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import { useConnectsStore } from '@/stores/connect';
 const userStore = useUserStore();

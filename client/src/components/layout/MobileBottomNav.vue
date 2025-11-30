@@ -11,11 +11,11 @@
 
       <!-- just to balance the right side -->
       <router-link 
-        :to="{name: 'Notifications'}" 
+        :to="{name: 'History'}" 
         class="flex flex-col items-center justify-center flex-1 h-full text-gray-600 hover:text-indigo-600 transition-colors"
       >
-        <Bell class="h-6 w-6" />
-        <span class="text-xs mt-1">Notifications</span>
+        <History class="h-6 w-6" />
+        <span class="text-xs mt-1">History</span>
       </router-link>
       
       <router-link 
@@ -57,7 +57,7 @@
 </template>
 
 <script setup>
-import { Home, Plus, UserIcon, BadgeCheck, Bell } from 'lucide-vue-next';
+import { Home, Plus, UserIcon, BadgeCheck, Bell, History } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useUserStore } from '@/stores/user';
 
