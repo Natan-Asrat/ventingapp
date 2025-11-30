@@ -6,9 +6,21 @@ from .permissions import IsReportAboutOrStaff
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from post.models import Post
+from .models import ReportTypes
 
 class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = Report.objects.all().prefetch_related('decisions').order_by("-created_at")
+    queryset = Report.objects.all().prefetch_related(
+            'decisions',
+            "reported_post__payment_info_list"
+        ).order_by(
+            "-created_at"
+        ).select_related(
+            "reported_post", 
+            "reported_connection", 
+            "reported_transaction", 
+            "reported_post__posted_by"
+        )
     serializer_class = ReportsWithDecisionsSerializer
     permission_classes = [IsAdminUser]
 
@@ -44,6 +56,32 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             approved=False,
             rejected=True,
             reason=request.data.get('reason')
+        )
+        return Response(status=200)
+
+    @action(detail=False, methods=['post'])
+    def report_post(self, request):
+        post_id = request.data.get('post_id')
+        if not post_id:
+            return Response({'error': 'Post ID is required'}, status=400)
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response({'error': 'Post not found'}, status=404)
+        existing_report = Report.objects.filter(
+            reported_by=request.user,
+            reported_post=post,
+            report_type=ReportTypes.POST,
+        ).first()
+        if existing_report:
+            return Response({'error': 'You have already reported this post'}, status=400)
+        
+        Report.objects.create(
+            reported_by=request.user,
+            about_user=post.posted_by,
+            reported_post=post,
+            reason=request.data.get('reason'),
+            report_type=ReportTypes.POST,
         )
         return Response(status=200)
 

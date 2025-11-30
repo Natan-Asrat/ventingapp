@@ -2,8 +2,10 @@ from rest_framework import serializers
 from .models import Report, ReportDecision, Appeal, AppealDecision
 from account.serializers import UserSimpleSerializer
 from transaction.serializers import TransactionsSimpleSerializer
+from post.serializers import PostSimpleSerializer
 class ReportSerializer(serializers.ModelSerializer):
     reported_transaction = TransactionsSimpleSerializer()
+    reported_post = PostSimpleSerializer()
     class Meta:
         model = Report
         fields = [
@@ -14,7 +16,6 @@ class ReportSerializer(serializers.ModelSerializer):
             'created_at', 
             'updated_at', 
             'about_user', 
-            'reported_by', 
             'reported_post', 
             'reported_connection', 
             'reported_transaction',
@@ -148,6 +149,7 @@ class ReportsWithDecisionsAndAppealsSerializer(serializers.ModelSerializer):
 
 class ReportsWithDecisionsSerializer(serializers.ModelSerializer):
     reported_transaction = TransactionsSimpleSerializer()
+    reported_post = PostSimpleSerializer()
     decisions = ReportDecisionSimpleSerializer(many=True)
     class Meta:
         model = Report

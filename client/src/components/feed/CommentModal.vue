@@ -25,157 +25,192 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-4 text-left align-middle shadow-xl transition-all">
-        <!-- Header -->
-        <div class="bg-white px-4 py-3 sm:p-6 sm:py-3 border-b border-gray-200">
-          <div class="flex justify-between items-center">
-            <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
-              Comments
-            </DialogTitle>
-            <button @click="closeModal" class="text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
-              <span class="sr-only">Close</span>
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
+              <!-- Header -->
+              <div class="bg-white px-4 py-3 sm:p-6 sm:py-3 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                  <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
+                    Comments
+                  </DialogTitle>
+                  <button @click="closeModal" class="text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
+                    <span class="sr-only">Close</span>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
-        <!-- Post Content -->
-        <div class="px-4 py-3 border-b border-gray-200">
-          <div class="flex space-x-3">
-            <div v-if="post.posted_by?.profile_picture" class="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
-              <img 
-                :src="post.posted_by.profile_picture" 
-                :alt="post.posted_by.name"
-                class="h-full w-full object-cover"
-              />
-            </div>
-            <div v-else class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium">
-              {{ post.posted_by?.name ? post.posted_by.name.charAt(0).toUpperCase() : 'U' }}
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="font-medium text-sm">{{ post.posted_by?.name || 'Anonymous' }}</p>
-              <ShowMore :text="post.description"/>
-              <p class="text-xs text-gray-400 mt-1">{{ post.formatted_created_at }}</p>
-            </div>
-          </div>
-          <!-- Action Buttons -->
-          <div v-if="!post.archived" class="flex items-center justify-between space-x-4 mt-2 pt-2 border-t border-gray-100">
-            <button 
-              @click.stop="handleLike"
-              class="flex items-center space-x-1 text-sm text-gray-500 hover:text-red-500 transition-colors"
-              :class="{ 'text-red-500': post.liked }"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                class="h-5 w-5" 
-                :fill="post.liked ? 'currentColor' : 'none'" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  stroke-linecap="round" 
-                  stroke-linejoin="round" 
-                  stroke-width="2" 
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-                />
-              </svg>
-              <span>{{ post.likes || 0 }}</span>
-            </button>
-            
-            <button 
-              @click.stop="handleSave"
-              class="flex items-center space-x-1 text-sm text-gray-500 hover:text-yellow-500 transition-colors"
-              :class="{ 'text-yellow-500': post.saved }"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                class="h-5 w-5" 
-                :fill="post.saved ? 'currentColor' : 'none'" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path 
-                  stroke-linecap="round" 
-                  stroke-linejoin="round" 
-                  stroke-width="2" 
-                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" 
-                />
-              </svg>
-              <span>Save</span>
-            </button>
-            
-            <button 
-              @click.stop="handleShare"
-              class="flex items-center space-x-1 text-sm text-gray-500 hover:text-blue-500 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-              </svg>
-              <span>Share</span>
-            </button>
-          </div>
-        </div>
+              <!-- Post Content -->
+              <div class="px-4 py-3 border-b border-gray-200">
+                <div class="flex justify-between items-start">
+                  <div class="flex space-x-3 flex-1">
+                    <div v-if="post.posted_by?.profile_picture" class="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
+                      <img 
+                        :src="post.posted_by.profile_picture" 
+                        :alt="post.posted_by.name"
+                        class="h-full w-full object-cover"
+                      />
+                    </div>
+                    <div v-else class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm text-gray-600">
+                      {{ post.posted_by?.name ? post.posted_by.name.charAt(0).toUpperCase() : 'U' }}
+                    </div>
+                    <div class="flex-1">
+                      <p class="font-medium text-sm">{{ post.posted_by?.name || 'Anonymous' }}</p>
+                      <ShowMore :text="post.description"/>
+                      <p class="text-xs text-gray-400 mt-1">{{ post.formatted_created_at }}</p>
+                    </div>
+                  </div>
+                  <!-- Three dots menu -->
+                  <div class="relative">
+                    <button 
+                      @click.stop="showReportMenu = !showReportMenu" 
+                      class="p-1 rounded-full hover:bg-gray-100 focus:outline-none"
+                    >
+                      <EllipsisVertical class="h-5 w-5 text-gray-500" />
+                    </button>
+                    
+                    <!-- Dropdown menu -->
+                    <div 
+                      v-if="showReportMenu" 
+                      class="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                      v-click-outside="() => showReportMenu = false"
+                    >
+                      <button 
+                        @click="handleReportPost"
+                        class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                      >
+                        Report Post
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-        <!-- Comments Section -->
-        <div class="h-[50vh] overflow-y-auto px-4 py-3">
-          <div v-if="loading" class="flex justify-center py-8">
-            <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-          </div>
-          
-          <div v-else-if="comments.length === 0" class="text-center py-12 text-gray-500">
-            No comments yet. Be the first to comment!
-          </div>
-          
-          <div v-else class="space-y-4">
-            <CommentItem 
-              v-for="comment in comments" 
-              :key="comment.id" 
-              :comment="comment"
-              :show-replies="showReplies[comment.id] || false"
-              :loading-replies="loadingReplies[comment.id] || false"
-              :replies="commentReplies[comment.id] || []"
-              @like="handleCommentLike"
-              @reply="handleReply"
-              @toggle-replies="toggleReplies"
-              @reply-added="handleReplyAdded(comment.id, $event)"
-            />
-          </div>
-        </div>
+                <!-- Post Actions -->
+                <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
+                  <button 
+                    @click.stop="handleLike"
+                    class="flex items-center space-x-1 text-sm text-gray-500 hover:text-red-500 transition-colors"
+                    :class="{ 'text-red-500': post.liked }"
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      class="h-5 w-5" 
+                      :fill="post.liked ? 'currentColor' : 'none'" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round" 
+                        stroke-width="2" 
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                      />
+                    </svg>
+                    <span>{{ post.likes || 0 }}</span>
+                  </button>
+                  
+                  <button 
+                    @click.stop="handleSave"
+                    class="flex items-center space-x-1 text-sm text-gray-500 hover:text-yellow-500 transition-colors"
+                    :class="{ 'text-yellow-500': post.saved }"
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      class="h-5 w-5" 
+                      :fill="post.saved ? 'currentColor' : 'none'" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path 
+                        stroke-linecap="round" 
+                        stroke-linejoin="round" 
+                        stroke-width="2" 
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" 
+                      />
+                    </svg>
+                    <span>Save</span>
+                  </button>
+                  
+                  <button 
+                    @click.stop="handleShare"
+                    class="flex items-center space-x-1 text-sm text-gray-500 hover:text-blue-500 transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                    </svg>
+                    <span>Share</span>
+                  </button>
+                </div>
+              </div>
 
-        <!-- Comment Input -->
-        <div v-if="!post.archived" class="bg-gray-50 px-4 py-3 border-t border-gray-200">
-          <div class="flex items-center space-x-2">
-            <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
-              <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
-            </div>
-            <div v-else class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
-              {{ userInitials }}
-            </div>
-            <div class="flex-1 relative">
-              <input
-                v-model="newComment"
-                type="text"
-                placeholder="Write a comment..."
-                class="block w-full rounded-full border-gray-300 pl-4 pr-10 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                @keyup.enter="addComment"
-              />
-              <button 
-                @click="addComment"
-                :disabled="!newComment.trim()"
-                class="absolute right-2 top-1/2 transform -translate-y-1/2 text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+              <!-- Comments Section -->
+              <div class="h-[50vh] overflow-y-auto px-4 py-3">
+                <div v-if="loading" class="flex justify-center py-8">
+                  <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+                
+                <div v-else-if="comments.length === 0" class="text-center py-12 text-gray-500">
+                  No comments yet. Be the first to comment!
+                </div>
+                
+                <div v-else class="space-y-4">
+                  <CommentItem 
+                    v-for="comment in comments" 
+                    :key="comment.id" 
+                    :comment="comment"
+                    :show-replies="showReplies[comment.id] || false"
+                    :loading-replies="loadingReplies[comment.id] || false"
+                    :replies="commentReplies[comment.id] || []"
+                    @like="handleCommentLike"
+                    @reply="handleReply"
+                    @toggle-replies="toggleReplies"
+                    @reply-added="handleReplyAdded(comment.id, $event)"
+                  />
+                </div>
+              </div>
+
+              <!-- Comment Input -->
+              <div v-if="!post.archived" class="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                <div class="flex items-center space-x-2">
+                  <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
+                    <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
+                  </div>
+                  <div v-else class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
+                    {{ userInitials }}
+                  </div>
+                  <div class="flex-1 relative">
+                    <input
+                      v-model="newComment"
+                      type="text"
+                      placeholder="Write a comment..."
+                      class="block w-full rounded-full border-gray-300 pl-4 pr-10 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      @keyup.enter="addComment"
+                    />
+                    <button 
+                      @click="addComment"
+                      :disabled="!newComment.trim()"
+                      class="absolute right-2 top-1/2 transform -translate-y-1/2 text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </DialogPanel>
           </TransitionChild>
         </div>
       </div>
+      
+      <!-- Report Modal -->
+      <ReportModal
+        v-if="isReportModalOpen"
+        :is-open="isReportModalOpen"
+        :is-submitting="isSubmittingReport"
+        @close="isReportModalOpen = false"
+        @submit="submitReport"
+      />
     </Dialog>
   </TransitionRoot>
 </template>
@@ -189,6 +224,22 @@ import { message } from 'ant-design-vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import ShowMore from '@/components/ShowMore.vue';
 import CommentItem from './CommentItem.vue';
+import ReportModal from './ReportModal.vue';
+import { EllipsisVertical } from 'lucide-vue-next';
+// Click outside directive
+const vClickOutside = {
+  beforeMount(el, binding) {
+    el.clickOutsideEvent = function(event) {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value();
+      }
+    };
+    document.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el.clickOutsideEvent);
+  },
+};
 
 const props = defineProps({
   show: {
@@ -258,6 +309,38 @@ const handleSave = () => {
 const handleShare = async () => {
   emit('share')
 };
+
+const isReportModalOpen = ref(false);
+const isSubmittingReport = ref(false);
+
+const handleReportPost = () => {
+  showReportMenu.value = false;
+  isReportModalOpen.value = true;
+};
+
+const submitReport = async (reason) => {
+  isSubmittingReport.value = true;
+  
+  try {
+    const response = await api.post('report/reports/report_post/', {
+      post_id: props.post.id,
+      reason: reason
+    });
+    
+    if (response.data.error) {
+      message.error(response.data.error);
+    } else {
+      message.success('Post reported successfully');
+    }
+  } catch (error) {
+    console.error('Error reporting post:', error);
+    const errorMessage = error.response?.data?.error || 'Failed to report post';
+    message.error(errorMessage);
+  } finally {
+    isSubmittingReport.value = false;
+    isReportModalOpen.value = false;
+  }
+};
 const userStore = useUserStore();
 
 const comments = ref([]);
@@ -267,6 +350,7 @@ const loadingReplies = ref({});
 const showReplies = ref({});
 const commentReplies = ref({});
 const commentRefs = ref({});
+const showReportMenu = ref(false);
 
 // Scroll to a specific comment
 const scrollToComment = (id) => {

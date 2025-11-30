@@ -1,15 +1,89 @@
-from report.models import ReportDecision
+from report.models import ReportDecision, ReportTypes
+from post.models import Post
 from .models import Notification
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 @receiver(post_save, sender=ReportDecision)
 def create_notification(sender, instance, created, **kwargs):
     if created:
+        if instance.report.report_type == ReportTypes.TRANSACTION:
+            Notification.objects.create(
+                report_decision=instance,
+                title="Admin Decision",
+                message=instance.reason,
+                user=instance.report.about_user,
+                viewed=False
+            )
+        elif instance.report.report_type == ReportTypes.POST and instance.approved:
+            post = instance.report.reported_post
+            post.banned = True
+            post.save()
+            Notification.objects.create(
+                report_decision=instance,
+                title="Admin Decision",
+                message=instance.reason,
+                user=instance.report.reported_by,
+                viewed=False
+            )
+        elif instance.report.report_type == ReportTypes.POST and instance.rejected:
+            post = instance.report.reported_post
+            post.banned = False
+            post.save()
+            Notification.objects.create(
+                report_decision=instance,
+                title="Admin Decision",
+                message=instance.reason,
+                user=instance.report.reported_by,
+                viewed=False
+            )
+
+
+@receiver(pre_save, sender=Post)
+def post_banned(sender, instance, **kwargs):
+    try:
+        previous = sender.objects.get(pk=instance.pk)
+        prev_banned = previous.banned
+    except sender.DoesNotExist:
+        prev_banned = False
+    report_decision = None
+    try:
+        report_decision = ReportDecision.objects.get(
+            report__reported_post=instance,
+            approved=True,
+        )
+    except ReportDecision.DoesNotExist:
+        report_decision = None
+    if instance.banned and not prev_banned and report_decision:
+
         Notification.objects.create(
-            report_decision=instance,
-            title="Admin Decision",
-            message=instance.reason,
-            user=instance.report.about_user,
-            viewed=False
+            title="Post Banned",
+            message="Your post has been banned!",
+            user=instance.posted_by,
+            report_decision=report_decision,
+        )
+
+
+@receiver(pre_save, sender=Post)
+def post_unbanned(sender, instance, **kwargs):
+    try:
+        previous = sender.objects.get(pk=instance.pk)
+        prev_banned = previous.banned
+    except sender.DoesNotExist:
+        prev_banned = False
+    report_decision = None
+    try:
+        report_decision = ReportDecision.objects.get(
+            report__reported_post=instance,
+            approved=True,
+        )
+    except ReportDecision.DoesNotExist:
+        report_decision = None
+    if not instance.banned and prev_banned and report_decision:
+
+        Notification.objects.create(
+            title="Post Unbanned",
+            message="Your post has been unbanned!",
+            user=instance.posted_by,
+            report_decision=report_decision,
         )

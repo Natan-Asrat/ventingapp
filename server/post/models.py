@@ -8,6 +8,7 @@ class Post(models.Model):
     description = models.CharField(max_length=1000)
     image = models.ImageField(upload_to='post_images', null=True, blank=True) # keep it as one image per post
     archived = models.BooleanField(default=False)
+    banned = models.BooleanField(default=False)
     likes = models.IntegerField(default=0)
     comments = models.IntegerField(default=0)
     saves = models.IntegerField(default=0)

@@ -123,6 +123,77 @@
                     </div>
                   </div>
                 </div>
+
+                <!-- Post Details -->
+                <div v-else-if="report.reported_post" class="border-t border-gray-200 pt-4">
+                  <h4 class="text-sm font-medium text-gray-500 mb-2">Post Details</h4>
+                  <div class="space-y-3">
+                    <!-- Post Author -->
+                    <div class="flex items-center space-x-2">
+                      <div v-if="report.reported_post.posted_by?.profile_picture" class="h-8 w-8 rounded-full overflow-hidden">
+                        <img 
+                          :src="report.reported_post.posted_by.profile_picture" 
+                          :alt="report.reported_post.posted_by.name"
+                          class="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div v-else class="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
+                        {{ report.reported_post.posted_by?.name ? report.reported_post.posted_by.name.charAt(0).toUpperCase() : 'U' }}
+                      </div>
+                      <div>
+                        <p class="text-sm font-medium">{{ report.reported_post.posted_by?.name || 'Anonymous' }}</p>
+                        <p class="text-xs text-gray-500">{{ report.reported_post.formatted_created_at }}</p>
+                      </div>
+                    </div>
+
+                    <!-- Post Content -->
+                    <div class="text-sm text-gray-800">
+                      {{ report.reported_post.description }}
+                    </div>
+
+                    <!-- Post Image -->
+                    <div v-if="report.reported_post.image" class="mt-2">
+                      <img 
+                        :src="report.reported_post.image" 
+                        :alt="'Post by ' + (report.reported_post.posted_by?.name || 'user')"
+                        class="max-h-64 w-auto rounded-lg object-cover"
+                        @click="openImageModal(report.reported_post.image)"
+                        @error="handleImageError"
+                      />
+                    </div>
+
+                    <!-- Post Stats -->
+                    <div class="flex items-center space-x-4 text-xs text-gray-500 pt-2">
+                      <div class="flex items-center space-x-1">
+                        <Heart class="h-4 w-4" />
+                        <span>{{ report.reported_post.likes || 0 }} likes</span>
+                      </div>
+                      <div class="flex items-center space-x-1">
+                        <MessageCircle class="h-4 w-4" />
+                        <span>{{ report.reported_post.comments || 0 }} comments</span>
+                      </div>
+                      <div class="flex items-center space-x-1">
+                        <Eye class="h-4 w-4" />
+                        <span>{{ report.reported_post.views || 0 }} views</span>
+                      </div>
+                    </div>
+
+                    <!-- Payment Info if exists -->
+                    <div v-if="report.reported_post.payment_info_list?.length > 0" class="mt-2 pt-2 border-t border-gray-100">
+                      <h5 class="text-xs font-medium text-gray-500 mb-1">Payment Info:</h5>
+                      <div v-for="(payment, index) in report.reported_post.payment_info_list" :key="index" class="text-xs bg-gray-50 p-2 rounded">
+                        <div class="grid grid-cols-2 gap-1">
+                          <span class="text-gray-500">Method:</span>
+                          <span class="font-medium">{{ payment.method }}</span>
+                          <span class="text-gray-500">Account:</span>
+                          <span class="font-mono">{{ payment.account }}</span>
+                          <span v-if="payment.nameOnAccount" class="text-gray-500">Name:</span>
+                          <span v-if="payment.nameOnAccount" class="font-medium">{{ payment.nameOnAccount }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Decisions -->
@@ -167,6 +238,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { api } from '@/main';
+import { Heart, MessageCircle, Eye } from 'lucide-vue-next';
 import AppealsModal from '@/components/admin/AppealsModal.vue';
 import DecisionModal from '@/components/admin/DecisionModal.vue';
 
@@ -177,6 +249,8 @@ const error = ref(null);
 // Modals state
 const isAppealsModalOpen = ref(false);
 const isDecisionModalOpen = ref(false);
+const isImageModalOpen = ref(false);
+const selectedImageUrl = ref('');
 const selectedDecisionId = ref(null);
 const selectedReportId = ref(null);
 const decisionReason = ref('');
@@ -191,6 +265,21 @@ const openAppealsModal = (decisionId) => {
 const closeAppealsModal = () => {
   isAppealsModalOpen.value = false;
   selectedDecisionId.value = null;
+};
+
+// Image modal handlers
+const openImageModal = (imageUrl) => {
+  selectedImageUrl.value = imageUrl;
+  isImageModalOpen.value = true;
+};
+
+const closeImageModal = () => {
+  isImageModalOpen.value = false;
+  selectedImageUrl.value = '';
+};
+
+const handleImageError = (e) => {
+  e.target.style.display = 'none';
 };
 
 const openDecisionModal = (reportId) => {

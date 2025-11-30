@@ -75,7 +75,7 @@ Essential features.
 
 ### Reporting
 
-- *FR11.1*: The system shall allow Users to report on posts.
+- ✅ *FR11.1*: The system shall allow Users to report on posts.
 
 ### Support
 
