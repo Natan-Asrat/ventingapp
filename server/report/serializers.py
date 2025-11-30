@@ -3,9 +3,11 @@ from .models import Report, ReportDecision, Appeal, AppealDecision
 from account.serializers import UserSimpleSerializer
 from transaction.serializers import TransactionsSimpleSerializer
 from post.serializers import PostSimpleSerializer
+from account.serializers import ConnectionListSerializer
 class ReportSerializer(serializers.ModelSerializer):
     reported_transaction = TransactionsSimpleSerializer()
     reported_post = PostSimpleSerializer()
+    reported_connection = ConnectionListSerializer()
     class Meta:
         model = Report
         fields = [

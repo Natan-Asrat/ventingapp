@@ -65,11 +65,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 
 class Connection(models.Model):
-    iniating_user = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='connections_list')
+    initiating_user = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='connections_list')
     connected_user = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='connected_users')
 
     reported = models.BooleanField(default=False)
     removed = models.BooleanField(default=False)
+    banned = models.BooleanField(default=False)
     connectSpent = models.IntegerField(default=0)
 
     message = models.CharField(max_length=255, blank=True, null=True)

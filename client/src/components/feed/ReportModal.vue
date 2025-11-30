@@ -30,7 +30,7 @@
               <div>
                 <div class="mt-3 text-center sm:mt-5">
                   <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
-                    Report Post
+                    Report
                   </DialogTitle>
                   <div class="mt-4">
                     <label for="reason" class="block text-sm font-medium text-gray-700 text-left mb-2">
@@ -41,7 +41,7 @@
                       v-model="reason"
                       rows="4"
                       class="w-full placeholder-gray-500 rounded-md border border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2"
-                      placeholder="Please provide a reason for reporting this post..."
+                      placeholder="Please provide a reason for reporting..."
                     />
                   </div>
                 </div>

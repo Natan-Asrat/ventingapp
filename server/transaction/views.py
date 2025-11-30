@@ -24,6 +24,7 @@ from polar_sdk.webhooks import validate_event
 from server.utils import get_readable_time_since
 from django.utils import timezone
 from rest_framework.permissions import IsAdminUser
+from account.pagination import CustomPagination
 
 # Create your views here.
 def get_amount_by_product_id(product_id):
@@ -44,6 +45,7 @@ def get_polar_amount_in_dollar(amount):
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
     serializer_class = TransactionsSimpleSerializer
+    pagination_class = CustomPagination
 
     @action(detail=False, methods=['post'])
     def create_order(self, request):
@@ -275,6 +277,16 @@ class TransactionViewSet(viewsets.ModelViewSet):
         )
 
         return Response(status=200)
+
+    @action(detail=False, methods=['get'])
+    def my_transactions(self, request):
+        qs = Transaction.objects.filter(user=request.user).order_by('-created_at')
+        paginated_queryset = self.paginate_queryset(qs)
+        if paginated_queryset is not None:
+            serializer = TransactionsSimpleSerializer(paginated_queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = TransactionsSimpleSerializer(qs, many=True)
+        return Response(serializer.data)
     
 
 class ManualPaymentViewSet(viewsets.ModelViewSet):

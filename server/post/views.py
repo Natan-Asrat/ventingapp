@@ -32,26 +32,26 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
                 liked=Exists(Like.objects.filter(post=OuterRef("pk"), liked_by=self.request.user, active=True)),
                 saved=Exists(Save.objects.filter(post=OuterRef("pk"), saved_by=self.request.user, active=True)),
                 connected=Exists(Connection.objects.filter(
-                    Q(iniating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(iniating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
                     removed=False
                 )),
                 pending_connection=Exists(Connection.objects.filter(
-                    Q(iniating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(iniating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
                     reconnection_requested=True,
                     removed=True,
                     reconnection_rejected=False
                 )),
                 rejected_connection=Exists(Connection.objects.filter(
-                    Q(iniating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(iniating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
                     removed=True,
                     reconnection_rejected=True
                 )),
                 removed_connection=Exists(Connection.objects.filter(
-                    Q(iniating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(iniating_user=OuterRef("posted_by"), connected_user=self.request.user),
+                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
+                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
                     removed=True,
                 )),
             )

@@ -194,8 +194,8 @@ class UserViewset(CreateModelMixin, GenericViewSet):
 
         # Check if active connection exists
         if Connection.objects.filter(
-            Q(iniating_user=initiating_user, connected_user=user_to_connect) |
-            Q(iniating_user=user_to_connect, connected_user=initiating_user), 
+            Q(initiating_user=initiating_user, connected_user=user_to_connect) |
+            Q(initiating_user=user_to_connect, connected_user=initiating_user), 
             removed=False
         ).exists():
             return Response(
@@ -205,8 +205,8 @@ class UserViewset(CreateModelMixin, GenericViewSet):
 
         # Check if removed connection exists
         removed_qs = Connection.objects.filter(
-            Q(iniating_user=initiating_user, connected_user=user_to_connect) |
-            Q(iniating_user=user_to_connect, connected_user=initiating_user),
+            Q(initiating_user=initiating_user, connected_user=user_to_connect) |
+            Q(initiating_user=user_to_connect, connected_user=initiating_user),
             removed=True
         )
         if removed_qs.filter(reconnection_count__gt=5).exists():
@@ -242,7 +242,7 @@ class UserViewset(CreateModelMixin, GenericViewSet):
 
         # No existing connection — create new
         Connection.objects.create(
-            iniating_user=initiating_user,
+            initiating_user=initiating_user,
             connected_user=user_to_connect,
             message=message
         )
@@ -258,14 +258,14 @@ class UserViewset(CreateModelMixin, GenericViewSet):
         user_to_disconnect = self.get_object()
         initiating_user = request.user
         if not Connection.objects.filter(
-            Q(iniating_user=initiating_user, connected_user=user_to_disconnect) |
-            Q(iniating_user=user_to_disconnect, connected_user=initiating_user),
+            Q(initiating_user=initiating_user, connected_user=user_to_disconnect) |
+            Q(initiating_user=user_to_disconnect, connected_user=initiating_user),
             removed=False
         ).exists():
             return Response({"error": "You are not connected to this user."}, status=status.HTTP_400_BAD_REQUEST)
         Connection.objects.filter(
-            Q(iniating_user=initiating_user, connected_user=user_to_disconnect) |
-            Q(iniating_user=user_to_disconnect, connected_user=initiating_user),
+            Q(initiating_user=initiating_user, connected_user=user_to_disconnect) |
+            Q(initiating_user=user_to_disconnect, connected_user=initiating_user),
             removed=False
         ).update(removed=True)
         # dont decrement connection count here
@@ -277,8 +277,8 @@ class UserViewset(CreateModelMixin, GenericViewSet):
         user_to_reconnect = self.get_object()
         initiating_user = request.user
         if not Connection.objects.filter(
-            Q(iniating_user=initiating_user, connected_user=user_to_reconnect) |
-            Q(iniating_user=user_to_reconnect, connected_user=initiating_user),
+            Q(initiating_user=initiating_user, connected_user=user_to_reconnect) |
+            Q(initiating_user=user_to_reconnect, connected_user=initiating_user),
             removed=True,
             reconnection_requested = True,
             reconnection_requested_by = user_to_reconnect,
@@ -286,8 +286,8 @@ class UserViewset(CreateModelMixin, GenericViewSet):
         ).exists():
             return Response({"error": "There are no requests to reconnect that you can accept."}, status=status.HTTP_400_BAD_REQUEST)
         Connection.objects.filter(
-            Q(iniating_user=initiating_user, connected_user=user_to_reconnect) |
-            Q(iniating_user=user_to_reconnect, connected_user=initiating_user),
+            Q(initiating_user=initiating_user, connected_user=user_to_reconnect) |
+            Q(initiating_user=user_to_reconnect, connected_user=initiating_user),
             removed=True,
             reconnection_requested = True,
             reconnection_requested_by = user_to_reconnect,
@@ -302,8 +302,8 @@ class UserViewset(CreateModelMixin, GenericViewSet):
         user_to_reconnect = self.get_object()
         initiating_user = request.user
         if not Connection.objects.filter(
-            Q(iniating_user=initiating_user, connected_user=user_to_reconnect) |
-            Q(iniating_user=user_to_reconnect, connected_user=initiating_user),
+            Q(initiating_user=initiating_user, connected_user=user_to_reconnect) |
+            Q(initiating_user=user_to_reconnect, connected_user=initiating_user),
             removed=True,
             reconnection_requested = True,
             reconnection_requested_by = user_to_reconnect,
@@ -311,8 +311,8 @@ class UserViewset(CreateModelMixin, GenericViewSet):
         ).exists():
             return Response({"error": "There are no requests to reconnect that you can reject."}, status=status.HTTP_400_BAD_REQUEST)
         Connection.objects.filter(
-            Q(iniating_user=initiating_user, connected_user=user_to_reconnect) |
-            Q(iniating_user=user_to_reconnect, connected_user=initiating_user),
+            Q(initiating_user=initiating_user, connected_user=user_to_reconnect) |
+            Q(initiating_user=user_to_reconnect, connected_user=initiating_user),
             removed=True,
             reconnection_requested = True,
             reconnection_requested_by = user_to_reconnect
@@ -326,8 +326,8 @@ class UserViewset(CreateModelMixin, GenericViewSet):
         user = request.user
 
         qs = Connection.objects.filter(
-            Q(iniating_user=user) | Q(connected_user=user)
-        ).select_related('iniating_user', 'connected_user').order_by('-reconnection_count', '-updated_at')
+            Q(initiating_user=user) | Q(connected_user=user)
+        ).select_related('initiating_user', 'connected_user').order_by('-reconnection_count', '-updated_at')
         paginated_queryset = self.paginate_queryset(qs)
         if paginated_queryset is not None:
             serializer = ConnectionListSerializer(paginated_queryset, many=True)
@@ -339,7 +339,20 @@ class UserViewset(CreateModelMixin, GenericViewSet):
     def our_connection(self, request, pk=None):
         user = self.get_object()
         connection = Connection.objects.filter(
-            Q(iniating_user=user) | Q(connected_user=user)
-        ).select_related('iniating_user', 'connected_user').order_by('-reconnection_count', '-updated_at')
+            Q(initiating_user=user) | Q(connected_user=user)
+        ).select_related('initiating_user', 'connected_user').order_by('-reconnection_count', '-updated_at')
         serializer = ConnectionListSerializer(connection, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def connections(self, request):
+        user = request.user
+        qs = Connection.objects.filter(
+            Q(initiating_user=user) | Q(connected_user=user)
+        ).select_related('initiating_user', 'connected_user').order_by('-updated_at')
+        paginated_queryset = self.paginate_queryset(qs)
+        if paginated_queryset is not None:
+            serializer = ConnectionListSerializer(paginated_queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = ConnectionListSerializer(qs, many=True)
         return Response(serializer.data)

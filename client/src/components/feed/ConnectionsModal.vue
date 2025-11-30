@@ -29,16 +29,16 @@
           <div v-else class="space-y-4">
             <div v-for="connection in connections" :key="connection.id" class="border rounded-lg p-4">
               <div class="flex items-center space-x-3 mb-3">
-                <div v-if="connection.iniating_user.profile_picture" class="h-12 w-12 rounded-full overflow-hidden">
-                  <img :src="connection.iniating_user.profile_picture" :alt="connection.iniating_user.name" class="h-full w-full object-cover">
+                <div v-if="connection.initiating_user.profile_picture" class="h-12 w-12 rounded-full overflow-hidden">
+                  <img :src="connection.initiating_user.profile_picture" :alt="connection.initiating_user.name" class="h-full w-full object-cover">
                 </div>
                 <div v-else class="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium">
-                  {{ connection.iniating_user.name?.charAt(0).toUpperCase() || 'U' }}
+                  {{ connection.initiating_user.name?.charAt(0).toUpperCase() || 'U' }}
                 </div>
                 <div>
                   <div>
-                    <p class="font-medium">{{ connection.iniating_user.name }}</p>
-                    <p class="text-sm text-gray-500">@{{ connection.iniating_user.username }}</p>
+                    <p class="font-medium">{{ connection.initiating_user.name }}</p>
+                    <p class="text-sm text-gray-500">@{{ connection.initiating_user.username }}</p>
                   </div>
                 </div>
               </div>
@@ -59,18 +59,18 @@
                   <button 
                     @click="handleAcceptConnection(connection)"
                     class="flex-1 flex items-center justify-center px-3 py-1.5 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors cursor-pointer"
-                    :disabled="processingAction"
+                    :disabled="connectionStore.processingAction"
                   >
-                    <Check v-if="!processingAction" :size="16" class="mr-1.5" />
+                    <Check v-if="!connectionStore.processingAction" :size="16" class="mr-1.5" />
                     <Loader2 v-else class="w-4 h-4 animate-spin mr-1.5" />
                     Accept
                   </button>
                   <button 
                     @click="handleRejectConnection(connection)"
                     class="flex-1 flex items-center justify-center px-3 py-1.5 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors cursor-pointer"
-                    :disabled="processingAction"
+                    :disabled="connectionStore.processingAction"
                   >
-                    <X v-if="!processingAction" :size="16" class="mr-1.5" />
+                    <X v-if="!connectionStore.processingAction" :size="16" class="mr-1.5" />
                     <Loader2 v-else class="w-4 h-4 animate-spin mr-1.5" />
                     Reject
                   </button>
@@ -101,7 +101,9 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
 import api from '@/api/axios';
 import { Loader2, Check, X } from 'lucide-vue-next';
 import { useUserStore } from '@/stores/user';
+import { useConnectionStore } from '@/stores/connection';
 
+const connectionStore = useConnectionStore();
 const userStore = useUserStore();
 
 defineProps({
@@ -121,31 +123,13 @@ defineProps({
 
 const emit = defineEmits(['connection-updated', 'close'])
 
-const processingAction = ref(false);
-
-
 const handleAcceptConnection = async (connection) => {
-  try {
-    processingAction.value = true;
-    await api.post(`/account/users/${connection.reconnection_requested_by}/accept_reconnection/`);
-    emit('connection-updated');
-  } catch (error) {
-    console.error('Error accepting connection:', error);
-  } finally {
-    processingAction.value = false;
-  }
-};
+    const success = await connectionStore.handleAcceptConnection(connection);
+    if(success) emit('connection-updated');
+}
 
 const handleRejectConnection = async (connection) => {
-  try {
-    processingAction.value = true;
-    await api.post(`/account/users/${connection.reconnection_requested_by}/reject_reconnection/`);
-    emit('connection-updated');
-  } catch (error) {
-    console.error('Error rejecting connection:', error);
-  } finally {
-    processingAction.value = false;
-  }
-};
-
+    const success = await connectionStore.handleRejectConnection(connection);
+    if(success) emit('connection-updated');
+}
 </script>

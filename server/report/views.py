@@ -1,5 +1,5 @@
 from rest_framework import viewsets, mixins
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .models import AppealDecision, Report, ReportDecision, Appeal
 from .serializers import ReportDecisionSerializer, AppealsAndDecisionsSerializer, ReportsWithDecisionsSerializer
 from .permissions import IsReportAboutOrStaff
@@ -8,6 +8,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from post.models import Post
 from .models import ReportTypes
+from account.permissions import IsConnectedUser
+from account.models import Connection
 
 class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Report.objects.all().prefetch_related(
@@ -59,7 +61,7 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         )
         return Response(status=200)
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def report_post(self, request):
         post_id = request.data.get('post_id')
         if not post_id:
@@ -82,6 +84,32 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             reported_post=post,
             reason=request.data.get('reason'),
             report_type=ReportTypes.POST,
+        )
+        return Response(status=200)
+
+    @action(detail=False, methods=['post'], permission_classes=[IsConnectedUser])
+    def report_connection(self, request):
+        connection_id = request.data.get('connection_id')
+        if not connection_id:
+            return Response({'error': 'Connection ID is required'}, status=400)
+        try:
+            connection = Connection.objects.get(id=connection_id)
+        except Connection.DoesNotExist:
+            return Response({'error': 'Connection not found'}, status=404)
+        existing_report = Report.objects.filter(
+            reported_by=request.user,
+            reported_connection=connection,
+            report_type=ReportTypes.CONNECTION,
+        ).first()
+        if existing_report:
+            return Response({'error': 'You have already reported this connection'}, status=400)
+        
+        Report.objects.create(
+            reported_by=request.user,
+            about_user=connection.initiating_user,
+            reported_connection=connection,
+            reason=request.data.get('reason'),
+            report_type=ReportTypes.CONNECTION,
         )
         return Response(status=200)
 

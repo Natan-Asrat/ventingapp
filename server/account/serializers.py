@@ -68,10 +68,10 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 
 class ConnectionListSerializer(serializers.ModelSerializer):
     connected_user = UserSimpleSerializer()
-    iniating_user = UserSimpleSerializer()
+    initiating_user = UserSimpleSerializer()
     class Meta:
         model = Connection
-        fields = ["id", "iniating_user", "message", "connected_user", "connectSpent", "created_at", "updated_at", "removed", "reported", "reconnection_count", "reconnection_rejected", "reconnection_requested_by", "formatted_created_at", "formatted_updated_at"]
+        fields = ["id", "initiating_user", "banned", "message", "connected_user", "connectSpent", "created_at", "updated_at", "removed", "reported", "reconnection_count", "reconnection_rejected", "reconnection_requested_by", "formatted_created_at", "formatted_updated_at"]
 
 class EditProfileSerializer(serializers.ModelSerializer):
     class Meta:

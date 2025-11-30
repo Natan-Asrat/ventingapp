@@ -9,6 +9,7 @@ import Profile from '@/views/Profile.vue';
 import ManualPayment from '@/views/ManualPayment.vue';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import AdminDashboard from '@/views/admin/DashboardView.vue';
+import HistoryView from '@/views/HistoryView.vue';
 
 const routes = [
   {
@@ -21,6 +22,12 @@ const routes = [
     path: '/profile',
     name: 'Profile',
     component: Profile,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/history',
+    name: 'History',
+    component: HistoryView,
     meta: { requiresAuth: true }
   },
   {

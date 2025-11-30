@@ -1,5 +1,6 @@
 from report.models import ReportDecision, ReportTypes
 from post.models import Post
+from account.models import Connection
 from .models import Notification
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
@@ -37,6 +38,28 @@ def create_notification(sender, instance, created, **kwargs):
                 user=instance.report.reported_by,
                 viewed=False
             )
+        elif instance.report.report_type == ReportTypes.CONNECTION and instance.approved:
+            connection = instance.report.reported_connection
+            connection.banned = True
+            connection.save()
+            Notification.objects.create(
+                report_decision=instance,
+                title="Admin Decision",
+                message=instance.reason,
+                user=instance.report.reported_by,
+                viewed=False
+            )
+        elif instance.report.report_type == ReportTypes.CONNECTION and instance.rejected:
+            connection = instance.report.reported_connection
+            connection.banned = False
+            connection.save()
+            Notification.objects.create(
+                report_decision=instance,
+                title="Admin Decision",
+                message=instance.reason,
+                user=instance.report.reported_by,
+                viewed=False
+            )
 
 
 @receiver(pre_save, sender=Post)
@@ -48,10 +71,10 @@ def post_banned(sender, instance, **kwargs):
         prev_banned = False
     report_decision = None
     try:
-        report_decision = ReportDecision.objects.get(
+        report_decision = ReportDecision.objects.filter(
             report__reported_post=instance,
             approved=True,
-        )
+        ).order_by('-created_at').first()
     except ReportDecision.DoesNotExist:
         report_decision = None
     if instance.banned and not prev_banned and report_decision:
@@ -73,10 +96,10 @@ def post_unbanned(sender, instance, **kwargs):
         prev_banned = False
     report_decision = None
     try:
-        report_decision = ReportDecision.objects.get(
+        report_decision = ReportDecision.objects.filter(
             report__reported_post=instance,
             approved=True,
-        )
+        ).order_by('-created_at').first()
     except ReportDecision.DoesNotExist:
         report_decision = None
     if not instance.banned and prev_banned and report_decision:
@@ -85,5 +108,53 @@ def post_unbanned(sender, instance, **kwargs):
             title="Post Unbanned",
             message="Your post has been unbanned!",
             user=instance.posted_by,
+            report_decision=report_decision,
+        )
+
+@receiver(pre_save, sender=Connection)
+def connection_banned(sender, instance, **kwargs):
+    try:
+        previous = sender.objects.get(pk=instance.pk)
+        prev_banned = previous.banned
+    except sender.DoesNotExist:
+        prev_banned = False
+    report_decision = None
+    try:
+        report_decision = ReportDecision.objects.filter(
+            report__reported_connection=instance,
+            approved=True,
+        ).order_by('-created_at').first()
+    except ReportDecision.DoesNotExist:
+        report_decision = None
+    if instance.banned and not prev_banned and report_decision:
+
+        Notification.objects.create(
+            title="Connection Banned",
+            message="Your connection has been banned!",
+            user=instance.initiating_user,
+            report_decision=report_decision,
+        )
+
+@receiver(pre_save, sender=Connection)
+def connection_unbanned(sender, instance, **kwargs):
+    try:
+        previous = sender.objects.get(pk=instance.pk)
+        prev_banned = previous.banned
+    except sender.DoesNotExist:
+        prev_banned = False
+    report_decision = None
+    try:
+        report_decision = ReportDecision.objects.filter(
+            report__reported_connection=instance,
+            approved=True,
+        ).order_by('-created_at').first()
+    except ReportDecision.DoesNotExist:
+        report_decision = None
+    if not instance.banned and prev_banned and report_decision:
+
+        Notification.objects.create(
+            title="Connection Unbanned",
+            message="Your connection has been unbanned!",
+            user=instance.initiating_user,
             report_decision=report_decision,
         )
