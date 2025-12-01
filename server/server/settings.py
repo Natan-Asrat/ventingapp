@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "notification",
     "support",
     "usage",
+    "conversation",
 
     "rest_framework",
     "rest_framework_simplejwt",

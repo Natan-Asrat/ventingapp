@@ -10,6 +10,8 @@ import ManualPayment from '@/views/ManualPayment.vue';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import AdminDashboard from '@/views/admin/DashboardView.vue';
 import HistoryView from '@/views/HistoryView.vue';
+import ChatView from '@/views/ChatView.vue';
+import ChatDetail from '@/views/ChatDetail.vue';
 
 const routes = [
   {
@@ -28,6 +30,18 @@ const routes = [
     path: '/history',
     name: 'History',
     component: HistoryView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: ChatView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/chat/:id',
+    name: 'ChatDetail',
+    component: ChatDetail,
     meta: { requiresAuth: true }
   },
   {
@@ -81,6 +95,12 @@ const routes = [
       window.location.reload();
       window.location.href = `/home?_v=${Date.now()}`;
     }  
+  },
+  {
+    path: '/emoji',
+    name: 'Emoji',
+    component: () => import('@/components/emoji.vue'),
+    meta: { requiresAuth: true }
   },
   // Admin routes
   {
