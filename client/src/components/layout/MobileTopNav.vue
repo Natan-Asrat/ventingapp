@@ -17,6 +17,13 @@
             <span class="text-sm font-medium text-gray-700">{{ currentConnects }}</span>
           </button>
 
+          <router-link
+            :to="{name: 'Chat'}"
+            class="p-2 rounded-full text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <MessageCircleMore class="h-5 w-5" />
+          </router-link>
+
           <!-- Support Button -->
           <button
             @click.stop="supportStore.open()"
@@ -34,29 +41,10 @@
           >
             <span class="sr-only">Open main menu</span>
             <!-- Hamburger icon -->
-            <svg
-              class="block h-6 w-6"
-              :class="{ 'hidden': isMenuOpen, 'block': !isMenuOpen }"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+             <Menu class="h-6 w-6 block" :class="{ 'hidden': isMenuOpen, 'block': !isMenuOpen }"/>
+
             <!-- Close icon -->
-            <svg
-              class="h-6 w-6"
-              :class="{ 'block': isMenuOpen, 'hidden': !isMenuOpen }"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
+             <X class="h-6 w-6" :class="{ 'block': isMenuOpen, 'hidden': !isMenuOpen }"/>
           </button>
         </div>
         </div>
@@ -136,7 +124,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
-import { Wallet, Headset } from 'lucide-vue-next';
+import { Wallet, Headset, Menu, X, MessageCircleMore } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import api from '@/api/axios';
 import { useConnectsStore } from '@/stores/connect';
