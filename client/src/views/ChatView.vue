@@ -116,6 +116,36 @@
                         {{ conversation.new_messages_count > 99 ? '99+' : conversation.new_messages_count }}
                       </span>
                   </div>
+                  <DropdownMenu>
+                    <template #trigger>
+                      <EllipsisVertical class="h-5 w-5 text-gray-500 cursor-pointer"/>
+                    </template>
+                    <button 
+                      v-if="conversation.my_membership_list[0]?.category !== 'primary'"
+                      @click.stop="moveConversation(conversation, 'primary')"
+                      class="flex cursor-pointer w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <ArrowRight class="mr-2 h-4 w-4" />
+                      <span>Move to Primary</span>
+                      <Check v-if="conversation.my_membership_list[0]?.category === 'primary'" class="ml-auto h-4 w-4 text-indigo-600" />
+                    </button>
+                    <button 
+                      v-if="conversation.my_membership_list[0]?.category !== 'secondary'"
+                      @click.stop="moveConversation(conversation, 'secondary')"
+                      class="flex cursor-pointer w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >
+                      <ArrowRight class="mr-2 h-4 w-4" />
+                      <span>Move to Secondary</span>
+                      <Check v-if="conversation.my_membership_list[0]?.category === 'secondary'" class="ml-auto h-4 w-4 text-indigo-600" />
+                    </button>
+                    <button 
+                      @click.stop="archiveConversation(conversation)"
+                      class="flex cursor-pointer w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      <Archive class="mr-2 h-4 w-4" />
+                      <span>Archive</span>
+                    </button>
+                  </DropdownMenu>
                 </div>
               </li>
             </ul>
@@ -155,6 +185,8 @@ import api from '@/api/axios';
 import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
+import { EllipsisVertical, Archive, ArrowRight, Check } from 'lucide-vue-next';
+import DropdownMenu from '@/components/common/DropdownMenu.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -389,14 +421,32 @@ const fetchLatestConversations = async () => {
 const updateOrAddConversation = (newConv) => {
   const index = conversations.value.findIndex(c => c.id === newConv.id);
   if (index !== -1) {
-    // Update existing conversation
     conversations.value[index] = { ...conversations.value[index], ...newConv };
   } else {
-    // Add new conversation and sort
     conversations.value.unshift(newConv);
-    conversations.value.sort((a, b) => {
-      return new Date(b.updated_at) - new Date(a.updated_at);
+    conversations.value.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  }
+};
+
+const moveConversation = async (conversation, category) => {
+  try {
+    await api.post(`chat/conversations/${conversation.id}/move_conversation/`, {
+      category: category
     });
+    
+    // Update the local state
+    conversations.value = conversations.value.filter(c => c.id !== conversation.id);
+  } catch (error) {
+    console.error('Error moving conversation:', error);
+  }
+};
+
+const archiveConversation = async (conversation) => {
+  try {
+    await api.post(`chat/conversations/${conversation.id}/archive_conversation_for_me/`);
+    conversations.value = conversations.value.filter(c => c.id !== conversation.id);
+  } catch (error) {
+    console.error('Error archiving conversation:', error);
   }
 };
 

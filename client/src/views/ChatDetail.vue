@@ -18,11 +18,9 @@
     <div class="border-b border-gray-200 p-4 flex items-center">
       <button 
         @click="$router.back()" 
-        class="mr-4 p-2 rounded-full hover:bg-gray-100 md:hidden"
+        class="mr-4 p-2 rounded-full hover:bg-gray-100 cursor-pointer"
       >
-        <svg class="h-5 w-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
+        <ArrowLeft class="h-5 w-5 text-gray-500"/>
       </button>
       
       <div class="flex items-center space-x-3 flex-1">
@@ -56,6 +54,16 @@
     <!-- Messages -->
     <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 messages-container" style="scroll-behavior: smooth;">
       <!-- Load More Button -->
+      <div v-if="loadingMessages" class="flex justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+      
+      <!-- Empty state -->
+      <div v-else-if="!loadingMessages && messages.length === 0" class="h-full flex flex-col items-center justify-center text-center p-8 text-gray-500">
+        <MessageCircle class="h-12 w-12 text-gray-300 mb-4" />
+        <h3 class="text-lg font-medium text-gray-700">No messages yet</h3>
+        <p class="mt-1 text-gray-500">Send the first message to start the conversation</p>
+      </div>
       <div v-if="pagination.next" class="flex justify-center mb-4">
         <button 
           @click="fetchMessages(true)" 
@@ -292,8 +300,9 @@
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
-import { X, Reply, Smile, EllipsisVertical, Send } from 'lucide-vue-next';
+import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft } from 'lucide-vue-next';
 import api from '@/api/axios';
+import { MessageCircle } from 'lucide-vue-next';
 
 const visibleMessages = ref([]);
 let visibilityObserver = null;
@@ -304,6 +313,7 @@ const firstNewMessageIndex = ref(-1);
 const isAtBottom = ref(true);
 const newMessagesCount = ref(0);
 const hasSentNewMessage = ref(false);
+const loadingMessages = ref(false)
 // Emoji Picker
 import data from 'emoji-mart-vue-fast/data/all.json';
 import 'emoji-mart-vue-fast/css/emoji-mart.css';
@@ -812,7 +822,9 @@ const stopNewMessagesPolling = () => {
 };
 
 onMounted(async () => {
+  loadingMessages.value = true
   await fetchConversation();
+  loadingMessages.value = false
   scrollToBottom();
   observeMessageVisibility();
   startVisibleMessagesPolling();

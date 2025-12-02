@@ -472,7 +472,6 @@ const addComment = async () => {
     // Scroll to the new comment after it's added
     nextTick(() => {
       scrollToComment(new_comment_obj.id);
-      emit('comment-added');
     });
     
     emit('update:post', {

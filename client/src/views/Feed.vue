@@ -33,9 +33,9 @@
             :liking="likingPostId === post.id"
             :saving="savingPostId === post.id"
             @donate="openDonationModal"
-            @image-loaded="handleImageLoad"
-            @like="handleLike"
+            @chat="handleChat"
             @save="handleSave"
+            @like="handleLike"
             @follow="handleFollowClick"
             @update:post="handleUpdatePostObj"
             @connection-updated="handleConnectionsUpdated(post.id)"
@@ -171,12 +171,37 @@ const loadMore = () => {
 };
 
 
+const handleChat = async (post) => {
+  try {
+    // If connected, start a chat
+    const chatResponse = await api.post('chat/conversations/chat_with_user/', {
+      user_id: post.posted_by.id
+    });
+    
+    // Navigate to the chat
+    const conversation = chatResponse.data[0]; // The API returns an array with one conversation
+    router.push(`/chat/${conversation.id}`);
+  } catch (error) {
+    console.error('Error starting chat:', error);
+    // Show error message to user
+    if (error.response?.data?.error) {
+      alert(error.response.data.error);
+    } else {
+      alert('Failed to start chat. Please try again.');
+    }
+  }
+};
+
 const openDonationModal = (post) => {
   selectedPost.value = post;
   showDonationModal.value = true;
 };
 
-const closeDonationModal = () => {
+const closeDonationModal = async (connected = false) => {
+  if (connected && selectedPost.value) {
+    // If user just connected, start a chat
+    await handleChat(selectedPost.value);
+  }
   showDonationModal.value = false;
   setTimeout(() => {
     selectedPost.value = null;

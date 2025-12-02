@@ -1,7 +1,10 @@
 from rest_framework import viewsets, mixins
+from rest_framework.permissions import IsAuthenticated
+
+from account.models import Connection, User
 from .models import Conversation, Member, Message, Reaction, ConversationCategoryOptions, MessageView
 from .serializers import ConversationSimpleSerializer, MessageSimpleSerializer
-from django.db.models import Prefetch
+from django.db.models import Q, Prefetch
 from rest_framework.decorators import action
 from rest_framework.response import Response 
 from .permissions import (
@@ -12,7 +15,7 @@ from .permissions import (
     IsActiveConversationMemberForMessageBulk
 )
 from .pagination import CustomMessagesPagination
-from .query import get_conversation_queryset
+from .query import add_conversation_details, get_conversation_queryset
 from django.utils import timezone
 # Create your views here.
 class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -203,6 +206,63 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
 
         serializer = ConversationSimpleSerializer(qs, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    def chat_with_user(self, request):
+        user_id = request.data.get("user_id")
+        if not user_id:
+            return Response({"error": "User ID is required"}, status=400)
+        try:
+            other_user = User.objects.get(pk=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=404)
+        
+        connection_exists = Connection.objects.filter(
+            Q(initiating_user=self.request.user, connected_user=other_user) |
+            Q(initiating_user=other_user, connected_user=self.request.user),
+            removed=False
+        ).exists()
+        if not connection_exists:
+            return Response({"error": "Connection does not exist"}, status=400)
+        existing_conversation = Conversation.objects.filter(members__user=request.user).filter(members__user=other_user).order_by("-updated_at").first()
+        print("existing", existing_conversation)
+        if existing_conversation:
+            existing_conversation_with_details = add_conversation_details(existing_conversation, request.user)
+            serializer = ConversationSimpleSerializer(existing_conversation_with_details, many=True)
+            return Response(serializer.data)
+        conversation = Conversation.objects.create()
+        member = Member.objects.create(
+            user=request.user,
+            conversation=conversation,
+            category=ConversationCategoryOptions.PRIMARY
+        )
+        other_member = Member.objects.create(
+            user=other_user,
+            conversation=conversation,
+            category=ConversationCategoryOptions.REQUESTS
+        )
+        conversation_with_detail = add_conversation_details(conversation, request.user)
+
+        serializer = ConversationSimpleSerializer(conversation_with_detail, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsActiveConversationMember])
+    def archive_conversation_for_me(self, request, pk=None):
+        conversation = self.get_object()
+        membership = conversation.members.filter(user=request.user)
+        membership.update(category=ConversationCategoryOptions.ARCHIVED)
+        return Response({"message": "Conversation archived for me"})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsActiveConversationMember])
+    def move_conversation(self, request, pk=None):
+        category = request.data.get("category")
+        if category not in [ConversationCategoryOptions.PRIMARY, ConversationCategoryOptions.SECONDARY]:
+            return Response({"error": "Invalid category"}, status=400)
+        conversation = self.get_object()
+        membership = conversation.members.filter(user=request.user)
+        membership.update(category=category)
+        return Response({"message": "Conversation moved"})
+
 
 
 class MessageViewSet(viewsets.GenericViewSet):

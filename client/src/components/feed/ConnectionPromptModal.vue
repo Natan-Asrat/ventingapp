@@ -14,10 +14,20 @@
           <div class="mt-2">
             <p class="text-sm text-gray-500">
               <template v-if="!isPending && !isRejected">
-                You need to connect with this user before you can see their donation details.
+                <span v-if="purpose == 'donate'">You need to connect with this user before you can donate to them.</span>
+                <span v-else-if="purpose == 'chat'"> You need to connect with this user before you can chat with them.</span>
+                <span v-else> You need to connect with this user first.</span>
               </template>
               <template v-else>
-                You have a pending connection request with {{ userName }}. You'll be able to see their donation details once they accept your request.
+                <span v-if="purpose == 'donate'">
+                  You have a pending connection request with {{ userName }}. You'll be able to see their donation details once they accept your request.
+                </span>
+                <span v-else-if="purpose == 'chat'">
+                  You have a pending connection request with {{ userName }}. You'll be able to chat with them once they accept your request.
+                </span>
+                <span v-else>
+                  You have a pending connection request with {{ userName }}. You'll be able to continue once they accept your request.
+                </span>
               </template>
             </p>
             
@@ -61,6 +71,10 @@ import { Loader2 } from 'lucide-vue-next';
 const props = defineProps({
   show: {
     type: Boolean,
+    required: true
+  },
+  purpose: {
+    type: String,
     required: true
   },
   userName: {

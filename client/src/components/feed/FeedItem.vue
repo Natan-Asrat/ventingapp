@@ -9,7 +9,6 @@
       @save="savePost"
       @share="handleShareClick(post)"
       @close="closeCommentModal"
-      @comment-added="handleCommentAdded"
       @update:post="$emit('update:post', $event)"
     />
     <ShareModal
@@ -38,6 +37,14 @@
       </div>
       
       <div v-if="!isCurrentUserPost" class="flex items-center space-x-2">
+        <button 
+          @click="handleChat(post)"
+          class="px-1 py-1 text-black text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="processingChat"
+        >
+          <Loader2 v-if="processingChat" class="w-3 h-3 mr-1.5 animate-spin" />
+          <Send v-else class="h-4 w-4"/>
+        </button>
         <button 
           v-if="post.payment_info_list && post.payment_info_list.length > 0"
           @click="handleDonate(post)"
@@ -201,6 +208,7 @@
       :user-name="post.posted_by?.name || 'this user'"
       :is-pending="post.pending_connection"
       :is-rejected="post.rejected_connection"
+      :purpose="connectionPromptPurpose"
       @connect="handleConnect"
       @close="showConnectionPrompt = false"
     />
@@ -217,7 +225,7 @@ import ShareModal from './ShareModal.vue';
 import ConnectionModal from '@/components/feed/ConnectionsModal.vue';
 import ImageViewer from '@/components/common/ImageViewer.vue';
 import ShowMore from '@/components/ShowMore.vue';
-import { Heart, MessageCircle, Bookmark, Share2, Loader2, UserPlus, UserCheck, Clock, UserX } from 'lucide-vue-next';
+import { Heart, MessageCircle, Bookmark, Share2, Loader2, UserPlus, UserCheck, Clock, UserX, Send } from 'lucide-vue-next';
 import ConnectionPromptModal from './ConnectionPromptModal.vue';
 
 const getFollowButtonTooltip = (post) => {
@@ -250,14 +258,13 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['donate', 'update:post', 'image-loaded', 'comment', 'comment-added', 'save', 'share', 'like', 'connection-updated']);
+const emit = defineEmits(['donate', 'chat', 'update:post', 'image-loaded', 'save', 'like', 'connection-updated']);
 const showCommentModal = ref(false);
 const showShareModal = ref(false);
 const route = useRoute();
-
+const connectionPromptPurpose = ref('donate'); 
 const handleCommentClick = (post) => {
   showCommentModal.value = true;
-  emit('comment', post);
 };
 const closeCommentModal = () => {
   showCommentModal.value = false;
@@ -269,11 +276,8 @@ const closeShareModal = () => {
 
 const handleShareClick = (post) => {
   showShareModal.value = true;
-  emit('share', post);
 };
-const handleCommentAdded = () => {
-  emit('comment-added');
-};
+
 
 const userStore = useUserStore();
 const showImageViewer = ref(false);
@@ -282,6 +286,7 @@ const showConnectionPrompt = ref(false);
 const connections = ref([]);
 const loadingConnections = ref(false);
 const processingDonation = ref(false);
+const processingChat = ref(false);
 
 const fetchConnections = async () => {
   if (!props.post?.posted_by?.id) return;
@@ -323,7 +328,6 @@ watch(() => route.query.p, (newPostId) => {
 onMounted(() => {
   if (route.query.p && String(props.post.id) === String(route.query.p)) {
     showCommentModal.value = true;
-    emit('comment', props.post);
   }
 });
 
@@ -346,9 +350,11 @@ const handleDonate = async (post) => {
     emit('donate', post);
   } else if (post.pending_connection || post.rejected_connection) {
     // Show pending connection message
+    connectionPromptPurpose.value = 'donate';
     showConnectionPrompt.value = true;
   } else {
     // Show connection prompt
+    connectionPromptPurpose.value = 'donate';
     showConnectionPrompt.value = true;
   }
 };
@@ -364,6 +370,22 @@ const handleConnect = async () => {
     console.error('Error connecting:', error);
   } finally {
     processingDonation.value = false;
+  }
+};
+
+
+const handleChat = async (post) => {
+  if (post.connected) {
+    // If already connected, proceed with donation
+    emit('chat', post);
+  } else if (post.pending_connection || post.rejected_connection) {
+    // Show pending connection message
+    connectionPromptPurpose.value = 'chat';
+    showConnectionPrompt.value = true;
+  } else {
+    // Show connection prompt
+    connectionPromptPurpose.value = 'chat';
+    showConnectionPrompt.value = true;
   }
 };
 

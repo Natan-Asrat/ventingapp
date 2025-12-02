@@ -200,7 +200,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         post = self.get_object()
         comments = post.comments_list.filter(archived=False, reply_to=None).prefetch_related("commented_by").annotate(
             liked=Exists(LikeComment.objects.filter(comment=OuterRef("pk"), liked_by=request.user, active=True))
-        )
+        ).order_by('-likes', '-created_at')
         paginated_comments = self.paginate_queryset(comments)
         if paginated_comments is not None:
             serializer = CommentsOnPostSerializer(paginated_comments, many=True)
