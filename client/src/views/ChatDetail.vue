@@ -429,29 +429,45 @@ const handleReply = (message) => {
 };
 
 // Scroll to and highlight a specific message
-const scrollToMessage = (messageId) => {
-  // Clear any existing highlight
-  console.log("scrolling to ", messageId);
-  if (highlightTimeout) {
-    clearTimeout(highlightTimeout);
-    highlightTimeout = null;
-  }
+const scrollToMessage = async (messageId) => {
+  // Check if the message is already loaded
+  const messageExists = messages.value.some(msg => msg.id === messageId);
   
-  // Set the highlighted message
-  highlightedMessageId.value = messageId;
-  
-  // Scroll to the message
-  nextTick(() => {
-    const messageElement = document.getElementById(`message-${messageId}`);
-    if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      // Remove highlight after 3 seconds
-      highlightTimeout = setTimeout(() => {
-        highlightedMessageId.value = null;
-      }, 2000);
+  if (!messageExists) {
+    try {
+      // If message is not loaded, fetch it
+      const response = await api.get(`chat/messages/get_bulk/?ids=${messageId}`);
+      if (response.data.results.length > 0) {
+        // Add the message to the beginning of the messages array
+        messages.value.unshift(response.data.results[0]);
+        // Update the firstNewMessageIndex to account for the new message
+        if (firstNewMessageIndex.value !== -1) {
+          firstNewMessageIndex.value += 1;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching message:', error);
+      return;
     }
-  });
+  }
+
+  // Wait for the DOM to update
+  await nextTick();
+  
+  // Find and scroll to the message
+  const element = document.getElementById(`message-${messageId}`);
+  if (element) {
+    // Highlight the message
+    highlightedMessageId.value = messageId;
+    
+    // Scroll to the message
+    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Remove highlight after a delay
+    setTimeout(() => {
+      highlightedMessageId.value = null;
+    }, 2000);
+  }
 };
 
 // Toggle emoji picker for a message
