@@ -185,10 +185,10 @@ const fetchConversations = async () => {
     const response = await api.get('chat/conversations/', {
       params: { category: activeTab.value }
     });
-    conversations.value = response.data;
+    conversations.value = response.data.results;
     
     // Update unread counts in tabs
-    updateUnreadCounts(response.data);
+    // updateUnreadCounts(response.data.results);
   } catch (error) {
     console.error('Error fetching conversations:', error);
   } finally {

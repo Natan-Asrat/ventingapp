@@ -26,6 +26,13 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             to_attr="other_user_list"
         )
 
+        # Prefetch the latest message
+        last_message_prefetch = Prefetch(
+            "message_set",
+            queryset=Message.objects.order_by("-created_at")[:1],
+            to_attr="last_message_list"
+        )
+
         qs = Conversation.objects.filter(
             active=True,
             members__user=user
@@ -37,7 +44,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
                 members__category=category
             )
 
-        qs = qs.prefetch_related(my_membership_prefetch, other_user_prefetch).distinct()
+        qs = qs.prefetch_related(my_membership_prefetch, other_user_prefetch, last_message_prefetch).distinct()
 
         return qs
 

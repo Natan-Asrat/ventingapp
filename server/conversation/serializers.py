@@ -15,18 +15,29 @@ class OtherMemberSerializer(serializers.ModelSerializer):
         model = Member
         fields = ['id', 'user', 'created_at', 'updated_at']
 
+class MessageFlatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Message
+        fields = '__all__'
 class ConversationSimpleSerializer(serializers.ModelSerializer):
     my_membership_list = MemberSerializer(many=True)
     other_user_list = OtherMemberSerializer(many=True)
     logo = serializers.SerializerMethodField()
+    last_message_list = MessageFlatSerializer(many=True)
+    last_message = serializers.SerializerMethodField()
 
     class Meta:
         model = Conversation
-        fields = ['id', 'name', 'logo', 'is_group', 'my_membership_list', 'other_user_list', 'members_count', 'active', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'last_message', 'last_message_list', 'logo', 'is_group', 'my_membership_list', 'other_user_list', 'members_count', 'active', 'created_at', 'updated_at']
     def get_logo(self, obj):
         if obj.logo:
             absolute_url =  urljoin(settings.BACKEND_URL, obj.logo.url)
             return absolute_url
+        return None
+
+    def get_last_message(self, obj):
+        if obj.last_message_list and len(obj.last_message_list) > 0:
+            return obj.last_message_list[0].message
         return None
 
 class ReplySerializer(serializers.ModelSerializer):

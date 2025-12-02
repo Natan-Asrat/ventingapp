@@ -24,11 +24,31 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
-      <div class="flex-1">
-        <h2 class="text-lg font-medium text-gray-900">{{ conversation.name || 'Chat' }}</h2>
-        <p class="text-sm text-gray-500" v-if="otherUser">
-          {{ otherUser.name || otherUser.username }}
-        </p>
+      
+      <div class="flex items-center space-x-3 flex-1">
+        <!-- Profile Picture -->
+        <div v-if="otherUser?.profile_picture" class="flex-shrink-0">
+          <img 
+            :src="otherUser.profile_picture" 
+            :alt="otherUser.name || otherUser.username"
+            class="h-10 w-10 rounded-full object-cover"
+          >
+        </div>
+        <div v-else class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
+          <span class="text-indigo-600 font-medium">
+            {{ (otherUser?.name || otherUser?.username || 'U').charAt(0).toUpperCase() }}
+          </span>
+        </div>
+        
+        <!-- User Info -->
+        <div class="min-w-0">
+          <h2 class="text-base font-medium text-gray-900 truncate">
+            {{ conversation.name || otherUser?.name || otherUser?.username || 'Chat' }}
+          </h2>
+          <p v-if="otherUser?.username" class="text-sm text-gray-500 truncate">
+            @{{ otherUser.username }}
+          </p>
+        </div>
       </div>
     </div>
 
@@ -622,8 +642,8 @@ const scrollToBottom = () => {
 
 // Get other user in conversation
 const otherUser = computed(() => {
-  if (!conversation.value.members) return null;
-  return conversation.value.members.find(
+  if (!conversation.value.other_user_list) return null;
+  return conversation.value.other_user_list.find(
     member => member.user.id !== currentUser.value.id
   )?.user;
 });
