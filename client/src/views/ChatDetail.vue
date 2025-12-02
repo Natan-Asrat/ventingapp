@@ -1,5 +1,19 @@
 <template>
-  <div class="max-w-4xl mx-auto h-screen flex flex-col">
+  <div class="max-w-4xl mx-auto h-screen flex flex-col relative">
+    <!-- New Messages Indicator -->
+    <div 
+      v-if="showNewMessagesIndicator" 
+      @click="scrollToNewMessages"
+      class="fixed bottom-24 mt-2 right-6 bg-indigo-600 text-white rounded-full p-3 shadow-lg cursor-pointer hover:bg-indigo-700 transition-colors z-10"
+      :title="`${newMessagesCount} new message${newMessagesCount > 1 ? 's' : ''}`"
+    >
+      <div class="flex items-center">
+        <span class="text-xs mr-2">{{ newMessagesCount }}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+      </div>
+    </div>
     <!-- Header -->
     <div class="border-b border-gray-200 p-4 flex items-center">
       <button 
@@ -21,16 +35,41 @@
 
     <!-- Messages -->
     <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 messages-container" style="scroll-behavior: smooth;">
+      <!-- Load More Button -->
+      <div v-if="pagination.next" class="flex justify-center mb-4">
+        <button 
+          @click="fetchMessages(true)" 
+          :disabled="pagination.isLoading"
+          :class="{'cursor-pointer': !pagination.isLoading}"
+          class="px-4 py-2 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full flex items-center space-x-2 transition-colors"
+        >
+          <svg v-if="pagination.isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ pagination.isLoading ? 'Loading...' : 'Load More' }}</span>
+        </button>
+      </div>
       <div 
-        v-for="message in messages" 
+        v-for="(message, index) in messages" 
         :key="message.id"
         :id="`message-${message.id}`"
         :class="[
+          'relative',
           'flex', 
           message.user.id === currentUser.id ? 'justify-end' : 'justify-start',
           { 'bg-blue-50 rounded-lg transition-colors duration-1000': highlightedMessageId === message.id }
         ]"
       >
+        <!-- New messages indicator -->
+        <div 
+          v-if="showNewMessageDivider && index === firstNewMessageIndex" 
+          class="w-full mt-2 text-center py-2 text-xs text-gray-500 flex items-center absolute -top-8 left-0 right-0"
+        >
+          <span class="flex-grow border-t border-gray-300"></span>
+          <span class="mx-2">New messages</span>
+          <span class="flex-grow border-t border-gray-300"></span>
+        </div>
         <!-- Avatar for received messages only -->
         <div v-if="message.user.id !== currentUser.id" class="flex-shrink-0 mr-2 self-end">
           <img 
@@ -230,12 +269,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { X, Reply, Smile, EllipsisVertical, Send } from 'lucide-vue-next';
 import api from '@/api/axios';
 
+const visibleMessages = ref([]);
+let visibilityObserver = null;
+let mutationObserver = null;
+const showNewMessagesIndicator = ref(false);
+const showNewMessageDivider = ref(false);
+const firstNewMessageIndex = ref(-1);
+const isAtBottom = ref(true);
+const newMessagesCount = ref(0);
+const hasSentNewMessage = ref(false);
 // Emoji Picker
 import data from 'emoji-mart-vue-fast/data/all.json';
 import 'emoji-mart-vue-fast/css/emoji-mart.css';
@@ -270,10 +318,14 @@ const newMessage = ref('');
 const messagesContainer = ref(null);
 const replyingTo = ref(null);
 const highlightedMessageId = ref(null);
-const emojiPickerForMessage = ref(null);
 const showActions = ref(null);
-const emojiPickerPosition = ref({ x: 0, y: 0 });
-let highlightTimeout = null;
+const emojiPickerForMessage = ref(null);
+const pagination = ref({
+  next: null,
+  previous: null,
+  count: 0,
+  isLoading: false
+});
 let closeTimeout = null;
 
 // Fetch conversation details
@@ -288,13 +340,64 @@ const fetchConversation = async () => {
 };
 
 // Fetch messages
-const fetchMessages = async () => {
+const fetchMessages = async (loadMore = false) => {
   try {
-    const response = await api.get(`chat/conversations/${route.params.id}/messages/`);
-    // Reverse the array to show newest messages at the bottom
-    messages.value = response.data.reverse();
+    pagination.value.isLoading = true;
+    let url = `chat/conversations/${route.params.id}/messages/`;
+    const first_message_id = messages.value.length > 0 ? messages.value[0].id : null;
+    
+    if (loadMore && pagination.value.next) {
+      // Use the next page URL if loading more
+      url = pagination.value.next;
+    } else if (!loadMore) {
+      // Reset messages if it's a fresh load
+      // messages.value = [];
+    }
+    
+    const response = await api.get(url);
+
+    const container = messagesContainer.value;
+
+    const prevBehavior = container.style.scrollBehavior;
+    container.style.scrollBehavior = 'auto';
+
+    const previousScrollHeight = container.scrollHeight;
+    
+    if (loadMore) {
+      // When loading more, prepend the new messages (they're older)
+      messages.value = [...response.data.results.reverse(), ...messages.value];
+    } else {
+      // For initial load, just set the messages
+      messages.value = response.data.results.reverse();
+    }
+    
+    // Update pagination info
+    pagination.value = {
+      next: response.data.next,
+      previous: response.data.previous,
+      count: response.data.count,
+      isLoading: false
+    };
+    
+    // Scroll to maintain position when loading more
+    if (loadMore && messagesContainer.value && messages.value.length > 0) {
+      const container = messagesContainer.value;
+
+      nextTick(() => {
+        const newScrollHeight = container.scrollHeight;
+        container.scrollTop += newScrollHeight - previousScrollHeight;
+
+        // Restore smooth scrolling
+        container.style.scrollBehavior = prevBehavior;
+      });
+    } else if (!loadMore) {
+      scrollToBottom();
+    }
+
+
   } catch (error) {
     console.error('Error fetching messages:', error);
+    pagination.value.isLoading = false;
   }
 };
 
@@ -309,7 +412,7 @@ const sendMessage = async () => {
     });
     newMessage.value = '';
     replyingTo.value = null;
-    await fetchMessages();
+    hasSentNewMessage.value = true;
   } catch (error) {
     console.error('Error sending message:', error);
   }
@@ -469,13 +572,36 @@ const formatTime = (dateString) => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+// Scroll to the first new message
+const scrollToNewMessages = () => {
+  if (firstNewMessageIndex.value >= 0) {
+    const firstNewMsgId = messages.value[firstNewMessageIndex.value].id;
+    let element = document.getElementById(`message-${firstNewMsgId - 1}`);
+
+    // Fallback to the first new message if previous doesn't exist
+    if (!element) {
+      element = document.getElementById(`message-${firstNewMsgId}`);
+    }    
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    showNewMessagesIndicator.value = false;
+  } else {
+    scrollToBottom();
+  }
+};
+
 // Scroll to bottom of messages
 const scrollToBottom = () => {
-  nextTick(() => {
-    if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
-    }
-  });
+  if (messagesContainer.value) {
+    messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    showNewMessagesIndicator.value = false;
+    setTimeout(() => {
+      showNewMessageDivider.value = false;
+    }, 3000);
+    isAtBottom.value = true;
+    newMessagesCount.value = 0;
+  }
 };
 
 // Get other user in conversation
@@ -486,13 +612,185 @@ const otherUser = computed(() => {
   )?.user;
 });
 
+function observeMessageVisibility() {
+  // Disconnect previous observer if any
+  if (visibilityObserver) visibilityObserver.disconnect();
+
+  visibilityObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const id = entry.target.id.replace("message-", "");
+        const index = visibleMessages.value.indexOf(id);
+
+        if (entry.isIntersecting) {
+          if (index === -1) {
+            visibleMessages.value.push(id);
+            console.log("VISIBLE:", id);
+          }
+        } else {
+          if (index !== -1) {
+            visibleMessages.value.splice(index, 1);
+            console.log("NOT VISIBLE:", id);
+          }
+        }
+      });
+      console.log("VISIBLE:", visibleMessages.value);
+
+    },
+    { threshold: 0.1 }
+  );
+
+  // Observe all current messages
+  document.querySelectorAll("[id^='message-']").forEach((el) => {
+    visibilityObserver.observe(el);
+  });
+
+  // Watch for newly added messages (pagination or new messages)
+  if (!mutationObserver) {
+    const container = document.querySelector(".messages-container");
+    if (!container) return;
+
+    mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1 && node.id?.startsWith("message-")) {
+            visibilityObserver.observe(node);
+          }
+        });
+      });
+    });
+
+    mutationObserver.observe(container, { childList: true, subtree: true });
+  }
+}
+
+let visibleMessagesInterval = null;
+
+// Fetch and update messages that are currently visible
+const fetchVisibleMessages = async () => {
+  if (!visibleMessages.value.length) return;
+
+  try {
+    const ids = visibleMessages.value.join(',');
+    const response = await api.get(`chat/messages/get_bulk/?id=${ids}`);
+    const fetchedMessages = response.data; // assume array of message objects
+
+    // Update messages in place
+    fetchedMessages.forEach(fetchedMsg => {
+      const index = messages.value.findIndex(m => m.id === fetchedMsg.id);
+      if (index !== -1) {
+        messages.value[index] = { ...messages.value[index], ...fetchedMsg };
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching visible messages:', error);
+  }
+};
+
+// Start polling
+const startVisibleMessagesPolling = () => {
+  if (visibleMessagesInterval) clearInterval(visibleMessagesInterval);
+  visibleMessagesInterval = setInterval(fetchVisibleMessages, 3000);
+};
+
+// Stop polling
+const stopVisibleMessagesPolling = () => {
+  if (visibleMessagesInterval) clearInterval(visibleMessagesInterval);
+};
+let newMessagesInterval = null;
+
+// Handle scroll events to track if user is at bottom
+const handleScroll = () => {
+  if (!messagesContainer.value) return;
+  
+  const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value;
+  const isBottom = scrollHeight - (scrollTop + clientHeight) < 100; // 100px threshold
+  
+  isAtBottom.value = isBottom;
+  if (isBottom) {
+    showNewMessagesIndicator.value = false;
+    setTimeout(() => {
+      showNewMessageDivider.value = false;
+    }, 3000);
+    newMessagesCount.value = 0;
+  }
+};
+
+// Fetch new messages since the latest one we have
+const fetchNewMessages = async () => {
+  if (!messages.value.length) return;
+
+  const latestId = messages.value[messages.value.length - 1].id;
+  try {
+    const response = await api.get(
+      `chat/conversations/${route.params.id}/new_messages/?after_id=${latestId}`
+    );
+    const newMsgs = response.data.results;
+
+    if (newMsgs.length) {
+      const prevLength = messages.value.length;
+      messages.value = [...messages.value, ...newMsgs];
+      
+      // Only update the firstNewMessageIndex if we don't have one yet or if user has scrolled to view previous new messages
+      if (firstNewMessageIndex.value === -1 || isAtBottom.value) {
+        firstNewMessageIndex.value = prevLength;
+        showNewMessageDivider.value = true;
+      } else {
+        // Keep the existing firstNewMessageIndex but ensure the divider is shown
+        showNewMessageDivider.value = true;
+      }
+
+      if(hasSentNewMessage.value && newMsgs.some(msg => msg.user.id === currentUser.value.id)){
+        hasSentNewMessage.value = false;
+        nextTick(() => {
+          scrollToBottom();
+        });
+        showNewMessageDivider.value = false;
+      } else if (!isAtBottom.value) {
+        showNewMessagesIndicator.value = true;
+        newMessagesCount.value += newMsgs.length;
+      } else {
+        // If at bottom, auto-scroll to show new messages
+        scrollToNewMessages();
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching new messages:", error);
+  }
+};
+
+// Start polling for new messages every second
+const startNewMessagesPolling = () => {
+  if (newMessagesInterval) clearInterval(newMessagesInterval);
+  newMessagesInterval = setInterval(fetchNewMessages, 1000);
+};
+
+// Stop polling
+const stopNewMessagesPolling = () => {
+  if (newMessagesInterval) clearInterval(newMessagesInterval);
+};
+
 onMounted(async () => {
   await fetchConversation();
   scrollToBottom();
-  // Set up polling for new messages (every 5 seconds)
-  const pollInterval = setInterval(fetchMessages, 5000);
+  observeMessageVisibility();
+  startVisibleMessagesPolling();
+  startNewMessagesPolling();
   
-  // Clean up interval on component unmount
-  return () => clearInterval(pollInterval);
+  // Add scroll event listener
+  if (messagesContainer.value) {
+    messagesContainer.value.addEventListener('scroll', handleScroll);
+  }
+});
+
+// Stop on unmount
+onUnmounted(() => {
+  stopVisibleMessagesPolling();
+  stopNewMessagesPolling();
+  
+  // Remove scroll event listener
+  if (messagesContainer.value) {
+    messagesContainer.value.removeEventListener('scroll', handleScroll);
+  }
 });
 </script>

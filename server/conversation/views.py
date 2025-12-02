@@ -5,11 +5,12 @@ from django.db.models import Prefetch
 from rest_framework.decorators import action
 from rest_framework.response import Response 
 from .permissions import IsActiveConversationMember, IsActiveConversationMemberForMessage
-
+from .pagination import CustomMessagesPagination
 # Create your views here.
 class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Conversation.objects.none()
     serializer_class = ConversationSimpleSerializer
+    pagination_class = CustomMessagesPagination
     def get_queryset(self):
         user = self.request.user
         category = self.request.query_params.get("category")
@@ -65,8 +66,55 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             other_reactions_prefetch,
             "reply_to"
         ).select_related("user", "reply_to", "reply_to__user").order_by("-created_at")
-
+        paginated_messages = self.paginate_queryset(messages)
+        if paginated_messages is not None:
+            serializer = MessageSimpleSerializer(paginated_messages, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = MessageSimpleSerializer(messages, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"], permission_classes=[IsActiveConversationMember])
+    def new_messages(self, request, pk=None):
+        """
+        Fetch messages created after a given message ID.
+        Example: GET /chat/conversations/<pk>/new_messages/?after_id=42
+        """
+        conversation = self.get_object()
+        user = request.user
+        after_id = request.query_params.get("after_id")
+
+        if not after_id:
+            return Response({"error": "Missing 'after_id' query parameter"}, status=400)
+
+        try:
+            after_id = int(after_id)
+        except ValueError:
+            return Response({"error": "Invalid 'after_id' format"}, status=400)
+
+        my_reaction_prefetch = Prefetch(
+            "reaction_set",
+            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
+            to_attr="my_reaction_list"
+        )
+        other_reactions_prefetch = Prefetch(
+            "reaction_set",
+            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
+            to_attr="other_reactions_list"
+        )
+
+        new_messages_qs = Message.objects.filter(
+            conversation=conversation,
+            id__gt=after_id
+        ).prefetch_related(
+            my_reaction_prefetch,
+            other_reactions_prefetch,
+            "reply_to"
+        ).select_related("user", "reply_to", "reply_to__user").order_by("id")
+        paginated_messages = self.paginate_queryset(new_messages_qs)
+        if paginated_messages is not None:
+            serializer = MessageSimpleSerializer(paginated_messages, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = MessageSimpleSerializer(new_messages_qs, many=True)
         return Response(serializer.data)
 
     @action(detail=True, methods=["post"], permission_classes=[IsActiveConversationMember])
@@ -145,4 +193,47 @@ class MessageViewSet(viewsets.GenericViewSet):
             "reply_to"
         ).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], permission_classes=[IsActiveConversationMemberForMessage])
+    def get_bulk(self, request):
+        """
+        Fetch multiple messages by comma-separated IDs.
+        Example: GET /chat/messages/get_bulk/?id=1,2,3
+        """
+        ids = request.query_params.get("id", "")
+        print("ids", ids)
+        if not ids:
+            return Response({"error": "No IDs provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            id_list = [int(i) for i in ids.split(",") if i.isdigit()]
+        except ValueError:
+            return Response({"error": "Invalid ID format"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not id_list:
+            return Response({"error": "No valid IDs found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+
+        my_reaction_prefetch = Prefetch(
+            "reaction_set",
+            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
+            to_attr="my_reaction_list"
+        )
+        other_reactions_prefetch = Prefetch(
+            "reaction_set",
+            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
+            to_attr="other_reactions_list"
+        )
+
+        messages_qs = Message.objects.filter(pk__in=id_list).prefetch_related(
+            my_reaction_prefetch,
+            other_reactions_prefetch,
+            "reply_to"
+        )
+
+        # Maintain the order of IDs
+        messages_ordered = sorted(messages_qs, key=lambda m: id_list.index(m.id))
+        serializer = MessageSimpleSerializer(messages_ordered, many=True)
         return Response(serializer.data)
