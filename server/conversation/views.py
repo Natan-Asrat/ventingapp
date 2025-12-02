@@ -1,11 +1,14 @@
 from rest_framework import viewsets, mixins
-from .models import Conversation, Member, Message, Reaction, ConversationCategoryOptions
+from .models import Conversation, Member, Message, Reaction, ConversationCategoryOptions, MessageView
 from .serializers import ConversationSimpleSerializer, MessageSimpleSerializer
-from django.db.models import Prefetch
+from django.db.models import OuterRef, Subquery, Count, IntegerField, Prefetch, Q
+from django.db.models import Case, When, Value, F, Min
+from django.db.models.functions import Coalesce, Greatest
 from rest_framework.decorators import action
 from rest_framework.response import Response 
 from .permissions import IsActiveConversationMember, IsActiveConversationMemberForMessage
 from .pagination import CustomMessagesPagination
+from .query import get_conversation_queryset
 # Create your views here.
 class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Conversation.objects.none()
@@ -14,39 +17,8 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     def get_queryset(self):
         user = self.request.user
         category = self.request.query_params.get("category")
-
-        my_membership_prefetch = Prefetch(
-            "members",
-            queryset=Member.objects.filter(user=user).order_by("-created_at"),
-            to_attr="my_membership_list"
-        )
-        other_user_prefetch = Prefetch(
-            "members",
-            queryset=Member.objects.exclude(user=user).select_related("user")[:3],
-            to_attr="other_user_list"
-        )
-
-        # Prefetch the latest message
-        last_message_prefetch = Prefetch(
-            "message_set",
-            queryset=Message.objects.order_by("-created_at")[:1],
-            to_attr="last_message_list"
-        )
-
-        qs = Conversation.objects.filter(
-            active=True,
-            members__user=user
-        )
-
-        if category:
-            qs = qs.filter(
-                members__user=user,
-                members__category=category
-            )
-
-        qs = qs.prefetch_related(my_membership_prefetch, other_user_prefetch, last_message_prefetch).distinct()
-
-        return qs
+        qs = get_conversation_queryset(user, category)
+        return qs.order_by("-new_messages_count")
 
     @action(detail=False, methods=["get"])
     def categories(self, request):
@@ -162,6 +134,36 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         
         return Response(serializer.data, status=201)
 
+    @action(detail=False, methods=["get"], permission_classes=[IsActiveConversationMember])
+    def get_bulk(self, request):
+        """
+        Fetch multiple conversations by comma-separated IDs.
+        Example: GET /chat/conversations/get_bulk/?id=1,2,3
+        """
+        ids = request.query_params.get("id", "")
+        if not ids:
+            return Response({"error": "No IDs provided"}, status=400)
+
+        try:
+            id_list = [int(i) for i in ids.split(",") if i.isdigit()]
+        except ValueError:
+            return Response({"error": "Invalid ID format"}, status=400)
+
+        if not id_list:
+            return Response({"error": "No valid IDs found"}, status=400)
+
+        user = request.user
+
+        # Reuse your existing queryset function
+        qs = get_conversation_queryset(user)
+        qs = qs.filter(id__in=id_list)
+
+        # Maintain the order of IDs
+        conversations_ordered = sorted(qs, key=lambda c: id_list.index(c.id))
+
+        serializer = ConversationSimpleSerializer(conversations_ordered, many=True)
+        return Response(serializer.data)
+
 class MessageViewSet(viewsets.GenericViewSet):
     queryset = Message.objects.all()
     serializer_class = MessageSimpleSerializer
@@ -239,6 +241,9 @@ class MessageViewSet(viewsets.GenericViewSet):
             other_reactions_prefetch,
             "reply_to"
         )
+
+        message_views = [MessageView(message=m, user=user) for m in messages_qs]
+        MessageView.objects.bulk_create(message_views, ignore_conflicts=True)
 
         # Maintain the order of IDs
         messages_ordered = sorted(messages_qs, key=lambda m: id_list.index(m.id))

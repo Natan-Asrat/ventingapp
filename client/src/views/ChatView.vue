@@ -63,6 +63,8 @@
                 :key="conversation.id"
                 class="py-4 hover:bg-gray-50 px-2 rounded-lg cursor-pointer"
                 @click="openChat(conversation.id)"
+                :data-id="`conversation-${conversation.id}`"
+
               >
                 <div class="flex items-center space-x-4">
                   <div class="flex-shrink-0">
@@ -92,28 +94,27 @@
                     </div>
                   </div>
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 truncate">
-                      {{ 
-                        conversation.name || 
-                        (conversation.other_user_list?.length > 0 ? 
-                          conversation.other_user_list[0].user.name : 
-                          'New Chat')
-                      }}
-                    </p>
-                    <p class="text-sm text-gray-500 truncate">
+                    <div class="flex items-center justify-between">
+                      <p :class="['text-sm truncate', conversation.new_messages_count > 0 ? 'font-bold text-gray-900' : 'font-light text-gray-900']">
+                        {{ 
+                          conversation.name || 
+                          (conversation.other_user_list?.length > 0 ? 
+                            conversation.other_user_list[0].user.name : 
+                            'New Chat')
+                        }}
+                      </p>
+                    </div>
+                    <p :class="['text-sm truncate', conversation.new_messages_count > 0 ? 'font-medium text-gray-900' : 'text-gray-500']">
                       {{ conversation.last_message || 'No messages yet' }}
                     </p>
                   </div>
                   <div class="flex flex-col items-end">
-                    <p class="text-xs text-gray-500">
-                      {{ formatTime(conversation.updated_at) }}
+                    <p v-if="conversation.last_message_list.length > 0" class="text-xs text-gray-500">
+                      {{ conversation.last_message_list[0].created_since }}
                     </p>
-                    <span 
-                      v-if="conversation.unread_count > 0"
-                      class="mt-1 inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
-                    >
-                      {{ conversation.unread_count }}
-                    </span>
+                    <span v-if="conversation.new_messages_count > 0" class="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-2">
+                        {{ conversation.new_messages_count > 99 ? '99+' : conversation.new_messages_count }}
+                      </span>
                   </div>
                 </div>
               </li>
@@ -129,7 +130,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import api from '@/api/axios';
@@ -143,6 +144,10 @@ const loading = ref(true);
 const activeTab = ref('primary');
 const categories = ref([]);
 const conversations = ref([]);
+
+const visibleConversations = ref([]);
+let visibilityObserver = null;
+let mutationObserver = null;
 
 // User data
 const userInitials = computed(() => {
@@ -226,10 +231,6 @@ const activeTabName = computed(() => {
   return tab ? tab.name : '';
 });
 
-const selectTab = (tabId) => {
-  activeTab.value = tabId;
-  fetchConversations();
-};
 
 const openChat = (conversationId) => {
   // Navigate to chat detail view
@@ -242,9 +243,115 @@ const formatTime = (dateString) => {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
+function observeConversationVisibility() {
+  if (visibilityObserver) visibilityObserver.disconnect();
+
+  visibilityObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const id = entry.target.dataset.id.replace("conversation-", "");
+        const index = visibleConversations.value.indexOf(id);
+
+        if (entry.isIntersecting) {
+          if (index === -1) {
+            visibleConversations.value.push(id);
+            console.log("VISIBLE:", id);
+          }
+        } else {
+          if (index !== -1) {
+            visibleConversations.value.splice(index, 1);
+            console.log("NOT VISIBLE:", id);
+          }
+        }
+      });
+
+      // Always log the current visible conversations
+      console.log("VISIBLE:", visibleConversations.value);
+    },
+    { threshold: 0.1 }
+  );
+
+  // Observe all current conversation items
+  document.querySelectorAll("[data-id^='conversation-']").forEach((el) => {
+    visibilityObserver.observe(el);
+  });
+
+  // Observe newly added conversation elements
+  if (!mutationObserver) {
+    const container = document.querySelector("#conversation-list");
+    if (!container) return;
+
+    mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1 && node.dataset.id?.startsWith("conversation-")) {
+            visibilityObserver.observe(node);
+          }
+        });
+      });
+    });
+
+    mutationObserver.observe(container, { childList: true, subtree: true });
+  }
+}
+
+
+const fetchVisibleConversations = async () => {
+  if (!visibleConversations.value.length) return;
+
+  try {
+    const ids = visibleConversations.value.join(',');
+    const response = await api.get(`chat/conversations/get_bulk/?id=${ids}`);
+    const fetchedConversations = response.data; // array of conversation objects
+
+    // Update conversations in place
+    fetchedConversations.forEach((conv) => {
+      const index = conversations.value.findIndex(c => c.id === conv.id);
+      if (index !== -1) {
+        conversations.value[index] = { ...conversations.value[index], ...conv };
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching visible conversations:", error);
+  }
+};
+
+let visibleConversationsInterval = null;
+
+const startVisibleConversationsPolling = () => {
+  if (visibleConversationsInterval) clearInterval(visibleConversationsInterval);
+  visibleConversationsInterval = setInterval(fetchVisibleConversations, 3000);
+};
+
+const stopVisibleConversationsPolling = () => {
+  if (visibleConversationsInterval) clearInterval(visibleConversationsInterval);
+};
+
+const selectTab = (tabId) => {
+  activeTab.value = tabId;
+
+  // Reset visible conversations for the new tab
+  visibleConversations.value = [];
+  if (visibilityObserver) visibilityObserver.disconnect();
+  mutationObserver?.disconnect();
+
+  fetchConversations().then(() => {
+    // Re-observe the new conversations
+    observeConversationVisibility();
+  });
+};
+
 onMounted(async () => {
   await fetchCategories();
   await fetchConversations();
+  observeConversationVisibility();
+  startVisibleConversationsPolling();
+});
+
+onUnmounted(() => {
+  stopVisibleConversationsPolling();
+  if (visibilityObserver) visibilityObserver.disconnect();
+  if (mutationObserver) mutationObserver.disconnect();
 });
 </script>
 

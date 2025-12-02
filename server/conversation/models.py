@@ -1,4 +1,5 @@
 from django.db import models
+from server.utils import get_readable_time_since
 
 class ConversationCategoryOptions(models.TextChoices):
     PRIMARY = "primary", "Primary"
@@ -49,7 +50,34 @@ class Message(models.Model):
     def __str__(self):
         return f"{self.user.email} - {self.conversation.name} - {self.message}"
 
+    @property
+    def formatted_created_at(self):
+        return self.created_at.strftime("%B %d, %Y")
+    
+    @property
+    def formatted_updated_at(self):
+        return self.updated_at.strftime("%B %d, %Y")
+    
+    @property
+    def created_since(self):
+        return get_readable_time_since(self.created_at)
 
+    @property
+    def updated_since(self):
+        return get_readable_time_since(self.updated_at)
+    
+
+class MessageView(models.Model):
+    message = models.ForeignKey(Message, on_delete=models.CASCADE)
+    user = models.ForeignKey('account.User', on_delete=models.CASCADE)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ('message', 'user')
+
+    def __str__(self):
+        return f"{self.user.email} views '{self.message.message}' - id {self.message.id}"
 class Reaction(models.Model):
     message = models.ForeignKey(Message, on_delete=models.CASCADE)
     user = models.ForeignKey('account.User', on_delete=models.CASCADE)
@@ -61,3 +89,4 @@ class Reaction(models.Model):
     def __str__(self):
         return f"{self.user.email} reacts to '{self.message.message}' with {self.reaction}"
     
+

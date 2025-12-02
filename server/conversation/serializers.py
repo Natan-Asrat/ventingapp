@@ -18,17 +18,17 @@ class OtherMemberSerializer(serializers.ModelSerializer):
 class MessageFlatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = '__all__'
+        fields = ['id', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
 class ConversationSimpleSerializer(serializers.ModelSerializer):
     my_membership_list = MemberSerializer(many=True)
     other_user_list = OtherMemberSerializer(many=True)
     logo = serializers.SerializerMethodField()
     last_message_list = MessageFlatSerializer(many=True)
     last_message = serializers.SerializerMethodField()
-
+    new_messages_count = serializers.IntegerField()
     class Meta:
         model = Conversation
-        fields = ['id', 'name', 'last_message', 'last_message_list', 'logo', 'is_group', 'my_membership_list', 'other_user_list', 'members_count', 'active', 'created_at', 'updated_at']
+        fields = ['id', 'name', 'last_message', 'last_message_list', 'logo', 'is_group', 'my_membership_list', 'other_user_list', 'members_count', 'active', 'created_at', 'updated_at', 'new_messages_count']
     def get_logo(self, obj):
         if obj.logo:
             absolute_url =  urljoin(settings.BACKEND_URL, obj.logo.url)

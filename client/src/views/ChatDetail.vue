@@ -433,6 +433,11 @@ const sendMessage = async () => {
     newMessage.value = '';
     replyingTo.value = null;
     hasSentNewMessage.value = true;
+    nextTick(() => {
+      if(messages.value.length == 0) {
+        fetchMessages();
+      }
+    });
   } catch (error) {
     console.error('Error sending message:', error);
   }
