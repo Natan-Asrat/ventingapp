@@ -57,7 +57,7 @@
               <p class="text-gray-500">No conversations found in {{ activeTabName }}.</p>
             </div>
             
-            <ul v-else class="divide-y divide-gray-200">
+            <ul v-else id="conversation-list" class="divide-y divide-gray-200">
               <li 
                 v-for="conversation in conversations" 
                 :key="conversation.id"
@@ -119,6 +119,24 @@
                 </div>
               </li>
             </ul>
+            
+            <!-- Load More Button -->
+            <div v-if="!loading && conversations.length > 0 && pagination.hasMore" class="mt-4 flex justify-center">
+              <button 
+                @click="loadMoreConversations"
+                :disabled="pagination.loadingMore"
+                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span v-if="pagination.loadingMore">
+                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Loading...
+                </span>
+                <span v-else>Load More</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -130,7 +148,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import api from '@/api/axios';
@@ -144,6 +162,11 @@ const loading = ref(true);
 const activeTab = ref('primary');
 const categories = ref([]);
 const conversations = ref([]);
+const pagination = ref({
+  page: 1,
+  hasMore: true,
+  loadingMore: false
+});
 
 const visibleConversations = ref([]);
 let visibilityObserver = null;
@@ -182,22 +205,48 @@ const fetchCategories = async () => {
 };
 
 // Fetch conversations for the active tab
-const fetchConversations = async () => {
+const fetchConversations = async (loadMore = false) => {
   if (!activeTab.value) return;
   
-  loading.value = true;
+  if (loadMore) {
+    pagination.value.loadingMore = true;
+    pagination.value.page += 1;
+  } else {
+    loading.value = true;
+    pagination.value.page = 1;
+    pagination.value.hasMore = true;
+  }
+
   try {
-    const response = await api.get('chat/conversations/', {
-      params: { category: activeTab.value }
-    });
-    conversations.value = response.data.results;
+    const response = await api.get(`chat/conversations/?category=${activeTab.value}&page=${pagination.value.page}`);
+    const newConversations = response.data.results || [];
     
-    // Update unread counts in tabs
-    // updateUnreadCounts(response.data.results);
+    if (loadMore) {
+      // Merge new conversations with existing ones, avoiding duplicates
+      const existingIds = new Set(conversations.value.map(c => c.id));
+      const uniqueNewConversations = newConversations.filter(conv => !existingIds.has(conv.id));
+      conversations.value = [...conversations.value, ...uniqueNewConversations];
+      
+      // Check if there are more pages
+      pagination.value.hasMore = response.data.next !== null;
+    } else {
+      conversations.value = newConversations;
+      pagination.value.hasMore = response.data.next !== null;
+    }
+    
+    // Re-sort conversations by updated_at
+    conversations.value.sort((a, b) => {
+      return new Date(b.updated_at) - new Date(a.updated_at);
+    });
   } catch (error) {
     console.error('Error fetching conversations:', error);
+    if (loadMore) {
+      // Revert page increment on error
+      pagination.value.page = Math.max(1, pagination.value.page - 1);
+    }
   } finally {
     loading.value = false;
+    pagination.value.loadingMore = false;
   }
 };
 
@@ -306,29 +355,76 @@ const fetchVisibleConversations = async () => {
 
     // Update conversations in place
     fetchedConversations.forEach((conv) => {
-      const index = conversations.value.findIndex(c => c.id === conv.id);
-      if (index !== -1) {
-        conversations.value[index] = { ...conversations.value[index], ...conv };
-      }
+      updateOrAddConversation(conv);
     });
   } catch (error) {
     console.error("Error fetching visible conversations:", error);
   }
 };
 
+const fetchLatestConversations = async () => {
+  if (conversations.value.length === 0) return;
+  
+  try {
+    const latestId = conversations.value[0].id; // Get the most recent conversation ID
+    const response = await api.get(`chat/conversations/latest_conversations/?after_id=${latestId}`);
+    const newConversations = response.data;
+    
+    if (newConversations.length > 0) {
+      // Update or add new conversations
+      newConversations.forEach(conv => {
+        updateOrAddConversation(conv);
+      });
+      
+      // Sort conversations by updated_at in descending order
+      conversations.value.sort((a, b) => {
+        return new Date(b.updated_at) - new Date(a.updated_at);
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching latest conversations:', error);
+  }
+};
+
+const updateOrAddConversation = (newConv) => {
+  const index = conversations.value.findIndex(c => c.id === newConv.id);
+  if (index !== -1) {
+    // Update existing conversation
+    conversations.value[index] = { ...conversations.value[index], ...newConv };
+  } else {
+    // Add new conversation and sort
+    conversations.value.unshift(newConv);
+    conversations.value.sort((a, b) => {
+      return new Date(b.updated_at) - new Date(a.updated_at);
+    });
+  }
+};
+
 let visibleConversationsInterval = null;
+let latestConversationsInterval = null;
 
 const startVisibleConversationsPolling = () => {
   if (visibleConversationsInterval) clearInterval(visibleConversationsInterval);
-  visibleConversationsInterval = setInterval(fetchVisibleConversations, 3000);
+  if (latestConversationsInterval) clearInterval(latestConversationsInterval);
+  
+  visibleConversationsInterval = setInterval(fetchVisibleConversations, 5000);
+  latestConversationsInterval = setInterval(fetchLatestConversations, 3000);
 };
 
 const stopVisibleConversationsPolling = () => {
   if (visibleConversationsInterval) clearInterval(visibleConversationsInterval);
+  if (latestConversationsInterval) clearInterval(latestConversationsInterval);
 };
 
 const selectTab = (tabId) => {
   activeTab.value = tabId;
+  
+  // Reset pagination for the new tab
+  pagination.value = {
+    page: 1,
+    hasMore: true,
+    loadingMore: false
+  };
 
   // Reset visible conversations for the new tab
   visibleConversations.value = [];
@@ -341,11 +437,20 @@ const selectTab = (tabId) => {
   });
 };
 
+const loadMoreConversations = async () => {
+  if (!pagination.value.hasMore || pagination.value.loadingMore) return;
+  await fetchConversations(true);
+};
+
 onMounted(async () => {
   await fetchCategories();
   await fetchConversations();
   observeConversationVisibility();
-  startVisibleConversationsPolling();
+  
+  // Start polling after initial load
+  nextTick(() => {
+    startVisibleConversationsPolling();
+  });
 });
 
 onUnmounted(() => {

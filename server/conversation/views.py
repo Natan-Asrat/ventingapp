@@ -1,14 +1,19 @@
 from rest_framework import viewsets, mixins
 from .models import Conversation, Member, Message, Reaction, ConversationCategoryOptions, MessageView
 from .serializers import ConversationSimpleSerializer, MessageSimpleSerializer
-from django.db.models import OuterRef, Subquery, Count, IntegerField, Prefetch, Q
-from django.db.models import Case, When, Value, F, Min
-from django.db.models.functions import Coalesce, Greatest
+from django.db.models import Prefetch
 from rest_framework.decorators import action
 from rest_framework.response import Response 
-from .permissions import IsActiveConversationMember, IsActiveConversationMemberForMessage
+from .permissions import (
+    IsActiveConversationMember,
+    IsActiveConversationMemberForMessage,
+    IsActiveConversationMemberForConvAfterId,
+    IsActiveConversationMemberForConvBulk,
+    IsActiveConversationMemberForMessageBulk
+)
 from .pagination import CustomMessagesPagination
 from .query import get_conversation_queryset
+from django.utils import timezone
 # Create your views here.
 class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Conversation.objects.none()
@@ -18,7 +23,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         user = self.request.user
         category = self.request.query_params.get("category")
         qs = get_conversation_queryset(user, category)
-        return qs.order_by("-new_messages_count")
+        return qs.order_by("-updated_at")
 
     @action(detail=False, methods=["get"])
     def categories(self, request):
@@ -99,6 +104,8 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     @action(detail=True, methods=["post"], permission_classes=[IsActiveConversationMember])
     def send_message(self, request, pk=None):
         conversation = self.get_object()
+        conversation.updated_at = timezone.now()
+        conversation.save()
         user = request.user
         message = request.data.get("message")
         reply_to_id = request.data.get("reply_to")
@@ -134,7 +141,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         
         return Response(serializer.data, status=201)
 
-    @action(detail=False, methods=["get"], permission_classes=[IsActiveConversationMember])
+    @action(detail=False, methods=["get"], permission_classes=[IsActiveConversationMemberForConvBulk])
     def get_bulk(self, request):
         """
         Fetch multiple conversations by comma-separated IDs.
@@ -163,6 +170,40 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
 
         serializer = ConversationSimpleSerializer(conversations_ordered, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["get"], permission_classes=[IsActiveConversationMemberForConvAfterId])
+    def latest_conversations(self, request):
+        """
+        Fetch conversations updated after a given conversation ID.
+        Example: GET /chat/conversations/latest_conversations/?after_id=42
+        """
+        user = request.user
+        after_id = request.query_params.get("after_id")
+
+        if not after_id:
+            return Response({"error": "Missing 'after_id' query parameter"}, status=400)
+
+        try:
+            after_id = int(after_id)
+        except ValueError:
+            return Response({"error": "Invalid 'after_id' format"}, status=400)
+
+        # Get the reference conversation
+        try:
+            reference_conv = Conversation.objects.get(pk=after_id)
+        except Conversation.DoesNotExist:
+            return Response({"error": "Conversation not found"}, status=404)
+
+        after_time = reference_conv.updated_at
+
+        # Reuse your existing queryset builder
+        qs = get_conversation_queryset(user).filter(
+            updated_at__gt=after_time
+        ).order_by("updated_at")
+
+        serializer = ConversationSimpleSerializer(qs, many=True)
+        return Response(serializer.data)
+
 
 class MessageViewSet(viewsets.GenericViewSet):
     queryset = Message.objects.all()
@@ -204,7 +245,7 @@ class MessageViewSet(viewsets.GenericViewSet):
         serializer = MessageSimpleSerializer(message_with_prefetch)
         return Response(serializer.data)
 
-    @action(detail=False, methods=["get"], permission_classes=[IsActiveConversationMemberForMessage])
+    @action(detail=False, methods=["get"], permission_classes=[IsActiveConversationMemberForMessageBulk])
     def get_bulk(self, request):
         """
         Fetch multiple messages by comma-separated IDs.
