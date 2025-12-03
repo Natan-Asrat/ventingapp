@@ -36,10 +36,11 @@ class Member(models.Model):
         return f"{self.user.email} - {self.conversation.name}"
     
 class Message(models.Model):
-    message = models.CharField(max_length=255)
+    message = models.CharField(max_length=255, null=True, blank=True)
     user = models.ForeignKey('account.User', on_delete=models.CASCADE)
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
     reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="replies")
+    forwarded_from = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="forwards")
     reaction_count = models.IntegerField(default=0)
     reply_count = models.IntegerField(default=0)
     view_count = models.IntegerField(default=0)

@@ -57,12 +57,19 @@ class OthersReactionSerializer(serializers.ModelSerializer):
         model = Reaction
         fields = ['id', 'reaction', 'user', 'created_at']
 
+class ForwardedMessageSerializer(serializers.ModelSerializer):
+    user = UserSimpleSerializer()
+    class Meta:
+        model = Message
+        fields = ['id', 'user', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
+
 class MessageSimpleSerializer(serializers.ModelSerializer):
     reply_to = ReplySerializer()
     my_reaction_list = ReactionSerializer(many=True)
     other_reactions_list = OthersReactionSerializer(many=True)
     user = UserSimpleSerializer()
+    forwarded_from = ForwardedMessageSerializer()
     class Meta:
         model = Message
-        fields = ['id', 'user', 'message', 'my_reaction_list', 'other_reactions_list', 'reply_to', 'reaction_count', 'reply_count', 'view_count', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'message', 'my_reaction_list', 'other_reactions_list', 'reply_to', 'reaction_count', 'reply_count', 'view_count', 'created_at', 'updated_at', 'forwarded_from']
 

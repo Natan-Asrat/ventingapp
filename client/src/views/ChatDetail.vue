@@ -140,8 +140,27 @@
             @mouseenter="showActions = message.id"
             @mouseleave="handleMouseLeave">
             
-            <!-- Message content -->
-            <p class="text-sm">{{ message.message }}</p>
+            <!-- Forwarded message indicator -->
+            <div v-if="message.forwarded_from" class="mb-1 flex items-center text-xs text-gray-500">
+              <Forward class="h-3 w-3 mr-1" />
+              <span>Forwarded from @{{ message.forwarded_from.user.username }}</span>
+            </div>
+            
+            <!-- Original forwarded message preview -->
+            <div 
+              v-if="message.forwarded_from" 
+              class="rounded p-2 mb-2 text-xs border-l-2 border-gray-300"
+              :class="[
+                message.user.id === currentUser.id 
+                ? 'bg-indigo-200/50 text-indigo-900' 
+                : 'bg-gray-200/50 text-gray-900',
+              ]"
+            >
+              <p class="truncate">{{ message.forwarded_from.message || 'Media' }}</p>
+            </div>
+            
+            <!-- Current message content -->
+            <p v-if="message.message" class="text-sm">{{ message.message }}</p>
             
             <!-- Hover actions -->
             <div 
@@ -201,7 +220,12 @@
                   />
                 </div>
               </div>
-              
+              <button 
+                @click.stop="handleForward(message)"
+                class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
+                title="Reply">
+                <Forward class="h-4 w-4"/>
+              </button>
               <button 
                 class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
                 title="More">
@@ -302,7 +326,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft } from 'lucide-vue-next';
 import api from '@/api/axios';
-import { MessageCircle } from 'lucide-vue-next';
+import { MessageCircle, Forward } from 'lucide-vue-next';
 
 const visibleMessages = ref([]);
 let visibilityObserver = null;
@@ -462,6 +486,11 @@ const handleReply = (message) => {
     if (input) input.focus();
   });
 };
+
+const handleForward = async (message) => {
+  await api.post(`chat/messages/${message.id}/forward/`);
+
+}
 
 // Scroll to and highlight a specific message
 const scrollToMessage = async (messageId) => {

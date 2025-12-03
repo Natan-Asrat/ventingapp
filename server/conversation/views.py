@@ -357,3 +357,37 @@ class MessageViewSet(viewsets.GenericViewSet):
         messages_ordered = sorted(messages_qs, key=lambda m: id_list.index(m.id))
         serializer = MessageSimpleSerializer(messages_ordered, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], permission_classes=[IsActiveConversationMemberForMessage])
+    def forward(self, request, pk=None):
+        message = self.get_object()
+        user = request.user
+        if message.forwarded_from:
+            original_message = message.forwarded_from
+        else:
+            original_message = message
+        new_forward = Message.objects.create(
+            forwarded_from=original_message,
+            user=user,
+            conversation=message.conversation
+        )
+        my_reaction_prefetch = Prefetch(
+            "reaction_set",
+            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
+            to_attr="my_reaction_list"
+        )
+        other_reactions_prefetch = Prefetch(
+            "reaction_set",
+            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
+            to_attr="other_reactions_list"
+        )
+
+        new_forward_with_prefetch = Message.objects.filter(pk=new_forward.pk).prefetch_related(
+            my_reaction_prefetch,
+            other_reactions_prefetch,
+            "reply_to",
+            "forwarded_from",
+            "forwarded_from__user"
+        ).first()
+        serializer = MessageSimpleSerializer(new_forward_with_prefetch)
+        return Response(serializer.data)
