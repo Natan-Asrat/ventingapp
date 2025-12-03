@@ -41,6 +41,7 @@ class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE)
     reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="replies")
     forwarded_from = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name="forwards")
+    shared_post = models.ForeignKey('post.Post', on_delete=models.SET_NULL, null=True, blank=True, related_name="shared_in_conversations")
     reaction_count = models.IntegerField(default=0)
     reply_count = models.IntegerField(default=0)
     view_count = models.IntegerField(default=0)

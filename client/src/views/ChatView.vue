@@ -16,9 +16,24 @@
     <!-- Main Content -->
     <div class="pt-16 pb-16 md:pt-0 md:pb-0">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="bg-white shadow sm:rounded-lg overflow-hidden">
-          <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-            <h3 class="text-lg leading-6 font-medium text-gray-900">Messages</h3>
+        <div class="max-w-4xl mx-auto h-screen flex flex-col">
+          <!-- Header with back button when sharing a post -->
+          <div class="border-b border-gray-200 p-4">
+            <div class="flex items-center">
+              <button 
+                v-if="isSharingPost" 
+                @click="router.push({ query: {} })"
+                class="mr-3 p-1 rounded-full hover:bg-gray-100"
+              >
+                <ArrowLeft class="h-5 w-5 text-gray-500" />
+              </button>
+              <h1 class="text-xl font-semibold text-gray-900">
+                {{ isSharingPost ? 'Send post to...' : 'Messages' }}
+              </h1>
+            </div>
+            <p v-if="isSharingPost" class="text-sm text-gray-500 mt-1">
+              Select a chat to share this post
+            </p>
           </div>
           
           <div class="px-4 py-5 sm:p-6">
@@ -69,7 +84,7 @@
                 v-for="conversation in conversations" 
                 :key="conversation.id"
                 class="py-4 hover:bg-gray-50 px-2 rounded-lg cursor-pointer"
-                @click="openChat(conversation.id)"
+                @click="selectConversation(conversation)"
                 :data-id="`conversation-${conversation.id}`"
 
               >
@@ -186,16 +201,21 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import api from '@/api/axios';
 import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
-import { EllipsisVertical, Archive, ArrowRight, Check } from 'lucide-vue-next';
+import { EllipsisVertical, Archive, ArrowRight, Check, ArrowLeft } from 'lucide-vue-next';
 import DropdownMenu from '@/components/common/DropdownMenu.vue';
 
+const route = useRoute();
 const router = useRouter();
+
+// Check for post in URL
+const postId = computed(() => route.query.p);
+const isSharingPost = computed(() => !!postId.value);
 const userStore = useUserStore();
 const loading = ref(true);
 const activeTab = ref('primary');
@@ -316,6 +336,30 @@ const activeTabName = computed(() => {
   return tab ? tab.name : '';
 });
 
+
+const selectConversation = async (conversation) => {
+  if (isSharingPost.value) {
+    console.log(`Sending post ${postId.value} to chat ${conversation.id}`);
+    try {
+      // const response = api.post("/chat/conversations/")
+      // Here you would typically make an API call to send the post
+      const response = await api.post(`/chat/conversations/${conversation.id}/share_post/`, { post_id: postId.value });
+      
+      // Show success message and navigate back
+      // You might want to use a toast notification here
+      // toast.success('Post shared successfully');
+      
+      // Navigate to the chat
+      router.push(`/chat/${conversation.id}`);
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      // Show error message
+      // toast.error('Failed to share post');
+    }
+  } else {
+    router.push(`/chat/${conversation.id}`);
+  }
+};
 
 const openChat = (conversationId) => {
   // Navigate to chat detail view

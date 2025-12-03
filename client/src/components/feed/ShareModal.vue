@@ -70,7 +70,17 @@
               </div>
 
               <!-- Share Options -->
-              <div class="mt-6">
+              <div class="mt-6 space-y-3">
+                <!-- Send in Chat Button -->
+                <button 
+                  @click="sendInChat"
+                  class="w-full cursor-pointer flex items-center justify-center space-x-2 bg-gray-100 text-gray-600 px-4 py-3 rounded-lg hover:bg-gray-200 hover:text-black transition-colors"
+                >
+                  <Send class="h-5 w-5" />
+                  <span>Send in chat</span>
+                </button>
+                
+                <!-- Shareable Link -->
                 <div @click="copyToClipboard" class="bg-gray-50 p-3 rounded-md flex justify-between items-center cursor-pointer hover:bg-gray-100 transition-colors">
                   <div class="overflow-hidden">
                     <p class="text-xs text-gray-500">Shareable Link</p>
@@ -101,7 +111,9 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
+import { useRouter } from 'vue-router';
 import ShowMore from '@/components/ShowMore.vue';
+import { Send } from 'lucide-vue-next';
 const props = defineProps({
   show: {
     type: Boolean,
@@ -119,6 +131,7 @@ const props = defineProps({
   }
 });
 
+const router = useRouter();
 const emit = defineEmits(['close']);
 
 const copyButtonText = ref('Copy Link');
@@ -136,10 +149,16 @@ const copyToClipboard = async () => {
     await navigator.clipboard.writeText(shareableLink.value);
     copyButtonText.value = 'Copied!';
     setTimeout(() => {
-      copyButtonText.value = 'Copy Link';
+      copyButtonText.value = 'Copy';
     }, 2000);
   } catch (err) {
-    console.error('Failed to copy:', err);
+    console.error('Failed to copy text: ', err);
+    copyButtonText.value = 'Failed to copy';
   }
+};
+
+const sendInChat = () => {
+  closeModal();
+  router.push(`/chat?p=${props.post.id}`);
 };
 </script>

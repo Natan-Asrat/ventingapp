@@ -3,7 +3,7 @@ from django.conf import settings
 from urllib.parse import urljoin
 from account.serializers import UserSimpleSerializer
 from .models import Conversation, Member, Message, Reaction
-
+from post.serializers import PostSimpleSerializer
 class MemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
@@ -47,6 +47,8 @@ class ConversationSimpleSerializer(serializers.ModelSerializer):
         if obj.last_message_list and len(obj.last_message_list) > 0:
             if obj.last_message_list[0].forwarded_from:
                 return obj.last_message_list[0].forwarded_from.message
+            elif obj.last_message_list[0].shared_post:
+                return "Sent a post by @" + obj.last_message_list[0].shared_post.posted_by.username + ": " + obj.last_message_list[0].shared_post.description
             return obj.last_message_list[0].message
         return None
 
@@ -74,7 +76,8 @@ class MessageSimpleSerializer(serializers.ModelSerializer):
     other_reactions_list = OthersReactionSerializer(many=True)
     user = UserSimpleSerializer()
     forwarded_from = ForwardedMessageSerializer()
+    shared_post = PostSimpleSerializer()
     class Meta:
         model = Message
-        fields = ['id', 'user', 'message', 'my_reaction_list', 'other_reactions_list', 'reply_to', 'reaction_count', 'reply_count', 'view_count', 'created_at', 'updated_at', 'forwarded_from']
+        fields = ['id', 'user', 'shared_post', 'message', 'my_reaction_list', 'other_reactions_list', 'reply_to', 'reaction_count', 'reply_count', 'view_count', 'created_at', 'updated_at', 'forwarded_from']
 

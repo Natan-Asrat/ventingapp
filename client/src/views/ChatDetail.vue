@@ -162,6 +162,11 @@
             <!-- Current message content -->
             <p v-if="message.message" class="text-sm">{{ message.message }}</p>
             
+            <!-- Shared Post Preview -->
+            <div v-if="message.shared_post" class="mt-2">
+              <SharedPostPreview :post="message.shared_post" />
+            </div>
+            
             <!-- Hover actions -->
             <div 
               v-if="showActions === message.id"
@@ -323,6 +328,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import SharedPostPreview from '@/components/chat/SharedPostPreview.vue';
 import { useUserStore } from '@/stores/user';
 import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft } from 'lucide-vue-next';
 import api from '@/api/axios';

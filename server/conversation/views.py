@@ -2,6 +2,7 @@ from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 
 from account.models import Connection, User
+from post.models import Post
 from .models import Conversation, Member, Message, Reaction, ConversationCategoryOptions, MessageView
 from .serializers import ConversationSimpleSerializer, MessageSimpleSerializer
 from django.db.models import Q, Prefetch
@@ -51,8 +52,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         messages = Message.objects.filter(conversation=conversation).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-            "reply_to"
-        ).select_related("user", "reply_to", "reply_to__user").order_by("-created_at")
+        ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").order_by("-created_at")
         paginated_messages = self.paginate_queryset(messages)
         if paginated_messages is not None:
             serializer = MessageSimpleSerializer(paginated_messages, many=True)
@@ -95,8 +95,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         ).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-            "reply_to"
-        ).select_related("user", "reply_to", "reply_to__user").order_by("id")
+        ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").order_by("id")
         paginated_messages = self.paginate_queryset(new_messages_qs)
         if paginated_messages is not None:
             serializer = MessageSimpleSerializer(paginated_messages, many=True)
@@ -138,8 +137,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         message_with_prefetch = Message.objects.filter(pk=new_message.pk).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-            "reply_to"
-        ).first()
+        ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         
         return Response(serializer.data, status=201)
@@ -270,6 +268,48 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         unread_counts = get_unread_counts_by_category(user)
         return Response(unread_counts)
 
+    @action(detail=True, methods=['post'], permission_classes=[IsActiveConversationMember])
+    def share_post(self, request, pk=None):
+        post_id = request.data.get("post_id")
+        if not post_id:
+            return Response({"error": "Post ID is required"}, status=400)
+        try:
+            post = Post.objects.get(pk=post_id)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found"}, status=404)
+        conversation = self.get_object()
+        conversation.updated_at = timezone.now()
+        conversation.save()
+        user = request.user
+
+        post.forwards += 1
+        post.save()
+
+        new_message = Message.objects.create(
+            shared_post=post,
+            user=user,
+            conversation=conversation,
+        )
+        my_reaction_prefetch = Prefetch(
+            "reaction_set",
+            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
+            to_attr="my_reaction_list"
+        )
+        other_reactions_prefetch = Prefetch(
+            "reaction_set",
+            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
+            to_attr="other_reactions_list"
+        )
+
+        message_with_prefetch = Message.objects.filter(pk=new_message.pk).prefetch_related(
+            my_reaction_prefetch,
+            other_reactions_prefetch,
+        ).select_related("shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").first()
+        serializer = MessageSimpleSerializer(message_with_prefetch)
+        
+        return Response(serializer.data, status=201)
+
+
 
 
 class MessageViewSet(viewsets.GenericViewSet):
@@ -307,8 +347,7 @@ class MessageViewSet(viewsets.GenericViewSet):
         message_with_prefetch = Message.objects.filter(pk=message.pk).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-            "reply_to"
-        ).first()
+        ).select_related("shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         return Response(serializer.data)
 
@@ -347,8 +386,8 @@ class MessageViewSet(viewsets.GenericViewSet):
         messages_qs = Message.objects.filter(pk__in=id_list).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-            "reply_to"
-        )
+        ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list")
+
 
         message_views = [MessageView(message=m, user=user) for m in messages_qs]
         MessageView.objects.bulk_create(message_views, ignore_conflicts=True)

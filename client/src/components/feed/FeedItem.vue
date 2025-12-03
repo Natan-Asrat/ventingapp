@@ -120,6 +120,7 @@
         <span>{{ post.likes }} {{ post.likes === 1 ? 'like' : 'likes' }}</span>
         <span>{{ post.comments }} {{ post.comments === 1 ? 'comment' : 'comments' }}</span>
         <span>{{ post.views }} {{ post.views === 1 ? 'view' : 'views' }}</span>
+        <span>{{ post.forwards }} {{ post.forwards === 1 ? 'share' : 'shares' }}</span>
         <span class="text-xs text-gray-400">{{ post.formatted_created_at }}</span>
       </div>
     </div>

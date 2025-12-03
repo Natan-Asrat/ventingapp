@@ -48,7 +48,7 @@ class PostSimpleSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = Post
-        fields = ['id', 'posted_by', 'connected', 'rejected_connection', 'banned_connection', 'pending_connection', 'removed_connection', 'description', 'image', 'image_url', 'liked', 'saved', 'likes', 'comments', 'saves', 'views', 'payment_info_list', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
+        fields = ['id', 'posted_by', 'connected', 'rejected_connection', 'banned_connection', 'pending_connection', 'removed_connection', 'description', 'image', 'image_url', 'liked', 'saved', 'likes', 'comments', 'saves', 'views', 'forwards', 'payment_info_list', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
     def get_image_url(self, obj):
         if obj.image:
             absolute_url =  urljoin(settings.BACKEND_URL, obj.image.url)
