@@ -18,7 +18,7 @@ def get_conversation_queryset(user, category=None):
     # Prefetch the latest message
     last_message_prefetch = Prefetch(
         "message_set",
-        queryset=Message.objects.order_by("-created_at")[:1],
+        queryset=Message.objects.select_related("forwarded_from", "forwarded_from__user").order_by("-created_at")[:1],
         to_attr="last_message_list"
     )
 
@@ -67,7 +67,7 @@ def add_conversation_details(conversation, user):
     # Prefetch the latest message
     last_message_prefetch = Prefetch(
         "message_set",
-        queryset=Message.objects.order_by("-created_at")[:1],
+        queryset=Message.objects.select_related("forwarded_from", "forwarded_from__user").order_by("-created_at")[:1],
         to_attr="last_message_list"
     )
 

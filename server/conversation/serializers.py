@@ -19,11 +19,19 @@ class MessageFlatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
         fields = ['id', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
+
+
+class ForwardedMessageSerializer(serializers.ModelSerializer):
+    user = UserSimpleSerializer()
+    class Meta:
+        model = Message
+        fields = ['id', 'user', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
+
 class ConversationSimpleSerializer(serializers.ModelSerializer):
     my_membership_list = MemberSerializer(many=True)
     other_user_list = OtherMemberSerializer(many=True)
     logo = serializers.SerializerMethodField()
-    last_message_list = MessageFlatSerializer(many=True)
+    last_message_list = ForwardedMessageSerializer(many=True)
     last_message = serializers.SerializerMethodField()
     new_messages_count = serializers.IntegerField()
     class Meta:
@@ -37,6 +45,8 @@ class ConversationSimpleSerializer(serializers.ModelSerializer):
 
     def get_last_message(self, obj):
         if obj.last_message_list and len(obj.last_message_list) > 0:
+            if obj.last_message_list[0].forwarded_from:
+                return obj.last_message_list[0].forwarded_from.message
             return obj.last_message_list[0].message
         return None
 
@@ -57,11 +67,6 @@ class OthersReactionSerializer(serializers.ModelSerializer):
         model = Reaction
         fields = ['id', 'reaction', 'user', 'created_at']
 
-class ForwardedMessageSerializer(serializers.ModelSerializer):
-    user = UserSimpleSerializer()
-    class Meta:
-        model = Message
-        fields = ['id', 'user', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
 
 class MessageSimpleSerializer(serializers.ModelSerializer):
     reply_to = ReplySerializer()
