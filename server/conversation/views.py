@@ -1,3 +1,4 @@
+from django.db.models.functions import Coalesce
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 
@@ -5,7 +6,7 @@ from account.models import Connection, User
 from post.models import Post
 from .models import Conversation, Member, Message, Reaction, ConversationCategoryOptions, MessageView
 from .serializers import ConversationSimpleSerializer, MessageSimpleSerializer
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Count, OuterRef, Prefetch, Subquery, Value
 from rest_framework.decorators import action
 from rest_framework.response import Response 
 from .permissions import (
@@ -388,10 +389,32 @@ class MessageViewSet(viewsets.GenericViewSet):
             other_reactions_prefetch,
         ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list")
 
+        existing = set(
+            MessageView.objects.filter(user=user, message__in=messages_qs)
+            .values_list("message_id", flat=True)
+        )
+        to_create = [
+            MessageView(message=m, user=user)
+            for m in messages_qs
+            if m.id not in existing
+        ]
+        if to_create:
+            MessageView.objects.bulk_create(to_create)
 
-        message_views = [MessageView(message=m, user=user) for m in messages_qs]
-        MessageView.objects.bulk_create(message_views, ignore_conflicts=True)
+            message_view_counts = MessageView.objects.filter(
+                message_id=OuterRef('id')
+            ).values('message_id').annotate(
+                count=Count('id')
+            ).values('count')
 
+            messages_qs.exclude(id__in=existing).update(
+                view_count=Coalesce(
+                    Subquery(message_view_counts),
+                    Value(0)
+                )
+            )
+
+        
         # Maintain the order of IDs
         messages_ordered = sorted(messages_qs, key=lambda m: id_list.index(m.id))
         serializer = MessageSimpleSerializer(messages_ordered, many=True)

@@ -64,7 +64,7 @@ Essential features.
 
 - ✅ *FR9.1*: The system shall categorize incoming text as Requests and allow Users to move the conversation to `Primary` and `Secondary`
 - ✅ *FR9.2*: The system shall allow Users to `Archive` conversations and add them to `Archived` category.
-- *FR9.3*: The system shall allow Users to send posts to conversations in the system chat.
+- ✅ *FR9.3*: The system shall allow Users to send posts to conversations in the system chat.
 - *FR9.5*: The system shall allow Users to create group conversations (v2).
 - *FR9.6*: The system shall allow Users to react (emojis), reply, forward (in the same conversation), report messages in a conversation.
 

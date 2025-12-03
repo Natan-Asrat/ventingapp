@@ -25,6 +25,18 @@ class Post(models.Model):
     def formatted_updated_at(self):
         return get_readable_time_since(self.updated_at)
 
+class PostView(models.Model):
+    post = models.ForeignKey('post.Post', on_delete=models.CASCADE)
+    user = models.ForeignKey('account.User', on_delete=models.CASCADE)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        unique_together = ('post', 'user')
+
+    def __str__(self):
+        return f"{self.user.email} views '{self.post.description}' - id {self.post.id}"
+
 class Like(models.Model):
     post = models.ForeignKey('post.Post', on_delete=models.CASCADE, related_name='likes_list')
     liked_by = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='liked_posts')

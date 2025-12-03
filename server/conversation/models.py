@@ -45,6 +45,7 @@ class Message(models.Model):
     reaction_count = models.IntegerField(default=0)
     reply_count = models.IntegerField(default=0)
     view_count = models.IntegerField(default=0)
+    forward_count = models.IntegerField(default=0)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -92,3 +93,4 @@ class Reaction(models.Model):
         return f"{self.user.email} reacts to '{self.message.message}' with {self.reaction}"
     
 
+from .signals import *

@@ -25,11 +25,12 @@
           <p class="text-gray-500">No posts to show. Be the first to post something!</p>
         </div>
         
-        <div v-else class="space-y-6">
+        <div v-else class="space-y-6" id="post-list">
           <FeedItem
             v-for="post in posts"
             :key="post.id"
             :post="post"
+            :data-id="`post-${post.id}`"
             :liking="likingPostId === post.id"
             :saving="savingPostId === post.id"
             @donate="openDonationModal"
@@ -86,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
@@ -117,6 +118,12 @@ const likingPostId = ref(null);
 const savingPostId = ref(null);
 const showConnectionModal = ref(false);
 const selectedUserForConnection = ref(null);
+
+
+const visiblePosts = ref([]);
+let visibilityObserver = null;
+let mutationObserver = null;
+
 const handleUpdatePostObj = (post) => {
   const index = posts.value.findIndex(p => p.id === post.id);
   if (index !== -1) {
@@ -483,11 +490,119 @@ const checkUrlForPost = async () => {
 };
 
 
+function observePostVisibility() {
+  if (visibilityObserver) visibilityObserver.disconnect();
+
+  visibilityObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        const id = entry.target.dataset.id.replace("post-", "");
+        const index = visiblePosts.value.indexOf(id);
+
+        if (entry.isIntersecting) {
+          if (index === -1) {
+            visiblePosts.value.push(id);
+            console.log("VISIBLE:", id);
+          }
+        } else {
+          if (index !== -1) {
+            visiblePosts.value.splice(index, 1);
+            console.log("NOT VISIBLE:", id);
+          }
+        }
+      });
+
+      // Always log the current visible posts
+      console.log("VISIBLE:", visiblePosts.value);
+    },
+    { threshold: 0.1 }
+  );
+
+  // Observe all current post items
+  document.querySelectorAll("[data-id^='post-']").forEach((el) => {
+    visibilityObserver.observe(el);
+  });
+
+  // Observe newly added post elements
+  if (!mutationObserver) {
+    const container = document.querySelector("#post-list");
+    if (!container) return;
+
+    mutationObserver = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === 1 && node.dataset.id?.startsWith("post-")) {
+            visibilityObserver.observe(node);
+          }
+        });
+      });
+    });
+
+    mutationObserver.observe(container, { childList: true, subtree: true });
+  }
+}
+
+
+const fetchVisiblePosts = async () => {
+  if (!visiblePosts.value.length) return;
+
+  try {
+    const ids = visiblePosts.value.join(',');
+    const response = await api.get(`post/posts/get_bulk/?id=${ids}`);
+    const fetchedPosts = response.data.results; // array of conversation objects
+
+    // Update conversations in place
+    fetchedPosts.forEach((post) => {
+      updateOrAddPost(post);
+    });
+  } catch (error) {
+    console.error("Error fetching visible posts:", error);
+  }
+};
+
+
+const updateOrAddPost = (newPost) => {
+  console.log("UPDATE OR ADD POST", newPost);
+  const index = posts.value.findIndex(p => p.id === newPost.id);
+  if (index !== -1) {
+    posts.value[index] = { ...posts.value[index], ...newPost };
+  } else {
+    posts.value.unshift(newPost);
+    posts.value.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+  }
+};
+
+
+let visiblePostsInterval = null;
+
+const startVisiblePostsPolling = () => {
+  if (visiblePostsInterval) clearInterval(visiblePostsInterval);
+  
+  visiblePostsInterval = setInterval(fetchVisiblePosts, 5000);
+};
+
+const stopVisiblePostsPolling = () => {
+  if (visiblePostsInterval) clearInterval(visiblePostsInterval);
+};
+
 // Lifecycle
 onMounted(async () => {
   await fetchPosts();
   // After loading posts, check if we need to load a specific post from URL
   await checkUrlForPost();
+  observePostVisibility();
+    
+  // Start polling after initial load
+  nextTick(() => {
+    startVisiblePostsPolling();
+  });
+});
+
+
+onUnmounted(() => {
+  stopVisiblePostsPolling();
+  if (visibilityObserver) visibilityObserver.disconnect();
+  if (mutationObserver) mutationObserver.disconnect();
 });
 </script>
 

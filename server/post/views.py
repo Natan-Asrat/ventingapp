@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Post, Like, Save, Comment, LikeComment, PaymentInfo
+from .models import Post, Like, PostView, Save, Comment, LikeComment, PaymentInfo
 from .serializers import (
     PostCreateSerializer, 
     CommentCreateSerializer, 
@@ -18,8 +18,9 @@ from .serializers import (
 from rest_framework.decorators import action
 from account.pagination import CustomPagination
 from .permissions import IsPostOwner
-from django.db.models import Exists, OuterRef, Q
-from account.models import Connection
+from django.db.models import Count, Exists, OuterRef, Subquery, Value
+from .query import get_posts_queryset
+from django.db.models.functions import Coalesce
 
 class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Post.objects.filter(archived=False, banned=False).prefetch_related("payment_info_list").select_related("posted_by")
@@ -28,38 +29,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
 
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
-            return self.queryset.annotate(
-                liked=Exists(Like.objects.filter(post=OuterRef("pk"), liked_by=self.request.user, active=True)),
-                saved=Exists(Save.objects.filter(post=OuterRef("pk"), saved_by=self.request.user, active=True)),
-                connected=Exists(Connection.objects.filter(
-                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
-                    removed=False
-                )),
-                pending_connection=Exists(Connection.objects.filter(
-                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
-                    reconnection_requested=True,
-                    removed=True,
-                    reconnection_rejected=False
-                )),
-                rejected_connection=Exists(Connection.objects.filter(
-                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
-                    removed=True,
-                    reconnection_rejected=True
-                )),
-                banned_connection=Exists(Connection.objects.filter(
-                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
-                    banned=True
-                )),
-                removed_connection=Exists(Connection.objects.filter(
-                    Q(initiating_user=self.request.user, connected_user=OuterRef("posted_by")) |
-                    Q(initiating_user=OuterRef("posted_by"), connected_user=self.request.user),
-                    removed=True,
-                )),
-            )
+            return get_posts_queryset(self.queryset, self.request.user)
         elif self.action in ['unarchive', 'comments']:
             return Post.objects.all()
         return super().get_queryset()
@@ -226,6 +196,51 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
             return Response({'message': 'Payment info added successfully', 'post': PostSimpleSerializer(new_post_data).data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=False, methods=["get"])
+    def get_bulk(self, request):
+        ids = request.query_params.get("id", "")
+
+        if not ids:
+            return Response({"error": "No IDs provided"}, status=status.HTTP_400_BAD_REQUEST)
+        id_list = ids.split(",")
+        if not id_list:
+            return Response({"error": "No IDs provided"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+
+        qs = Post.objects.filter(pk__in=id_list)
+        posts = get_posts_queryset(qs, user)
+
+        existing = set(
+            PostView.objects.filter(user=user, post__in=posts)
+            .values_list("post_id", flat=True)
+        )
+        to_create = [
+            PostView(post=post, user=user)
+            for post in posts
+            if post.id not in existing
+        ]
+        if to_create:
+            PostView.objects.bulk_create(to_create)
+
+            post_view_counts = PostView.objects.filter(
+                post_id=OuterRef('id')
+            ).values('post_id').annotate(
+                count=Count('id')
+            ).values('count')
+
+            qs.exclude(id__in=existing).update(
+                views=Coalesce(
+                    Subquery(post_view_counts),
+                    Value(0)
+                )
+            )
+        
+        paginated_posts = self.paginate_queryset(posts)
+        if paginated_posts is not None:
+            serializer = PostSimpleSerializer(paginated_posts, many=True)
+            return self.get_paginated_response(serializer.data)
+        return Response(PostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
 
 
 class CommentViewSet(viewsets.GenericViewSet):
