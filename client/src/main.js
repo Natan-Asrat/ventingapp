@@ -5,6 +5,7 @@ import Antd from 'ant-design-vue';
 import App from './App.vue';
 import router from './router';
 import './assets/main.css';
+import vClickOutside from "click-outside-vue3";
 
 // Import our configured axios instance
 import api from './api/axios';
@@ -20,6 +21,7 @@ app.config.globalProperties.$http = api;
 app.use(pinia);
 app.use(router);
 app.use(Antd);
+app.directive("click-outside", vClickOutside);
 
 // Mount the app
 app.mount('#app');

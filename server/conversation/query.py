@@ -1,8 +1,8 @@
 from django.db.models import OuterRef, Subquery, Count, IntegerField, Prefetch, Q
 from django.db.models import Case, When, Value, F, Min
 from django.db.models.functions import Coalesce, Greatest
-from .models import Conversation, Member, Message, MessageView
-
+from .models import Conversation, ConversationCategoryOptions, Member, Message, MessageView
+from django.db.models import Sum
 def get_conversation_queryset(user, category=None):
     my_membership_prefetch = Prefetch(
         "members",
@@ -90,3 +90,51 @@ def add_conversation_details(conversation, user):
 
     qs = qs.prefetch_related(my_membership_prefetch, other_user_prefetch, last_message_prefetch)
     return qs
+
+
+def get_unread_counts_by_category(user):
+    # Subquery: last viewed message_id for each conversation
+    last_viewed_sub = MessageView.objects.filter(
+        user=user,
+        message__conversation=OuterRef("conversation_id")
+    ).order_by("-created_at").values("message_id")[:1]
+
+    # Coalesce needs explicit output_field to avoid FK vs Integer mismatch
+    last_viewed_id = Coalesce(
+        Subquery(last_viewed_sub),
+        Value(0),
+        output_field=IntegerField(),
+    )
+
+    # Annotate each membership with unread_count
+    members = Member.objects.filter(user=user).annotate(
+        last_viewed_id=last_viewed_id,
+        unread_count=Count(
+            "conversation__message",
+            filter=Q(conversation__message__id__gt=last_viewed_id),
+            output_field=IntegerField()
+        )
+    )
+
+    categories = [
+        ConversationCategoryOptions.PRIMARY,
+        ConversationCategoryOptions.SECONDARY,
+        ConversationCategoryOptions.REQUESTS,
+        ConversationCategoryOptions.ARCHIVED
+    ]
+ 
+    result = {}
+
+    # Use aggregate() for each category
+    for cat in categories:
+        unread = members.filter(category=cat).aggregate(
+            total_unread=Coalesce(
+                Sum("unread_count"),
+                Value(0),
+                output_field=IntegerField()
+            )
+        )["total_unread"]
+
+        result[cat] = unread
+
+    return result

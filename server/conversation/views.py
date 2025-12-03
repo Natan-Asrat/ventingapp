@@ -15,7 +15,7 @@ from .permissions import (
     IsActiveConversationMemberForMessageBulk
 )
 from .pagination import CustomMessagesPagination
-from .query import add_conversation_details, get_conversation_queryset
+from .query import add_conversation_details, get_conversation_queryset, get_unread_counts_by_category
 from django.utils import timezone
 # Create your views here.
 class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -182,6 +182,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         """
         user = request.user
         after_id = request.query_params.get("after_id")
+        category = request.query_params.get("category")
 
         if not after_id:
             return Response({"error": "Missing 'after_id' query parameter"}, status=400)
@@ -200,8 +201,8 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         after_time = reference_conv.updated_at
 
         # Reuse your existing queryset builder
-        qs = get_conversation_queryset(user).filter(
-            updated_at__gt=after_time
+        qs = get_conversation_queryset(user, category).filter(
+            updated_at__gt=after_time,
         ).order_by("updated_at")
 
         serializer = ConversationSimpleSerializer(qs, many=True)
@@ -262,6 +263,12 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         membership = conversation.members.filter(user=request.user)
         membership.update(category=category)
         return Response({"message": "Conversation moved"})
+
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def unread_counts(self, request):
+        user = request.user
+        unread_counts = get_unread_counts_by_category(user)
+        return Response(unread_counts)
 
 
 

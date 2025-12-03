@@ -40,7 +40,14 @@
                   {{ tab.name }}
                   <span 
                     v-if="tab.unread > 0"
-                    class="ml-2 bg-indigo-100 text-indigo-600 text-xs font-medium px-2 py-0.5 rounded-full"
+                    :class="[
+                      'ml-2 text-xs font-medium px-2 py-0.5 rounded-full',
+                      tab.id === 'archived' 
+                        ? 'bg-gray-100 text-gray-600' 
+                        : tab.id === 'requests' 
+                          ? 'bg-red-100 text-red-600' 
+                          : 'bg-indigo-100 text-indigo-600'
+                    ]"
                   >
                     {{ tab.unread }}
                   </span>
@@ -66,8 +73,8 @@
                 :data-id="`conversation-${conversation.id}`"
 
               >
-                <div class="flex items-center space-x-4">
-                  <div class="flex-shrink-0">
+                <div class="flex items-center">
+                  <div class="flex-shrink-0 mr-4">
                     <!-- Show conversation logo for groups or when explicitly showing conversation details -->
                     <div v-if="conversation.is_group || conversation.name" class="h-10 w-10 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center">
                       <img v-if="conversation.logo" 
@@ -118,7 +125,7 @@
                   </div>
                   <DropdownMenu>
                     <template #trigger>
-                      <EllipsisVertical class="h-5 w-5 text-gray-500 cursor-pointer"/>
+                      <EllipsisVertical class="h-8 py-2 w-8 text-gray-500 cursor-pointer"/>
                     </template>
                     <button 
                       v-if="conversation.my_membership_list[0]?.category !== 'primary'"
@@ -283,16 +290,13 @@ const fetchConversations = async (loadMore = false) => {
 };
 
 // Update unread counts for each tab
-const updateUnreadCounts = (conversations) => {
-  const counts = {};
+const updateUnreadCounts = async (conversations) => {
+  let counts = {};
   categories.value.forEach(cat => counts[cat] = 0);
   
-  conversations.forEach(conv => {
-    const category = conv.my_membership_list?.[0]?.category;
-    if (category && counts[category] !== undefined) {
-      counts[category]++;
-    }
-  });
+  const response = await api.get("/chat/conversations/unread_counts/")
+  console.log("unread_counts", response.data)
+  counts = response.data
   
   tabs.value = tabs.value.map(tab => ({
     ...tab,
@@ -399,7 +403,7 @@ const fetchLatestConversations = async () => {
   
   try {
     const latestId = conversations.value[0].id; // Get the most recent conversation ID
-    const response = await api.get(`chat/conversations/latest_conversations/?after_id=${latestId}`);
+    const response = await api.get(`chat/conversations/latest_conversations/?after_id=${latestId}&category=${activeTab.value}`);
     const newConversations = response.data;
     
     if (newConversations.length > 0) {
@@ -436,6 +440,7 @@ const moveConversation = async (conversation, category) => {
     
     // Update the local state
     conversations.value = conversations.value.filter(c => c.id !== conversation.id);
+    await updateUnreadCounts();
   } catch (error) {
     console.error('Error moving conversation:', error);
   }
@@ -445,6 +450,7 @@ const archiveConversation = async (conversation) => {
   try {
     await api.post(`chat/conversations/${conversation.id}/archive_conversation_for_me/`);
     conversations.value = conversations.value.filter(c => c.id !== conversation.id);
+    await updateUnreadCounts();
   } catch (error) {
     console.error('Error archiving conversation:', error);
   }
@@ -494,6 +500,7 @@ const loadMoreConversations = async () => {
 
 onMounted(async () => {
   await fetchCategories();
+  await updateUnreadCounts();
   await fetchConversations();
   observeConversationVisibility();
   
