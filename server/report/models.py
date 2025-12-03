@@ -29,7 +29,7 @@ class Report(models.Model):
     reported_post = models.ForeignKey('post.Post', on_delete=models.SET_NULL, null=True, blank=True, related_name='reports')
     reported_connection = models.ForeignKey('account.Connection', on_delete=models.SET_NULL, null=True, blank=True, related_name='reports')
     reported_transaction = models.ForeignKey('transaction.Transaction', on_delete=models.SET_NULL, null=True, blank=True, related_name='reports')
-
+    reported_message = models.ForeignKey('conversation.Message', on_delete=models.SET_NULL, null=True, blank=True, related_name='reports')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -125,6 +125,127 @@
                 </div>
 
                 <!-- Post Details -->
+                <!-- Message Details -->
+                <div v-else-if="report.reported_message" class="border-t border-gray-200 pt-4">
+                  <h4 class="text-sm font-medium text-gray-500 mb-2">Reported Message</h4>
+                  <div class="space-y-4">
+                    <!-- Message Header -->
+                    <div class="flex items-start space-x-3">
+                      <!-- Sender Avatar -->
+                      <div v-if="report.reported_message.user?.profile_picture" class="h-10 w-10 rounded-full overflow-hidden flex-shrink-0">
+                        <img 
+                          :src="report.reported_message.user.profile_picture" 
+                          :alt="report.reported_message.user.name"
+                          class="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div v-else class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm text-gray-600 flex-shrink-0">
+                        {{ report.reported_message.user?.name ? report.reported_message.user.name.charAt(0).toUpperCase() : 'U' }}
+                      </div>
+                      
+                      <!-- Sender Info -->
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-2">
+                          <span class="text-sm font-medium text-gray-900 truncate">
+                            {{ report.reported_message.user?.name || 'Unknown User' }}
+                          </span>
+                          <span class="text-xs text-gray-500">
+                            @{{ report.reported_message.user?.username || 'user' }}
+                          </span>
+                        </div>
+                          <!-- Main Message Content -->
+                        <div v-if="report.reported_message.message" class="text-sm text-gray-800">
+                          {{ report.reported_message.message }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Message Content -->
+                    <div class="pl-13 -mt-2 space-y-3">
+                      <!-- Reply To -->
+                      <div v-if="report.reported_message.reply_to" class="bg-gray-50 rounded-lg p-2 text-xs border border-gray-100">
+                        <div class="flex items-center text-gray-500 mb-1">
+                          <Reply class="h-3 w-3 mr-1" />
+                          <span>Replying to @{{ report.reported_message.reply_to.user?.username || 'user' }}</span>
+                        </div>
+                        <p class="text-gray-700 truncate">{{ report.reported_message.reply_to.message || 'No message content' }}</p>
+                      </div>
+
+                      <!-- Forwarded From -->
+                      <div v-if="report.reported_message.forwarded_from" class="bg-blue-50 rounded-lg p-2 text-xs border border-blue-100">
+                        <div class="flex items-center text-blue-600 mb-1">
+                          <Forward class="h-3 w-3 mr-1" />
+                          <span>Forwarded from @{{ report.reported_message.forwarded_from.user?.username || 'user' }}</span>
+                        </div>
+                        <p class="text-gray-700">{{ report.reported_message.forwarded_from.message || 'No message content' }}</p>
+                      </div>
+
+                      
+
+                      <!-- Shared Post -->
+                      <div v-if="report.reported_message.shared_post" class="border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="p-3 bg-gray-50 border-b border-gray-100">
+                          <div class="flex items-center space-x-2">
+                            <FileText class="h-4 w-4 text-gray-500" />
+                            <span class="text-xs font-medium text-gray-700">Shared Post</span>
+                          </div>
+                        </div>
+                        <div class="p-3">
+                          <div class="flex items-center space-x-2 mb-2">
+                            <div v-if="report.reported_message.shared_post.posted_by?.profile_picture" class="h-6 w-6 rounded-full overflow-hidden">
+                              <img 
+                                :src="report.reported_message.shared_post.posted_by.profile_picture" 
+                                :alt="report.reported_message.shared_post.posted_by.name"
+                                class="h-full w-full object-cover"
+                              />
+                            </div>
+                            <div v-else class="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
+                              {{ report.reported_message.shared_post.posted_by?.name ? report.reported_message.shared_post.posted_by.name.charAt(0).toUpperCase() : 'U' }}
+                            </div>
+                            <span class="text-xs font-medium">{{ report.reported_message.shared_post.posted_by?.name || 'User' }}</span>
+                          </div>
+                          
+                          <p class="text-xs text-gray-700 line-clamp-2 mb-2">
+                            {{ report.reported_message.shared_post.description || 'No description' }}
+                          </p>
+                          
+                          <div v-if="report.reported_message.shared_post.image" class="relative h-32 w-full rounded overflow-hidden">
+                            <img 
+                              :src="report.reported_message.shared_post.image" 
+                              alt="Shared post image"
+                              class="h-full w-full object-cover"
+                              @click="openImageModal(report.reported_message.shared_post.image)"
+                            />
+                            <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
+                              <ImageIcon class="h-5 w-5 text-white opacity-0 group-hover:opacity-100" />
+                            </div>
+                          </div>
+                          
+                          <!-- Payment Info -->
+                          <div v-if="report.reported_message.shared_post.payment_info_list?.length > 0" class="mt-2 pt-2 border-t border-gray-100">
+                            <div v-for="(payment, index) in report.reported_message.shared_post.payment_info_list" :key="index" class="text-xs bg-gray-50 p-2 rounded">
+                              <div class="grid grid-cols-2 gap-1">
+                                <span class="text-gray-500">Method:</span>
+                                <span class="font-medium">{{ payment.method }}</span>
+                                <span class="text-gray-500">Account:</span>
+                                <span class="font-mono">{{ payment.account }}</span>
+                                <span v-if="payment.nameOnAccount" class="text-gray-500">Name:</span>
+                                <span v-if="payment.nameOnAccount" class="font-medium">{{ payment.nameOnAccount }}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- No Content Message -->
+                      <div v-if="!report.reported_message.message && !report.reported_message.shared_post" class="text-sm text-gray-500 italic">
+                        No message content
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Post Details -->
                 <div v-else-if="report.reported_post" class="border-t border-gray-200 pt-4">
                   <h4 class="text-sm font-medium text-gray-500 mb-2">Post Details</h4>
                   <div class="space-y-3">
@@ -236,9 +357,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { api } from '@/main';
-import { Heart, MessageCircle, Eye } from 'lucide-vue-next';
+import { MessageCircle, Forward, Eye, Heart, Reply, FileText, User, Image as ImageIcon, AlertCircle } from 'lucide-vue-next';
 import AppealsModal from '@/components/admin/AppealsModal.vue';
 import DecisionModal from '@/components/admin/DecisionModal.vue';
 
@@ -352,7 +473,18 @@ onMounted(() => {
 // Filter to capitalize first letter
 const capitalize = (value) => {
   if (!value) return '';
-  value = value.toString();
   return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const options = { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  };
+  return new Date(dateString).toLocaleDateString(undefined, options);
 };
 </script>

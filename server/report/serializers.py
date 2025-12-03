@@ -1,13 +1,39 @@
+from conversation.models import Message
 from rest_framework import serializers
 from .models import Report, ReportDecision, Appeal, AppealDecision
 from account.serializers import UserSimpleSerializer
 from transaction.serializers import TransactionsSimpleSerializer
 from post.serializers import PostSimpleSerializer
 from account.serializers import ConnectionListSerializer
+class ReplyOrForwardedMessageSerializer(serializers.ModelSerializer):
+    user = UserSimpleSerializer()
+    class Meta:
+        model = Message
+        fields = [
+            'id',
+            'user',
+            'message'
+        ]
+class ReportedMessageSerializer(serializers.ModelSerializer):
+    forwarded_from = ReplyOrForwardedMessageSerializer()
+    reply_to = ReplyOrForwardedMessageSerializer()
+    shared_post = PostSimpleSerializer() 
+    user = UserSimpleSerializer()
+    class Meta:
+        model = Message
+        fields = [
+            'id',
+            'user',
+            'message',
+            'forwarded_from',
+            'reply_to',
+            'shared_post'
+        ]
 class ReportSerializer(serializers.ModelSerializer):
     reported_transaction = TransactionsSimpleSerializer()
     reported_post = PostSimpleSerializer()
     reported_connection = ConnectionListSerializer()
+    reported_message = ReportedMessageSerializer()
     class Meta:
         model = Report
         fields = [
@@ -21,6 +47,7 @@ class ReportSerializer(serializers.ModelSerializer):
             'reported_post', 
             'reported_connection', 
             'reported_transaction',
+            'reported_message',
             'formatted_created_at',
             'formatted_updated_at',
             'created_since',
@@ -152,6 +179,7 @@ class ReportsWithDecisionsAndAppealsSerializer(serializers.ModelSerializer):
 class ReportsWithDecisionsSerializer(serializers.ModelSerializer):
     reported_transaction = TransactionsSimpleSerializer()
     reported_post = PostSimpleSerializer()
+    reported_message = ReportedMessageSerializer()
     decisions = ReportDecisionSimpleSerializer(many=True)
     class Meta:
         model = Report
@@ -168,6 +196,7 @@ class ReportsWithDecisionsSerializer(serializers.ModelSerializer):
             'reported_post', 
             'reported_connection', 
             'reported_transaction',
+            'reported_message',
             'formatted_created_at',
             'formatted_updated_at',
             'created_since',

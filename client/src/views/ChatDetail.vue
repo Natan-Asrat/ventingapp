@@ -228,14 +228,31 @@
               <button 
                 @click.stop="handleForward(message)"
                 class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                title="Reply">
+                title="Forward">
                 <Forward class="h-4 w-4"/>
               </button>
-              <button 
-                class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                title="More">
-                <EllipsisVertical class="h-4 w-4"/>
-              </button>
+              <div class="relative">
+                  <button 
+                    @click.stop="showReportMenu = !showReportMenu" 
+                    class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
+                    title="More">
+                    <EllipsisVertical class="h-4 w-4"/>
+                  </button>
+                  
+                  <!-- Dropdown menu -->
+                  <div 
+                    v-if="showReportMenu" 
+                    class="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                    v-click-outside="() => showReportMenu = false"
+                  >
+                    <button 
+                      @click="handleReportMessage(message.id)"
+                      class="block cursor-pointer w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Report Message
+                    </button>
+                  </div>
+                </div>
             </div>
           </div>
 
@@ -283,11 +300,18 @@
               </div>
             </div>
           </div>
-
-
         </div>
       </div>
     </div>
+
+    <!-- Report Modal -->
+    <ReportModal
+      v-if="isReportModalOpen"
+      :is-open="isReportModalOpen"
+      :is-submitting="isSubmittingReport"
+      @close="isReportModalOpen = false"
+      @submit="submitReport"
+    />
 
     <!-- Message Input -->
     <div class="border-t border-gray-200">
@@ -328,12 +352,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import ReportModal from '@/components/feed/ReportModal.vue';
 import SharedPostPreview from '@/components/chat/SharedPostPreview.vue';
 import { useUserStore } from '@/stores/user';
-import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft } from 'lucide-vue-next';
+import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft, Flag } from 'lucide-vue-next';
 import api from '@/api/axios';
 import { MessageCircle, Forward } from 'lucide-vue-next';
-
+import { message } from 'ant-design-vue';
 const visibleMessages = ref([]);
 let visibilityObserver = null;
 let mutationObserver = null;
@@ -344,6 +369,8 @@ const isAtBottom = ref(true);
 const newMessagesCount = ref(0);
 const hasSentNewMessage = ref(false);
 const loadingMessages = ref(false)
+const showReportMenu = ref(false);
+
 // Emoji Picker
 import data from 'emoji-mart-vue-fast/data/all.json';
 import 'emoji-mart-vue-fast/css/emoji-mart.css';
@@ -380,6 +407,9 @@ const replyingTo = ref(null);
 const highlightedMessageId = ref(null);
 const showActions = ref(null);
 const emojiPickerForMessage = ref(null);
+const isReportModalOpen = ref(false);
+const isSubmittingReport = ref(false);
+const selectedMessageId = ref(null);
 const pagination = ref({
   next: null,
   previous: null,
@@ -388,6 +418,36 @@ const pagination = ref({
 });
 let closeTimeout = null;
 
+const handleReportMessage = (messageId) => {
+  selectedMessageId.value = messageId;
+  showReportMenu.value = false;
+  isReportModalOpen.value = true;
+};
+
+
+const submitReport = async (reason) => {
+  isSubmittingReport.value = true;
+  
+  try {
+    const response = await api.post('report/reports/report_message/', {
+      message_id: selectedMessageId.value,
+      reason: reason
+    });
+    
+    if (response.data.error) {
+      message.error(response.data.error);
+    } else {
+      message.success('Message reported successfully');
+    }
+  } catch (error) {
+    console.error('Error reporting message:', error);
+    const errorMessage = error.response?.data?.error || 'Failed to report message';
+    message.error(errorMessage);
+  } finally {
+    isSubmittingReport.value = false;
+    isReportModalOpen.value = false;
+  }
+};
 // Fetch conversation details
 const fetchConversation = async () => {
   try {

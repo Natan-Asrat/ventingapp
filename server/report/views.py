@@ -1,5 +1,7 @@
 from rest_framework import viewsets, mixins
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
+
+from conversation.models import Message
 from .models import AppealDecision, Report, ReportDecision, Appeal
 from .serializers import ReportDecisionSerializer, AppealsAndDecisionsSerializer, ReportsWithDecisionsSerializer
 from .permissions import IsReportAboutOrStaff
@@ -14,14 +16,23 @@ from account.models import Connection
 class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Report.objects.all().prefetch_related(
             'decisions',
-            "reported_post__payment_info_list"
+            "reported_post__payment_info_list",
+            "reported_message__shared_post__payment_info_list"
         ).order_by(
             "-created_at"
         ).select_related(
             "reported_post", 
             "reported_connection", 
             "reported_transaction", 
-            "reported_post__posted_by"
+            "reported_post__posted_by",
+            "reported_message",
+            "reported_message__user",
+            "reported_message__forwarded_from",
+            "reported_message__reply_to",
+            "reported_message__shared_post",
+            "reported_message__shared_post__posted_by",
+            "reported_message__forwarded_from__user",
+            "reported_message__reply_to__user"
         )
     serializer_class = ReportsWithDecisionsSerializer
     permission_classes = [IsAdminUser]
@@ -112,6 +123,33 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             report_type=ReportTypes.CONNECTION,
         )
         return Response(status=200)
+    
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def report_message(self, request):
+        message_id = request.data.get('message_id')
+        if not message_id:
+            return Response({'error': 'Message ID is required'}, status=400)
+        try:
+            message = Message.objects.get(id=message_id)
+        except Message.DoesNotExist:
+            return Response({'error': 'Message not found'}, status=404)
+        existing_report = Report.objects.filter(
+            reported_by=request.user,
+            reported_message=message,
+            report_type=ReportTypes.MESSAGE,
+        ).first()
+        if existing_report:
+            return Response({'error': 'You have already reported this message'}, status=400)
+        
+        Report.objects.create(
+            reported_by=request.user,
+            about_user=message.user,
+            reported_message=message,
+            reason=request.data.get('reason'),
+            report_type=ReportTypes.MESSAGE,
+        )
+        return Response(status=200)
+    
 
 # Create your views here.
 class ReportDecisionViewSet(viewsets.GenericViewSet):
