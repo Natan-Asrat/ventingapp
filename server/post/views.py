@@ -18,7 +18,7 @@ from .serializers import (
 from rest_framework.decorators import action
 from account.pagination import CustomPagination
 from .permissions import IsPostOwner
-from django.db.models import Count, Exists, OuterRef, Subquery, Value
+from django.db.models import F, Count, Exists, OuterRef, Subquery, Value
 from .query import get_posts_queryset
 from django.db.models.functions import Coalesce
 
@@ -249,6 +249,10 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
                     Value(0)
                 )
             )
+
+        PostView.objects.filter(
+            user=user, post_id__in=id_list
+        ).update(count=F("count") + Value(1))
         
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:

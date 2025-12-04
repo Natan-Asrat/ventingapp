@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 from server.utils import get_readable_time_since
+from pgvector.django import IvfflatIndex, VectorField
 # Create your models here.
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -16,6 +17,22 @@ class Post(models.Model):
     forwards = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    embedding = VectorField(
+        dimensions=1536,
+        null=True,
+        blank=True,
+        help_text="Vector embeddings of the post description",
+    )
+
+    class Meta:
+        indexes = [
+            IvfflatIndex(
+                name='post_embedding_index',
+                fields=['embedding'],
+                lists=100,
+                opclasses=['vector_l2_ops']
+            )
+        ]
     
     @property
     def formatted_created_at(self):
@@ -28,9 +45,10 @@ class Post(models.Model):
 class PostView(models.Model):
     post = models.ForeignKey('post.Post', on_delete=models.CASCADE)
     user = models.ForeignKey('account.User', on_delete=models.CASCADE)
-    
+    count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
     class Meta:
         unique_together = ('post', 'user')
 
