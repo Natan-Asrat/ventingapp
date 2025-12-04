@@ -66,7 +66,11 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
                 profileId.value = response.data?.id;
             } catch (err) {
                 console.error('Error fetching user profile:', err);
-                message.error('Failed to load user profile. Please try again.');
+                if (err.response?.data?.error) {
+                    message.error(err.response.data.error);
+                } else {
+                    message.error('Failed to load user profile. Please try again.');
+                }
             }
         }
     };
