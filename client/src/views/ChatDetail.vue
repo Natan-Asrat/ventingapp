@@ -174,8 +174,8 @@
               <p v-if="message.message" class="text-sm">{{ message.message }}</p>
               
               <!-- Shared Post Preview -->
-              <div v-if="message.shared_post" class="mt-2">
-                <SharedPostPreview :post="message.shared_post" />
+              <div v-if="message.shared_post || message.forwarded_from?.shared_post" class="mt-2">
+                <SharedPostPreview :post="message.shared_post || message.forwarded_from?.shared_post" />
               </div>
               
               <!-- Hover actions -->

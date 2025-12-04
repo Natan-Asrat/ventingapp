@@ -23,9 +23,10 @@ class MessageFlatSerializer(serializers.ModelSerializer):
 
 class ForwardedMessageSerializer(serializers.ModelSerializer):
     user = UserSimpleSerializer()
+    shared_post = PostSimpleSerializer()
     class Meta:
         model = Message
-        fields = ['id', 'user', 'banned', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
+        fields = ['id', 'user', 'banned', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since', 'shared_post']
 
 class ConversationSimpleSerializer(serializers.ModelSerializer):
     my_membership_list = MemberSerializer(many=True)
