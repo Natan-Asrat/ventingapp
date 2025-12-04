@@ -12,28 +12,10 @@ from post.models import Post
 from .models import ReportTypes
 from account.permissions import IsConnectedUser
 from account.models import Connection
+from .query import optimize_report_queryset
 
 class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    queryset = Report.objects.all().prefetch_related(
-            'decisions',
-            "reported_post__payment_info_list",
-            "reported_message__shared_post__payment_info_list"
-        ).order_by(
-            "-created_at"
-        ).select_related(
-            "reported_post", 
-            "reported_connection", 
-            "reported_transaction", 
-            "reported_post__posted_by",
-            "reported_message",
-            "reported_message__user",
-            "reported_message__forwarded_from",
-            "reported_message__reply_to",
-            "reported_message__shared_post",
-            "reported_message__shared_post__posted_by",
-            "reported_message__forwarded_from__user",
-            "reported_message__reply_to__user"
-        )
+    queryset = optimize_report_queryset(Report.objects.all().order_by("-created_at"))
     serializer_class = ReportsWithDecisionsSerializer
     permission_classes = [IsAdminUser]
 
