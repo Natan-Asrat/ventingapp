@@ -280,7 +280,8 @@ const handleLogout = () => {
 // Initial load
 onMounted(async () => {
     console.log("user id", route.params.userId)
-    if (route.params.userId) {
+    console.log("username", route.params.username)
+    if (route.params.userId || route.params.username) {
         profileStore.setLoading(true);
         await profileStore.fetchUserProfile();
         profileStore.setLoading(false);

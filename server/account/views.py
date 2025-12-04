@@ -371,3 +371,18 @@ class UserViewset(CreateModelMixin, GenericViewSet):
         )
 
         return Response(serializer.data)
+    
+    @action(detail=False, methods=["get"])
+    def get_profile_by_username(self, request):
+        current_user = request.user         # viewer
+        try:
+            target_user = User.objects.get(username=request.query_params.get("username"))
+            annotated_user = get_other_profile_queryset(target_user.id, current_user)
+
+            serializer = OtherProfileSerializer(
+                annotated_user,
+            )
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response(serializer.data)

@@ -46,13 +46,28 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
     }
 
     const fetchUserProfile = async () => {
-        try {            
-            const response = await api.get(`/account/users/${profileId.value}/profile/`);
-            profile.value = response.data;
-            
-        } catch (err) {
-            console.error('Error fetching user profile:', err);
-            message.error('Failed to load user profile. Please try again.');
+        if (profileId.value) {
+            try {            
+                const response = await api.get(`/account/users/${profileId.value}/profile/`);
+                profile.value = response.data;
+                
+            } catch (err) {
+                console.error('Error fetching user profile:', err);
+                message.error('Failed to load user profile. Please try again.');
+            }
+        } else if (route.params.username) {
+            try {
+                const response = await api.get(`/account/users/get_profile_by_username/`, {
+                    params: {
+                        username: route.params.username
+                    }
+                });
+                profile.value = response.data;
+                profileId.value = response.data?.id;
+            } catch (err) {
+                console.error('Error fetching user profile:', err);
+                message.error('Failed to load user profile. Please try again.');
+            }
         }
     };
 

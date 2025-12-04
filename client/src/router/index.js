@@ -35,6 +35,13 @@ const routes = [
     props: true
   },
   {
+    path: '/@:username',
+    name: 'UsernameProfile',
+    component: UserProfile,
+    meta: { requiresAuth: true },
+    props: true
+  },
+  {
     path: '/history',
     name: 'History',
     component: HistoryView,
