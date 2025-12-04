@@ -21,7 +21,8 @@ from .query import (
     add_conversation_details, 
     get_conversation_queryset, 
     get_unread_counts_by_category,
-    optimize_messages_queryset
+    optimize_messages_queryset,
+    prefetch_reactions
 )
 from django.utils import timezone
 # Create your views here.
@@ -44,20 +45,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     def messages(self, request, pk=None):
         conversation = self.get_object()
         user=request.user
-        my_reaction_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
-            to_attr="my_reaction_list"
-        )
-        other_reactions_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
-            to_attr="other_reactions_list"
-        )
-        unoptimized_qs = Message.objects.filter(conversation=conversation).prefetch_related(
-            my_reaction_prefetch,
-            other_reactions_prefetch,
-        )
+        unoptimized_qs = prefetch_reactions(Message.objects.filter(conversation=conversation), user)
         messages = optimize_messages_queryset(unoptimized_qs).order_by("-created_at")
 
         paginated_messages = self.paginate_queryset(messages)
@@ -85,23 +73,10 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         except ValueError:
             return Response({"error": "Invalid 'after_id' format"}, status=400)
 
-        my_reaction_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
-            to_attr="my_reaction_list"
-        )
-        other_reactions_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
-            to_attr="other_reactions_list"
-        )
-        unoptimized_qs = Message.objects.filter(
+        unoptimized_qs = prefetch_reactions(Message.objects.filter(
             conversation=conversation,
             id__gt=after_id
-        ).prefetch_related(
-            my_reaction_prefetch,
-            other_reactions_prefetch,
-        )
+        ), user)
         new_messages_qs = optimize_messages_queryset(unoptimized_qs).order_by("id")
         paginated_messages = self.paginate_queryset(new_messages_qs)
         if paginated_messages is not None:
@@ -133,21 +108,8 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             conversation=conversation,
             reply_to=reply_to
         )
-        my_reaction_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
-            to_attr="my_reaction_list"
-        )
-        other_reactions_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
-            to_attr="other_reactions_list"
-        )
 
-        unoptimized_qs = Message.objects.filter(pk=new_message.pk).prefetch_related(
-            my_reaction_prefetch,
-            other_reactions_prefetch,
-        )
+        unoptimized_qs = prefetch_reactions(Message.objects.filter(pk=new_message.pk), user)
 
         message_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
@@ -310,21 +272,8 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             user=user,
             conversation=conversation,
         )
-        my_reaction_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
-            to_attr="my_reaction_list"
-        )
-        other_reactions_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
-            to_attr="other_reactions_list"
-        )
 
-        unoptimized_qs = Message.objects.filter(pk=new_message.pk).prefetch_related(
-            my_reaction_prefetch,
-            other_reactions_prefetch,
-        )
+        unoptimized_qs = prefetch_reactions(Message.objects.filter(pk=new_message.pk), user)
         message_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         
@@ -357,21 +306,9 @@ class MessageViewSet(viewsets.GenericViewSet):
                 user=user,
                 reaction=emoji
             )
-        my_reaction_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
-            to_attr="my_reaction_list"
-        )
-        other_reactions_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
-            to_attr="other_reactions_list"
-        )
+        
+        unoptimized_qs = prefetch_reactions(Message.objects.filter(pk=message.pk), user)
 
-        unoptimized_qs = Message.objects.filter(pk=message.pk).prefetch_related(
-            my_reaction_prefetch,
-            other_reactions_prefetch,
-        )
         message_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         return Response(serializer.data)
@@ -396,21 +333,7 @@ class MessageViewSet(viewsets.GenericViewSet):
             return Response({"error": "No valid IDs found"}, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
-
-        my_reaction_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
-            to_attr="my_reaction_list"
-        )
-        other_reactions_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
-            to_attr="other_reactions_list"
-        )
-        unoptimized_qs = Message.objects.filter(pk__in=id_list).prefetch_related(
-            my_reaction_prefetch,
-            other_reactions_prefetch,
-        )
+        unoptimized_qs = prefetch_reactions(Message.objects.filter(pk__in=id_list), user)
         messages_qs = optimize_messages_queryset(unoptimized_qs)
         existing = set(
             MessageView.objects.filter(user=user, message__in=messages_qs)
@@ -461,24 +384,8 @@ class MessageViewSet(viewsets.GenericViewSet):
             user=user,
             conversation=message.conversation
         )
-        my_reaction_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
-            to_attr="my_reaction_list"
-        )
-        other_reactions_prefetch = Prefetch(
-            "reaction_set",
-            queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
-            to_attr="other_reactions_list"
-        )
 
-        unoptimized_qs = Message.objects.filter(pk=new_forward.pk).prefetch_related(
-            my_reaction_prefetch,
-            other_reactions_prefetch,
-            "reply_to",
-            "forwarded_from",
-            "forwarded_from__user"
-        )
+        unoptimized_qs = prefetch_reactions(Message.objects.filter(pk=new_forward.pk), user)
 
         new_forward_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(new_forward_with_prefetch)

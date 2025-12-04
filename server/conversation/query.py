@@ -1,7 +1,14 @@
 from django.db.models import OuterRef, Subquery, Count, IntegerField, Prefetch, Q
 from django.db.models import Case, When, Value, F, Min
 from django.db.models.functions import Coalesce, Greatest
-from .models import Conversation, ConversationCategoryOptions, Member, Message, MessageView
+from .models import (
+    Conversation, 
+    ConversationCategoryOptions, 
+    Member, 
+    Message, 
+    MessageView,
+    Reaction
+)
 from django.db.models import Sum
 def get_conversation_queryset(user, category=None):
     my_membership_prefetch = Prefetch(
@@ -153,4 +160,20 @@ def optimize_messages_queryset(qs):
     ).prefetch_related(
         "shared_post__payment_info_list",
         "reply_to__shared_post__payment_info_list"
+    )
+
+def prefetch_reactions(qs, user):
+    my_reaction_prefetch = Prefetch(
+        "reaction_set",
+        queryset=Reaction.objects.filter(user=user).order_by("-created_at"),
+        to_attr="my_reaction_list"
+    )
+    other_reactions_prefetch = Prefetch(
+        "reaction_set",
+        queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
+        to_attr="other_reactions_list"
+    )
+    return qs.prefetch_related(
+        my_reaction_prefetch,
+        other_reactions_prefetch,
     )
