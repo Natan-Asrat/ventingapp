@@ -156,10 +156,15 @@ def optimize_messages_queryset(qs):
         "reply_to__forwarded_from",
         "reply_to__forwarded_from__user",
         "reply_to__shared_post",
-        "reply_to__shared_post__posted_by"
+        "reply_to__shared_post__posted_by",
+        "forwarded_from",
+        "forwarded_from__user",
+        "forwarded_from__shared_post",
+        "forwarded_from__shared_post__posted_by",
     ).prefetch_related(
         "shared_post__payment_info_list",
-        "reply_to__shared_post__payment_info_list"
+        "reply_to__shared_post__payment_info_list",
+        "forwarded_from__shared_post__payment_info_list"
     )
 
 def prefetch_reactions(qs, user):
