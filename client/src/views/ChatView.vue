@@ -209,7 +209,7 @@ import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
 import { EllipsisVertical, Archive, ArrowRight, Check, ArrowLeft } from 'lucide-vue-next';
 import DropdownMenu from '@/components/common/DropdownMenu.vue';
-
+import { message } from 'ant-design-vue';
 const route = useRoute();
 const router = useRouter();
 
@@ -353,6 +353,7 @@ const selectConversation = async (conversation) => {
       router.push(`/chat/${conversation.id}`);
     } catch (error) {
       console.error('Error sharing post:', error);
+      message.error(error.response.data.error)
       // Show error message
       // toast.error('Failed to share post');
     }

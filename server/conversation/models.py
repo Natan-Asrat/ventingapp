@@ -15,7 +15,7 @@ class Conversation(models.Model):
     members_count = models.IntegerField(default=2)
     active = models.BooleanField(default=True)
     logo = models.ImageField(upload_to="conversation_logos/", blank=True, null=True)
-
+    connection = models.ForeignKey('account.Connection', on_delete=models.SET_NULL, null=True, blank=True)
     is_group = models.BooleanField(default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
@@ -46,6 +46,7 @@ class Message(models.Model):
     reply_count = models.IntegerField(default=0)
     view_count = models.IntegerField(default=0)
     forward_count = models.IntegerField(default=0)
+    banned = models.BooleanField(default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

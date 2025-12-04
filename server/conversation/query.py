@@ -138,3 +138,19 @@ def get_unread_counts_by_category(user):
         result[cat] = unread
 
     return result
+
+def optimize_messages_queryset(qs):
+    return qs.select_related(
+        "user", 
+        "reply_to", 
+        "reply_to__user", 
+        "shared_post", 
+        "shared_post__posted_by",
+        "reply_to__forwarded_from",
+        "reply_to__forwarded_from__user",
+        "reply_to__shared_post",
+        "reply_to__shared_post__posted_by"
+    ).prefetch_related(
+        "shared_post__payment_info_list",
+        "reply_to__shared_post__payment_info_list"
+    )

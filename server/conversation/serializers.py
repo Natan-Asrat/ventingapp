@@ -18,14 +18,14 @@ class OtherMemberSerializer(serializers.ModelSerializer):
 class MessageFlatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = ['id', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
+        fields = ['id', 'message', 'banned', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
 
 
 class ForwardedMessageSerializer(serializers.ModelSerializer):
     user = UserSimpleSerializer()
     class Meta:
         model = Message
-        fields = ['id', 'user', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
+        fields = ['id', 'user', 'banned', 'message', 'created_at', 'updated_at', 'formatted_created_at', 'formatted_updated_at', 'created_since', 'updated_since']
 
 class ConversationSimpleSerializer(serializers.ModelSerializer):
     my_membership_list = MemberSerializer(many=True)
@@ -54,9 +54,12 @@ class ConversationSimpleSerializer(serializers.ModelSerializer):
 
 class ReplySerializer(serializers.ModelSerializer):
     user = UserSimpleSerializer()
+    forwarded_from = ForwardedMessageSerializer()
+    shared_post = PostSimpleSerializer()
+
     class Meta:
         model = Message
-        fields = ['id', 'message', 'user', 'created_at']
+        fields = ['id', 'message', 'forwarded_from', 'shared_post', 'banned', 'user', 'created_at']
 
 class ReactionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -79,5 +82,5 @@ class MessageSimpleSerializer(serializers.ModelSerializer):
     shared_post = PostSimpleSerializer()
     class Meta:
         model = Message
-        fields = ['id', 'user', 'shared_post', 'message', 'my_reaction_list', 'other_reactions_list', 'reply_to', 'reaction_count', 'reply_count', 'view_count', 'created_at', 'updated_at', 'forwarded_from']
+        fields = ['id', 'user', 'banned', 'shared_post', 'message', 'my_reaction_list', 'other_reactions_list', 'reply_to', 'reaction_count', 'reply_count', 'view_count', 'created_at', 'updated_at', 'forwarded_from']
 

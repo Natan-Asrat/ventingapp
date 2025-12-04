@@ -121,117 +121,128 @@
               Replied to {{ message.reply_to.user.id === currentUser.id ? 'You' : `@${message.reply_to.user.username}` }}
             </div>
             <div class="truncate">
-              {{ message.reply_to.message }}
+              {{ 
+                message.reply_to.message || 
+                message.reply_to?.forwarded_from?.message  ||
+                (message?.reply_to?.shared_post?.description && "Post: " + message?.reply_to?.shared_post?.description)
+
+              }}
             </div>
           </div>
           
           <!-- Message bubble with hover area -->
-          <div 
-            :class="[
-              'max-w-xs md:max-w-md lg:max-w-lg rounded-lg relative',
-              message.user.id === currentUser.id 
-                ? 'bg-indigo-100 text-indigo-900' 
-                : 'bg-gray-100 text-gray-900',
-              'hover:bg-opacity-90 transition-colors duration-200',
-              'px-4 py-2',
-              'flex flex-col',
-              message.user.id === currentUser.id ? 'ml-auto' : 'mr-auto'
-            ]"
-            @mouseenter="showActions = message.id"
-            @mouseleave="handleMouseLeave">
-            
-            <!-- Forwarded message indicator -->
-            <div v-if="message.forwarded_from" class="mb-1 flex items-center text-xs text-gray-500">
-              <Forward class="h-3 w-3 mr-1" />
-              <span>Forwarded from @{{ message.forwarded_from.user.username }}</span>
-            </div>
-            
-            <!-- Original forwarded message preview -->
+           <div :class="[message.user.id !== currentUser.id && 'flex-row-reverse']" class="flex gap-2">
+            <span 
+              v-if="message.banned"
+              class="text-red-600 font-bold text-lg mt-1"
+              title="This message was banned"
+            >!</span>
             <div 
-              v-if="message.forwarded_from" 
-              class="rounded p-2 mb-2 text-xs border-l-2 border-gray-300"
               :class="[
+                'max-w-xs md:max-w-md lg:max-w-lg rounded-lg relative',
                 message.user.id === currentUser.id 
-                ? 'bg-indigo-200/50 text-indigo-900' 
-                : 'bg-gray-200/50 text-gray-900',
+                  ? 'bg-indigo-100 text-indigo-900' 
+                  : 'bg-gray-100 text-gray-900',
+                'hover:bg-opacity-90 transition-colors duration-200',
+                'px-4 py-2',
+                'flex flex-col',
+                message.user.id === currentUser.id ? 'ml-auto' : 'mr-auto'
               ]"
-            >
-              <p class="truncate">{{ message.forwarded_from.message || 'Media' }}</p>
-            </div>
-            
-            <!-- Current message content -->
-            <p v-if="message.message" class="text-sm">{{ message.message }}</p>
-            
-            <!-- Shared Post Preview -->
-            <div v-if="message.shared_post" class="mt-2">
-              <SharedPostPreview :post="message.shared_post" />
-            </div>
-            
-            <!-- Hover actions -->
-            <div 
-              v-if="showActions === message.id"
-              class="absolute flex items-center space-x-1 bg-white rounded-full shadow-md p-1 transition-opacity duration-200"
-              :class="{
-                'right-0 -bottom-6': message.user.id === currentUser.id,
-                'left-0 -bottom-6': message.user.id !== currentUser.id,
-                'ml-12': (message.my_reaction_list?.length || message.other_reactions_list?.length) && message.user.id !== currentUser.id,
-                'mr-12': (message.my_reaction_list?.length || message.other_reactions_list?.length) && message.user.id === currentUser.id,
-                '!left-4': message.user.id !== currentUser.id
-              }"
-              @mouseenter="showActions = message.id">
+              @mouseenter="showActions = message.id"
+              @mouseleave="handleMouseLeave">
               
-              <button 
-                @click.stop="handleReply(message)"
-                class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                title="Reply">
-                <Reply class="h-4 w-4"/>
-              </button>
+              <!-- Forwarded message indicator -->
+              <div v-if="message.forwarded_from" class="mb-1 flex items-center text-xs text-gray-500">
+                <Forward class="h-3 w-3 mr-1" />
+                <span>Forwarded from @{{ message.forwarded_from.user.username }}</span>
+              </div>
               
-              <div class="relative">
+              <!-- Original forwarded message preview -->
+              <div 
+                v-if="message.forwarded_from" 
+                class="rounded p-2 mb-2 text-xs border-l-2 border-gray-300"
+                :class="[
+                  message.user.id === currentUser.id 
+                  ? 'bg-indigo-200/50 text-indigo-900' 
+                  : 'bg-gray-200/50 text-gray-900',
+                ]"
+              >
+                <p class="truncate">{{ message.forwarded_from.message || 'Media' }}</p>
+              </div>
+              
+              <!-- Current message content -->
+              <p v-if="message.message" class="text-sm">{{ message.message }}</p>
+              
+              <!-- Shared Post Preview -->
+              <div v-if="message.shared_post" class="mt-2">
+                <SharedPostPreview :post="message.shared_post" />
+              </div>
+              
+              <!-- Hover actions -->
+              <div 
+                v-if="showActions === message.id"
+                class="absolute flex items-center space-x-1 bg-white rounded-full shadow-md p-1 transition-opacity duration-200"
+                :class="{
+                  'right-0 -bottom-6': message.user.id === currentUser.id,
+                  'left-0 -bottom-6': message.user.id !== currentUser.id,
+                  'ml-12': (message.my_reaction_list?.length || message.other_reactions_list?.length) && message.user.id !== currentUser.id,
+                  'mr-12': (message.my_reaction_list?.length || message.other_reactions_list?.length) && message.user.id === currentUser.id,
+                  '!left-4': message.user.id !== currentUser.id
+                }"
+                @mouseenter="showActions = message.id">
+                
                 <button 
-                  @click.stop="toggleEmojiPicker(message.id, $event)"
-                  @mouseenter="cancelClose()"
+                  @click.stop="handleReply(message)"
                   class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                  title="React">
-                  <Smile class="h-4 w-4"/>
+                  title="Reply">
+                  <Reply class="h-4 w-4"/>
                 </button>
                 
-                <!-- Emoji Picker Popup -->
-                <div 
-                  v-if="emojiPickerForMessage === message.id"
-                  class="absolute left-0 z-50 shadow-lg rounded-lg overflow-hidden bg-white"
-                  :style="{ 
-                    left: message.user.id === currentUser.id ? 'auto' : '0px',
-                    right: message.user.id === currentUser.id ? '-50px' : 'auto',
-                    width: '300px',
-                    maxHeight: '300px',
-                    overflowY: 'auto' 
-                  }"
-                  @mouseenter="cancelClose(); showActions = message.id">
-                  <Picker 
-                    :data="emojiIndex" 
-                    set="twitter" 
-                    @select="(emoji) => onEmojiSelect(message, emoji)" 
-                    :perLine="7"
-                    :showPreview="false"
-                    :showSearch="true"
-                    :showSkinTones="false"
-                    :emojiSize="24"
-                    :native="true"
-                    :autoFocus="true"
-                    :enableFrequentEmojiSort="true"
-                    title="Pick an emoji"
-                    style="width: 300px;"
-                  />
+                <div class="relative">
+                  <button 
+                    @click.stop="toggleEmojiPicker(message.id, $event)"
+                    @mouseenter="cancelClose()"
+                    class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
+                    title="React">
+                    <Smile class="h-4 w-4"/>
+                  </button>
+                  
+                  <!-- Emoji Picker Popup -->
+                  <div 
+                    v-if="emojiPickerForMessage === message.id"
+                    class="absolute left-0 z-50 shadow-lg rounded-lg overflow-hidden bg-white"
+                    :style="{ 
+                      left: message.user.id === currentUser.id ? 'auto' : '0px',
+                      right: message.user.id === currentUser.id ? '-50px' : 'auto',
+                      width: '300px',
+                      maxHeight: '300px',
+                      overflowY: 'auto' 
+                    }"
+                    @mouseenter="cancelClose(); showActions = message.id">
+                    <Picker 
+                      :data="emojiIndex" 
+                      set="twitter" 
+                      @select="(emoji) => onEmojiSelect(message, emoji)" 
+                      :perLine="7"
+                      :showPreview="false"
+                      :showSearch="true"
+                      :showSkinTones="false"
+                      :emojiSize="24"
+                      :native="true"
+                      :autoFocus="true"
+                      :enableFrequentEmojiSort="true"
+                      title="Pick an emoji"
+                      style="width: 300px;"
+                    />
+                  </div>
                 </div>
-              </div>
-              <button 
-                @click.stop="handleForward(message)"
-                class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                title="Forward">
-                <Forward class="h-4 w-4"/>
-              </button>
-              <div class="relative">
+                <button 
+                  @click.stop="handleForward(message)"
+                  class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
+                  title="Forward">
+                  <Forward class="h-4 w-4"/>
+                </button>
+                <div class="relative">
                   <button 
                     @click.stop="showReportMenu = !showReportMenu" 
                     class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
@@ -239,10 +250,10 @@
                     <EllipsisVertical class="h-4 w-4"/>
                   </button>
                   
-                  <!-- Dropdown menu -->
+                  <!-- Dropdown menu ABOVE -->
                   <div 
                     v-if="showReportMenu" 
-                    class="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                    class="absolute right-0 bottom-full mb-1 w-48 bg-white rounded-md shadow-lg py-1 z-50"
                     v-click-outside="() => showReportMenu = false"
                   >
                     <button 
@@ -253,6 +264,8 @@
                     </button>
                   </div>
                 </div>
+
+              </div>
             </div>
           </div>
 
@@ -322,7 +335,11 @@
           @click="scrollToMessage(replyingTo.id)"
         >
           <div class="font-medium text-gray-900">Replying to @{{ replyingTo.user.username }}</div>
-          <div class="text-gray-500 mt-1 truncate">{{ replyingTo.message }}</div>
+          <div class="text-gray-500 mt-1 truncate">{{ 
+          replyingTo.message || 
+          replyingTo?.forwarded_from?.message || 
+          (replyingTo?.shared_post?.description && "Post: " + replyingTo?.shared_post?.description)
+        }}</div>
         </div>
         <button 
           @click="cancelReply" 
@@ -539,6 +556,7 @@ const sendMessage = async () => {
       }
     });
   } catch (error) {
+    message.error(error.response.data.error)
     console.error('Error sending message:', error);
   }
 };
@@ -553,8 +571,13 @@ const handleReply = (message) => {
   });
 };
 
-const handleForward = async (message) => {
-  await api.post(`chat/messages/${message.id}/forward/`);
+const handleForward = async (message_data) => {
+  try{
+    await api.post(`chat/messages/${message_data.id}/forward/`);
+  } catch(error){
+    message.error(error.response.data.error)
+    console.error('Error forwarding message:', error);
+  }
 
 }
 
@@ -675,10 +698,10 @@ const cancelClose = () => {
 };
 
 // Handle emoji selection
-const onEmojiSelect = async (message, emoji) => {
+const onEmojiSelect = async (message_data, emoji) => {
   try {
     // Send reaction to the server and get the updated message
-    const response = await api.post(`chat/messages/${message.id}/react/`, {
+    const response = await api.post(`chat/messages/${message_data.id}/react/`, {
       emoji: emoji.native
     });
     
@@ -703,6 +726,7 @@ const onEmojiSelect = async (message, emoji) => {
     
   } catch (error) {
     console.error('Error sending reaction:', error);
+    message.error(error.response.data.error)
   }
 };
 

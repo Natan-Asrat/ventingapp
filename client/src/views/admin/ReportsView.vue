@@ -128,7 +128,7 @@
                 <!-- Message Details -->
                 <div v-else-if="report.reported_message" class="border-t border-gray-200 pt-4">
                   <h4 class="text-sm font-medium text-gray-500 mb-2">Reported Message</h4>
-                  <div class="space-y-4">
+                  <div class="space-y-4 text-left">
                     <!-- Message Header -->
                     <div class="flex items-start space-x-3">
                       <!-- Sender Avatar -->
@@ -205,20 +205,16 @@
                             <span class="text-xs font-medium">{{ report.reported_message.shared_post.posted_by?.name || 'User' }}</span>
                           </div>
                           
-                          <p class="text-xs text-gray-700 line-clamp-2 mb-2">
-                            {{ report.reported_message.shared_post.description || 'No description' }}
-                          </p>
+                          <ShowMore :text="report.reported_message.shared_post.description" />
                           
-                          <div v-if="report.reported_message.shared_post.image" class="relative h-32 w-full rounded overflow-hidden">
+                          <!-- Post Image -->
+                          <div v-if="report.reported_message.shared_post.image_url" class="mt-3 rounded-lg overflow-hidden">
                             <img 
-                              :src="report.reported_message.shared_post.image" 
-                              alt="Shared post image"
-                              class="h-full w-full object-cover"
-                              @click="openImageModal(report.reported_message.shared_post.image)"
+                              :src="report.reported_message.shared_post.image_url" 
+                              :alt="'Post by ' + (report.reported_message.shared_post.posted_by?.username || 'user')" 
+                              class="w-full h-auto object-cover cursor-zoom-in"
+                              @load="$emit('image-loaded')"
                             />
-                            <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
-                              <ImageIcon class="h-5 w-5 text-white opacity-0 group-hover:opacity-100" />
-                            </div>
                           </div>
                           
                           <!-- Payment Info -->
@@ -362,6 +358,7 @@ import { api } from '@/main';
 import { MessageCircle, Forward, Eye, Heart, Reply, FileText, User, Image as ImageIcon, AlertCircle } from 'lucide-vue-next';
 import AppealsModal from '@/components/admin/AppealsModal.vue';
 import DecisionModal from '@/components/admin/DecisionModal.vue';
+import ShowMore from '@/components/ShowMore.vue';
 
 const reports = ref([]);
 const isLoading = ref(true);

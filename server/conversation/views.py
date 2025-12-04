@@ -17,7 +17,12 @@ from .permissions import (
     IsActiveConversationMemberForMessageBulk
 )
 from .pagination import CustomMessagesPagination
-from .query import add_conversation_details, get_conversation_queryset, get_unread_counts_by_category
+from .query import (
+    add_conversation_details, 
+    get_conversation_queryset, 
+    get_unread_counts_by_category,
+    optimize_messages_queryset
+)
 from django.utils import timezone
 # Create your views here.
 class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
@@ -49,11 +54,12 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
             to_attr="other_reactions_list"
         )
-
-        messages = Message.objects.filter(conversation=conversation).prefetch_related(
+        unoptimized_qs = Message.objects.filter(conversation=conversation).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-        ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").order_by("-created_at")
+        )
+        messages = optimize_messages_queryset(unoptimized_qs).order_by("-created_at")
+
         paginated_messages = self.paginate_queryset(messages)
         if paginated_messages is not None:
             serializer = MessageSimpleSerializer(paginated_messages, many=True)
@@ -89,14 +95,14 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
             to_attr="other_reactions_list"
         )
-
-        new_messages_qs = Message.objects.filter(
+        unoptimized_qs = Message.objects.filter(
             conversation=conversation,
             id__gt=after_id
         ).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-        ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").order_by("id")
+        )
+        new_messages_qs = optimize_messages_queryset(unoptimized_qs).order_by("id")
         paginated_messages = self.paginate_queryset(new_messages_qs)
         if paginated_messages is not None:
             serializer = MessageSimpleSerializer(paginated_messages, many=True)
@@ -107,6 +113,9 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     @action(detail=True, methods=["post"], permission_classes=[IsActiveConversationMember])
     def send_message(self, request, pk=None):
         conversation = self.get_object()
+        connection = conversation.connection
+        if connection.banned:
+            return Response({"error": "Your can no longer text this person! Connection Banned!"}, status=400)
         conversation.updated_at = timezone.now()
         conversation.save()
         user = request.user
@@ -135,10 +144,12 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             to_attr="other_reactions_list"
         )
 
-        message_with_prefetch = Message.objects.filter(pk=new_message.pk).prefetch_related(
+        unoptimized_qs = Message.objects.filter(pk=new_message.pk).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-        ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").first()
+        )
+
+        message_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         
         return Response(serializer.data, status=201)
@@ -230,7 +241,12 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             existing_conversation_with_details = add_conversation_details(existing_conversation, request.user)
             serializer = ConversationSimpleSerializer(existing_conversation_with_details, many=True)
             return Response(serializer.data)
-        conversation = Conversation.objects.create()
+        connection = Connection.objects.filter(
+            Q(initiating_user=self.request.user, connected_user=other_user) |
+            Q(initiating_user=other_user, connected_user=self.request.user),
+            removed=False
+        ).first()
+        conversation = Conversation.objects.create(connection = connection)
         member = Member.objects.create(
             user=request.user,
             conversation=conversation,
@@ -279,6 +295,9 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         except Post.DoesNotExist:
             return Response({"error": "Post not found"}, status=404)
         conversation = self.get_object()
+        connection = conversation.connection
+        if connection.banned:
+            return Response({"error": "You can no longer share posts in this conversation! Connection banned!"}, status=403)
         conversation.updated_at = timezone.now()
         conversation.save()
         user = request.user
@@ -302,10 +321,11 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             to_attr="other_reactions_list"
         )
 
-        message_with_prefetch = Message.objects.filter(pk=new_message.pk).prefetch_related(
+        unoptimized_qs = Message.objects.filter(pk=new_message.pk).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-        ).select_related("shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").first()
+        )
+        message_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         
         return Response(serializer.data, status=201)
@@ -320,6 +340,9 @@ class MessageViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=["post"], permission_classes=[IsActiveConversationMemberForMessage])
     def react(self, request, pk=None):
         message = self.get_object()
+        connection = message.conversation.connection 
+        if connection.banned:
+            return Response({"error": "You can no longer react to messages! Connection banned!"}, status=400)
         user = request.user
         emoji = request.data.get("emoji")
         if not emoji:
@@ -345,10 +368,11 @@ class MessageViewSet(viewsets.GenericViewSet):
             to_attr="other_reactions_list"
         )
 
-        message_with_prefetch = Message.objects.filter(pk=message.pk).prefetch_related(
+        unoptimized_qs = Message.objects.filter(pk=message.pk).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-        ).select_related("shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list").first()
+        )
+        message_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         return Response(serializer.data)
 
@@ -383,12 +407,11 @@ class MessageViewSet(viewsets.GenericViewSet):
             queryset=Reaction.objects.exclude(user=user).select_related("user").order_by("-created_at")[:3],
             to_attr="other_reactions_list"
         )
-
-        messages_qs = Message.objects.filter(pk__in=id_list).prefetch_related(
+        unoptimized_qs = Message.objects.filter(pk__in=id_list).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
-        ).select_related("user", "reply_to", "reply_to__user", "shared_post", "shared_post__posted_by").prefetch_related("shared_post__payment_info_list")
-
+        )
+        messages_qs = optimize_messages_queryset(unoptimized_qs)
         existing = set(
             MessageView.objects.filter(user=user, message__in=messages_qs)
             .values_list("message_id", flat=True)
@@ -423,6 +446,11 @@ class MessageViewSet(viewsets.GenericViewSet):
     @action(detail=True, methods=["post"], permission_classes=[IsActiveConversationMemberForMessage])
     def forward(self, request, pk=None):
         message = self.get_object()
+        
+        connection = message.conversation.connection 
+        if connection.banned:
+            return Response({"error": "You can no longer forward messages! Connection banned!"}, status=400)
+
         user = request.user
         if message.forwarded_from:
             original_message = message.forwarded_from
@@ -444,12 +472,14 @@ class MessageViewSet(viewsets.GenericViewSet):
             to_attr="other_reactions_list"
         )
 
-        new_forward_with_prefetch = Message.objects.filter(pk=new_forward.pk).prefetch_related(
+        unoptimized_qs = Message.objects.filter(pk=new_forward.pk).prefetch_related(
             my_reaction_prefetch,
             other_reactions_prefetch,
             "reply_to",
             "forwarded_from",
             "forwarded_from__user"
-        ).first()
+        )
+
+        new_forward_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(new_forward_with_prefetch)
         return Response(serializer.data)
