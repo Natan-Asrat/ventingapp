@@ -60,8 +60,10 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
             if not like.active:
                 like.active = True
                 like.save()
-            post.likes += 1
+            post.likes = Like.objects.filter(post=post, active=True).count()
             post.save()
+            post.posted_by.post_likes = Like.objects.filter(post__posted_by=post.posted_by, active=True).count()
+            post.posted_by.save()
             return Response({'message': 'Post liked successfully', 'likes': post.likes}, status=status.HTTP_200_OK)
         return Response({'message': 'Post already liked'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -70,8 +72,10 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         post = self.get_object()
         if Like.objects.filter(post=post, liked_by=request.user, active=True).exists():
             Like.objects.filter(post=post, liked_by=request.user).update(active=False)
-            post.likes -= 1
+            post.likes = Like.objects.filter(post=post, active=True).count()
             post.save()
+            post.posted_by.post_likes = Like.objects.filter(post__posted_by=post.posted_by, active=True).count()
+            post.posted_by.save()
             return Response({'message': 'Post unliked successfully', 'likes': post.likes}, status=status.HTTP_200_OK)
         return Response({'message': 'Post not liked'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -137,6 +141,16 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
             return self.get_paginated_response(serializer.data)
         return Response(MyPostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=["get"])
+    def other_user_posts(self, request):
+        user = request.query_params.get("user")
+        filtered_posts = Post.objects.filter(posted_by_id=user, archived=False).prefetch_related("payment_info_list").select_related("posted_by")
+        posts = get_posts_queryset(filtered_posts, request.user)
+        paginated_posts = self.paginate_queryset(posts)
+        if paginated_posts is not None:
+            serializer = MyPostSimpleSerializer(paginated_posts, many=True)
+            return self.get_paginated_response(serializer.data)
+        return Response(MyPostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=["get"])
     def my_archived_posts(self, request):

@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate, get_user_model
+from django.db.models import Q
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
@@ -106,3 +107,84 @@ class EditProfileSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
+class OtherProfileSerializer(serializers.ModelSerializer):
+    profile_picture = serializers.SerializerMethodField()
+    followers = serializers.IntegerField()
+    connected = serializers.BooleanField()
+    rejected_connection = serializers.BooleanField()
+    banned_connection = serializers.BooleanField()
+    pending_connection = serializers.BooleanField()
+    removed_connection = serializers.BooleanField()
+    class Meta:
+        model = User
+        fields = [
+            "id", 
+            "post_likes", 
+            "username", 
+            "name", 
+            "profile_picture", 
+            "date_joined", 
+            "formatted_date_joined", 
+            "followers", 
+            "connected",
+            "rejected_connection",
+            "banned_connection",
+            "pending_connection",
+            "removed_connection"
+        ]
+    def get_profile_picture(self, obj):
+        if obj.profile_picture:
+            absolute_url =  urljoin(settings.BACKEND_URL, obj.profile_picture.url)
+            return absolute_url
+        return None
+    # def get_followers(self, obj):
+    #     return Connection.objects.filter(connected_user=obj, removed=False).count()
+
+    # def get_connected(self, obj):
+    #     request = self.context.get("request")
+    #     user = request.user
+    #     return Connection.objects.filter(
+    #         Q(initiating_user=user, connected_user=obj) |
+    #         Q(initiating_user=obj, connected_user=user),
+    #         removed=False
+    #     ).exists()
+
+    # def get_pending_connection(self, obj):
+    #     request = self.context.get("request")
+    #     user = request.user
+    #     return Connection.objects.filter(
+    #         Q(initiating_user=user, connected_user=obj) |
+    #         Q(initiating_user=obj, connected_user=user),
+    #         reconnection_requested=True,
+    #         removed=True,
+    #         reconnection_rejected=False
+    #     ).exists()
+    
+    # def get_rejected_connection(self, obj):
+    #     request = self.context.get("request")
+    #     user = request.user
+    #     return Connection.objects.filter(
+    #         Q(initiating_user=user, connected_user=obj) |
+    #         Q(initiating_user=obj, connected_user=user),
+    #         removed=True,
+    #         reconnection_rejected=True
+    #     ).exists()
+
+    # def get_banned_connection(self, obj):
+    #     request = self.context.get("request")
+    #     user = request.user
+    #     return Connection.objects.filter(
+    #         Q(initiating_user=user, connected_user=obj) |
+    #         Q(initiating_user=obj, connected_user=user),
+    #         banned=True
+    #     ).exists()
+    
+    # def get_removed_connection(self, obj):
+    #     request = self.context.get("request")
+    #     user = request.user
+    #     return Connection.objects.filter(
+    #         Q(initiating_user=user, connected_user=obj) |
+    #         Q(initiating_user=obj, connected_user=user),
+    #         removed=True,
+    #     ).exists()

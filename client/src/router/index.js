@@ -6,6 +6,7 @@ import Feed from '@/views/Feed.vue';
 import NewPost from '@/views/NewPost.vue';
 import ForgotPassword from '@/views/auth/ForgotPassword.vue';
 import Profile from '@/views/Profile.vue';
+import UserProfile from '@/views/UserProfile.vue';
 import ManualPayment from '@/views/ManualPayment.vue';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import AdminDashboard from '@/views/admin/DashboardView.vue';
@@ -25,6 +26,13 @@ const routes = [
     name: 'Profile',
     component: Profile,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile/:userId',
+    name: 'UserProfile',
+    component: UserProfile,
+    meta: { requiresAuth: true },
+    props: true
   },
   {
     path: '/history',

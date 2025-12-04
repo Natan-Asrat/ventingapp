@@ -49,7 +49,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email_verified = models.BooleanField(default=False)
     otp_secret = models.CharField(max_length=32, blank=True, null=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-
+    post_likes = models.IntegerField(default=0)
     connects_needed_for_connection = models.PositiveIntegerField(default=1)
     last_month_free_connects_date = models.DateTimeField(null=True, blank=True)
     is_staff = models.BooleanField(default=False)

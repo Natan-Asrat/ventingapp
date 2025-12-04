@@ -19,7 +19,7 @@
     />
     <!-- Post Header -->
     <div class="px-4 py-3 flex items-center justify-between border-b border-gray-200">
-      <div class="flex items-center space-x-3">
+      <router-link :to="`/profile/${post.posted_by.id}`" class="flex flex-1 items-center space-x-3">
         <div v-if="post.posted_by?.profile_picture" class="h-10 w-10 rounded-full overflow-hidden">
           <img 
             :src="post.posted_by.profile_picture" 
@@ -34,7 +34,7 @@
           <p class="font-medium text-sm">{{ post.posted_by?.name || 'Anonymous' }}</p>
           <p class="text-xs text-gray-500">@{{ post.posted_by?.username || 'user' }}</p>
         </div>
-      </div>
+      </router-link>
       
       <div v-if="!isCurrentUserPost" class="flex items-center space-x-2">
         <button 

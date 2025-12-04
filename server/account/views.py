@@ -6,7 +6,8 @@ from .serializers import (
     UserSimpleSerializer, 
     ConnectionListSerializer, 
     CustomTokenObtainPairSerializer,
-    EditProfileSerializer
+    EditProfileSerializer,
+    OtherProfileSerializer
 )
 from rest_framework.response import Response
 from rest_framework import status
@@ -18,6 +19,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.db.models import Q, F
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .pagination import CustomPagination
+from .query import get_other_profile_queryset
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -355,4 +357,17 @@ class UserViewset(CreateModelMixin, GenericViewSet):
             serializer = ConnectionListSerializer(paginated_queryset, many=True)
             return self.get_paginated_response(serializer.data)
         serializer = ConnectionListSerializer(qs, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["get"])
+    def profile(self, request, pk=None):
+        current_user = request.user         # viewer
+        target_user = self.get_object()     # profile owner
+
+        annotated_user = get_other_profile_queryset(target_user.id, current_user)
+
+        serializer = OtherProfileSerializer(
+            annotated_user,
+        )
+
         return Response(serializer.data)
