@@ -63,6 +63,17 @@ def approve_appeal(sender, instance, created, **kwargs):
                 reason=instance.reason,
                 from_appeal=True
             )
+
+        elif report.report_type == ReportTypes.MESSAGE:
+            previous_decision = report_decision.approved
+            ReportDecision.objects.create(
+                report=report,
+                decision_maker=instance.decision_maker,
+                approved=not previous_decision,
+                rejected=previous_decision,
+                reason=instance.reason,
+                from_appeal=True
+            )
             
 
 @receiver(post_save, sender=AppealDecision)
