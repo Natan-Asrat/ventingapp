@@ -3,7 +3,11 @@ def optimize_report_queryset(qs):
         "reported_post",
         "reported_post__posted_by",
 
+        "reported_connection",
         "reported_transaction",
+
+        "reported_connection__connected_user",
+        "reported_connection__initiating_user",
 
         "reported_message__user", 
         "reported_message__reply_to", 
