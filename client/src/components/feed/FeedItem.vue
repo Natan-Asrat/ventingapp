@@ -259,7 +259,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['donate', 'chat', 'update:post', 'image-loaded', 'save', 'like', 'connection-updated']);
+const emit = defineEmits(['donate', 'chat', 'update:post', 'image-loaded', 'save', 'like', 'connection-updated', 'follow']);
 const showCommentModal = ref(false);
 const showShareModal = ref(false);
 const route = useRoute();
