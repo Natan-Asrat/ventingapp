@@ -29,7 +29,7 @@
           />
           
           <!-- Load More Button -->
-          <div v-if="hasNextPage" class="flex justify-center py-4">
+          <div v-if="hasNextPage || postStore.showRecommended" class="flex justify-center py-4">
             <button 
               @click="loadMore" 
               :disabled="loadingMore"

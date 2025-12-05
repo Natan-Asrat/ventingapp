@@ -8,6 +8,8 @@ export const usePostStore = defineStore('post', () => {
     const router = useRouter();
     const route = useRoute();
 
+    const showRecommended = ref(true);
+
     // State
     const posts = ref([]);
     const loading = ref(true);
@@ -50,17 +52,17 @@ export const usePostStore = defineStore('post', () => {
         }
     }
 
-    const fetchPosts = async (url = '/post/posts/') => {
+    const fetchPosts = async (url = '/post/posts/recommended_posts/') => {
         try {
             const response = await api.get(url);
-            if (url.includes('page=')) {
-            // Append new posts when loading more
-            posts.value = [...posts.value, ...response.data.results];
+            if (showRecommended.value) {
+                posts.value = [...posts.value, ...response.data];
+            } else if (url.includes('page=')) {
+                posts.value = [...posts.value, ...response.data.results]; 
             } else {
-            // Set initial posts
-            posts.value = response.data.results;
+                posts.value = response.data.results;
+                nextPage.value = response.data.next;
             }
-            nextPage.value = response.data.next;
         } catch (error) {
             console.error('Error fetching posts:', error);
             message.error('Failed to load posts. Please try again later.');
@@ -71,7 +73,10 @@ export const usePostStore = defineStore('post', () => {
     };
 
     const loadMore = () => {
-        if (nextPage.value && !loadingMore.value) {
+        if (showRecommended.value && !loadingMore.value) {
+            loadingMore.value = true;
+            fetchPosts();
+        } else if (nextPage.value && !loadingMore.value) {
             loadingMore.value = true;
 
             const url = new URL(nextPage.value, window.location.origin);
@@ -497,7 +502,8 @@ export const usePostStore = defineStore('post', () => {
 
         setSelectedUserForConnection,
         setShowConnectionModal,
-        closeConnectionModal
+        closeConnectionModal,
+        showRecommended
 
     };
 });

@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { onMounted, computed, watch, onUnmounted, nextTick } from 'vue';
+import { computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
@@ -79,25 +79,6 @@ const logout = async () => {
   }
 };
 
-// Lifecycle
-onMounted(async () => {
-  await postStore.fetchPosts();
-  // After loading posts, check if we need to load a specific post from URL
-  await postStore.checkUrlForPost();
-  postStore.observePostVisibility();
-    
-  // Start polling after initial load
-  nextTick(() => {
-    postStore.startVisiblePostsPolling();
-  });
-});
-
-
-onUnmounted(() => {
-  postStore.stopVisiblePostsPolling();
-  if (postStore.visibilityObserver) postStore.visibilityObserver.disconnect();
-  if (postStore.mutationObserver) postStore.mutationObserver.disconnect();
-});
 </script>
 
 <style scoped>

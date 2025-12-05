@@ -1,7 +1,7 @@
 
 
 from django.db import transaction
-from django.db.models import OuterRef, Exists
+from django.db.models import Case, IntegerField, OuterRef, Exists, Value, When
 from .models import ClusterMember, PreviousRecommendedPost, Post, UserInterest
 from pgvector.django import CosineDistance
 from django.conf import settings
@@ -123,9 +123,14 @@ def get_top_post_ids(user, post_count = settings.TOP_POSTS_RECOMMENDED_COUNT):
     if remaining_needed > 0:
         qs = Post.objects.filter(
             archived=False, banned=False
-        ).exclude(id__in=selected_ids).exclude(posted_by=user).annotate(
-                previously_recommended=Exists(previously_recommended),
-        ).order_by('previously_recommended', '-views')[:remaining_needed]
+        ).exclude(id__in=selected_ids).annotate(
+            previously_recommended=Exists(previously_recommended),
+            is_own_post=Case(
+                When(posted_by=user, then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('previously_recommended', '-views', 'is_own_post')[:remaining_needed]
         remaining_ids = list(qs.values_list('id', flat=True))
         selected_ids.extend(remaining_ids)
 
