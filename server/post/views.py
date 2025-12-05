@@ -2,6 +2,8 @@ from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.response import Response
 from rest_framework import status
+
+from .recommendation import get_top_post_ids, updated_post_view_count
 from .models import Post, Like, PostView, Save, Comment, LikeComment, PaymentInfo
 from .serializers import (
     PostCreateSerializer, 
@@ -18,7 +20,7 @@ from .serializers import (
 from rest_framework.decorators import action
 from account.pagination import CustomPagination
 from .permissions import IsPostOwner
-from django.db.models import F, Count, Exists, OuterRef, Subquery, Value
+from django.db.models import F, Case, Count, Exists, OuterRef, Subquery, Value, When
 from .query import get_posts_queryset
 from django.db.models.functions import Coalesce
 
@@ -26,6 +28,27 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     queryset = Post.objects.filter(archived=False, banned=False).prefetch_related("payment_info_list").select_related("posted_by")
     serializer_class = PostSimpleSerializer
     pagination_class = CustomPagination
+
+    @action(detail=False, methods=["get"])
+    def recommended_posts(self, request):
+        """
+        Returns posts ranked by user interests:
+        - Top 5 interests weighted by count
+        - Random 5 interests outside top 5
+        - Excludes posts created by the user
+        - Not paginated
+        """
+        user = request.user
+        post_ids = get_top_post_ids(user)
+
+        # Preserve the order of post_ids in the queryset
+        posts_qs = self.queryset.filter(id__in=post_ids).order_by(
+            Case(*[When(id=pid, then=pos) for pos, pid in enumerate(post_ids)])
+        )
+        qs = get_posts_queryset(posts_qs, request.user)
+
+        serializer = PostSimpleSerializer(qs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
@@ -224,10 +247,9 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
 
         qs = Post.objects.filter(pk__in=id_list)
         posts = get_posts_queryset(qs, user)
-
+        existing_qs = PostView.objects.filter(user=user, post__in=posts)
         existing = set(
-            PostView.objects.filter(user=user, post__in=posts)
-            .values_list("post_id", flat=True)
+            existing_qs.values_list("post_id", flat=True)
         )
         to_create = [
             PostView(post=post, user=user)
@@ -253,6 +275,9 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         PostView.objects.filter(
             user=user, post_id__in=id_list
         ).update(count=F("count") + Value(1))
+
+        for post_view in existing_qs:
+            updated_post_view_count(post_view.post, user)
         
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:

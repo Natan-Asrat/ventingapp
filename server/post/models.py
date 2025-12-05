@@ -55,6 +55,37 @@ class PostView(models.Model):
     def __str__(self):
         return f"{self.user.email} views '{self.post.description}' - id {self.post.id}"
 
+class UserInterest(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name="clusters")
+    centroid = VectorField(dimensions=1536)
+    count = models.IntegerField(default=1)
+    radius = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"User: {self.user.email}, Count: {self.count}, Radius: {self.radius}"
+
+class PreviousRecommendedPost(models.Model):
+    post = models.ForeignKey('post.Post', on_delete=models.CASCADE)
+    user = models.ForeignKey('account.User', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('post', 'user')
+
+    def __str__(self):
+        return f"{self.user} - {self.post.id} - {self.post.description}"
+
+class ClusterMember(models.Model):
+    post = models.ForeignKey('post.Post', on_delete=models.CASCADE)
+    centroid = models.ForeignKey('post.UserInterest', on_delete=models.CASCADE)
+    weight = models.IntegerField(default=1)
+    def __str__(self):
+        return f"Weight: {self.weight}, Post ID: {self.post.id}, Cluster ID: {self.centroid.pk}, Post Description: {self.post.description}"
+
 class Like(models.Model):
     post = models.ForeignKey('post.Post', on_delete=models.CASCADE, related_name='likes_list')
     liked_by = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='liked_posts')
@@ -137,3 +168,5 @@ class PaymentInfo(models.Model):
     @property
     def formatted_updated_at(self):
         return get_readable_time_since(self.updated_at)
+
+from .signals import *

@@ -320,7 +320,6 @@ class MessageViewSet(viewsets.GenericViewSet):
         Example: GET /chat/messages/get_bulk/?id=1,2,3
         """
         ids = request.query_params.get("id", "")
-        print("ids", ids)
         if not ids:
             return Response({"error": "No IDs provided"}, status=status.HTTP_400_BAD_REQUEST)
         

@@ -14,6 +14,8 @@ from pathlib import Path
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+from enum import Enum
+
 load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -229,3 +231,30 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=365),  # make refresh token last 7 days
     'ROTATE_REFRESH_TOKENS': True
 }
+
+class POST_ACTIVITY_TYPES(Enum):
+    VIEW_POST = "view"
+    LIKE_POST = "like"
+    COMMENT_POST = "comment"
+    LIKE_COMMENT = "like_comment"
+    REPLY_COMMENT = "reply"
+    SEND_POST = "send"
+    SAVE_POST = "save"
+
+
+POST_ACTIVITY_WEIGHTS = {
+    POST_ACTIVITY_TYPES.VIEW_POST: 1,
+    POST_ACTIVITY_TYPES.LIKE_COMMENT: 10,
+    POST_ACTIVITY_TYPES.LIKE_POST: 15,
+    POST_ACTIVITY_TYPES.REPLY_COMMENT: 20,
+    POST_ACTIVITY_TYPES.COMMENT_POST: 30,
+    POST_ACTIVITY_TYPES.SAVE_POST: 45,
+    POST_ACTIVITY_TYPES.SEND_POST: 60,
+}
+
+TOP_K_INTERESTS = 5
+TOP_K_INTERESTS_POST_RETURNED_COUNT = [5, 4, 3, 2, 1]
+TOP_POSTS_RECOMMENDED_COUNT = 20
+COSINE_THRESHOLD = 0.3
+
+EMBEDDING_MODEL_NAME = "gemini-embedding-001"
