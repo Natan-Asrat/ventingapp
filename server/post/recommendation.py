@@ -97,9 +97,11 @@ def get_top_post_ids(user, post_count = settings.TOP_POSTS_RECOMMENDED_COUNT):
             archived=False, banned=False, embedding__isnull=False
         ).exclude(id__in=selected_ids).exclude(posted_by=user).annotate(
             previously_recommended=Exists(previously_recommended),
-            similarity=CosineDistance('embedding', interest.centroid)
-        ).filter(previously_recommended=False, similarity__lte=settings.COSINE_THRESHOLD).order_by('similarity')[:num_posts]
-        selected_ids.extend(list(qs.values_list('id', flat=True)))
+            similarity=CosineDistance('embedding', interest.centroid),
+        ).filter(
+            similarity__lte=settings.COSINE_THRESHOLD
+        ).order_by('previously_recommended', 'similarity')[:num_posts]
+        selected_ids.extend(qs.values_list('id', flat=True))
 
     # Random interests outside top 5 (fill remaining slots)
     remaining_needed = post_count - len(selected_ids)
@@ -112,9 +114,11 @@ def get_top_post_ids(user, post_count = settings.TOP_POSTS_RECOMMENDED_COUNT):
                 archived=False, banned=False, embedding__isnull=False
             ).exclude(id__in=selected_ids).exclude(posted_by=user).annotate(
                 previously_recommended=Exists(previously_recommended),
-                similarity=CosineDistance('embedding', interest.centroid)
-            ).filter(previously_recommended=False, similarity__lte=settings.COSINE_THRESHOLD).order_by('?')[:remaining_needed]
-            selected_ids.extend(list(qs.values_list('id', flat=True)))
+                similarity=CosineDistance('embedding', interest.centroid),
+            ).filter(
+                similarity__lte=settings.COSINE_THRESHOLD
+            ).order_by('previously_recommended', 'similarity')[:remaining_needed]            
+            selected_ids.extend(qs.values_list('id', flat=True))
             remaining_needed = post_count - len(selected_ids)
         
     
@@ -130,7 +134,7 @@ def get_top_post_ids(user, post_count = settings.TOP_POSTS_RECOMMENDED_COUNT):
                 default=Value(0),
                 output_field=IntegerField(),
             )
-        ).order_by('previously_recommended', '-views', 'is_own_post')[:remaining_needed]
+        ).order_by('is_own_post', 'previously_recommended', '-views')[:remaining_needed]
         remaining_ids = list(qs.values_list('id', flat=True))
         selected_ids.extend(remaining_ids)
 

@@ -56,7 +56,14 @@ export const usePostStore = defineStore('post', () => {
         try {
             const response = await api.get(url);
             if (showRecommended.value) {
-                posts.value = [...posts.value, ...response.data];
+                for (const newPost of response.data) {
+                    const index = posts.value.findIndex(p => p.id === newPost.id);
+                    if (index == -1) {
+                        posts.value.push(newPost);
+                    } else {
+                        posts.value[index] = { ...posts.value[index], ...newPost };
+                    }
+                }
             } else if (url.includes('page=')) {
                 posts.value = [...posts.value, ...response.data.results]; 
             } else {
