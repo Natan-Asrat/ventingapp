@@ -59,3 +59,19 @@ def add_signup_free_connects(user):
 
     user.last_month_free_connects_date = timezone.now()
     user.save()
+
+def safe_usd_equivalent(amount_transferred, exchange_rate):
+    try:
+        # Convert to float just in case
+        amount_transferred = float(amount_transferred)
+        exchange_rate = float(exchange_rate)
+
+        # Prevent division by zero
+        if exchange_rate == 0:
+            return 0.0  # or None, depending on how you want to handle it
+
+        return amount_transferred / exchange_rate
+
+    except (TypeError, ValueError):
+        # If input is invalid, return 0 or None
+        return 0.0

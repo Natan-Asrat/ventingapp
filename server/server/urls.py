@@ -11,7 +11,8 @@ urlpatterns = [
     path("api/report/", include("report.urls")),
     path("api/usage/", include("usage.urls")),
     path("api/chat/", include("conversation.urls")),
-    path("api/support/", include("support.urls"))
+    path("api/support/", include("support.urls")),
+    path("api/analytics/", include("analytics.urls"))
 ]
 
 if settings.DEBUG:

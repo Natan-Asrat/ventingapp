@@ -53,7 +53,7 @@ class PostView(models.Model):
         unique_together = ('post', 'user')
 
     def __str__(self):
-        return f"{self.user.email} views '{self.post.description}' - id {self.post.id}"
+        return f"Count: {self.count}, {self.user.email} views '{self.post.description}' - id {self.post.id} - {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')}"
 
 class UserInterest(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

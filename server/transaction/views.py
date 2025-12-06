@@ -2,7 +2,7 @@ from polar_sdk.models import SubscriptionStatus
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .utils import add_monthly_free_connects
+from .utils import add_monthly_free_connects, safe_usd_equivalent
 from .models import (
     ManualTransactionStatus, 
     Transaction,
@@ -157,6 +157,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         transaction.refunded_amount = get_polar_amount_in_dollar(event.data.refunded_amount)
         transaction.refunded_tax_amount = get_polar_amount_in_dollar(event.data.refunded_tax_amount)
 
+        transaction.usd_equivalent = transaction.net_amount
 
         transaction.discount_id = event.data.discount_id
         transaction.connects = connects
@@ -338,6 +339,8 @@ class ManualPaymentViewSet(viewsets.ModelViewSet):
         currency = manual_payment_option.currency
         method = manual_payment_option.method
 
+        usd_equivalent = safe_usd_equivalent(amount_transferred, exchange_rate)
+
         transaction = Transaction.objects.create(
             user=request.user,
             currency=currency,
@@ -348,6 +351,8 @@ class ManualPaymentViewSet(viewsets.ModelViewSet):
             subtotal_amount=amount_transferred,
             total_amount=amount_transferred,
             net_amount=amount_transferred,
+
+            usd_equivalent=usd_equivalent,
 
             requires_approval=True,
             approved=False,

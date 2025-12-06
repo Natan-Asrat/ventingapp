@@ -25,6 +25,7 @@ from .query import get_posts_queryset
 from django.db.models.functions import Coalesce
 from django.conf import settings
 from rest_framework.filters import SearchFilter
+from django.utils import timezone
 
 class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Post.objects.filter(archived=False, banned=False).prefetch_related("payment_info_list").select_related("posted_by")
@@ -278,7 +279,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
 
         PostView.objects.filter(
             user=user, post_id__in=id_list
-        ).update(count=F("count") + Value(1))
+        ).update(count=F("count") + Value(1), updated_at=timezone.now())
 
         for post_view in existing_qs:
             updated_post_view_count(post_view.post, user)
