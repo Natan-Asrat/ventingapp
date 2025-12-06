@@ -20,7 +20,28 @@
   <div class="space-y-6">
     <div class="bg-white shadow rounded-lg p-6">
       <h2 class="text-lg font-medium text-gray-900 mb-6">Reports</h2>
-      
+
+      <div class="flex items-center space-x-2 mt-4 mb-4">
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input 
+            type="checkbox" 
+            :checked="dismissed" 
+            @change="toggleDismissed"
+            class="form-checkbox h-4 w-4 text-indigo-600 cursor-pointer"
+          />
+          <span class="text-sm text-gray-700 cursor-pointer">Show dismissed</span>
+        </label>
+        <label class="flex items-center space-x-2 cursor-pointer">
+          <input 
+            type="checkbox" 
+            :checked="concluded" 
+            @change="toggleConcluded"
+            class="form-checkbox h-4 w-4 text-indigo-600 cursor-pointer"
+          />
+          <span class="text-sm text-gray-700 cursor-pointer">Show concluded</span>
+        </label>
+      </div>
+            
       <!-- Loading State -->
       <div v-if="isLoading" class="flex justify-center py-8">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
@@ -60,8 +81,14 @@
               </div>
               <div class="flex flex-col space-y-2 items-end">
                 <div class="flex space-x-2">
+                   <span 
+                    v-if="report.concluded"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  >
+                    Decided
+                  </span>
                   <button
-                    v-if="!report.concluded && !report.dismissed"
+                    v-if="!report.dismissed"
                     @click="openDecisionModal(report.id)"
                     class="inline-flex cursor-pointer items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
@@ -74,17 +101,13 @@
                   >
                     Dismiss
                   </button>
-                  <span 
-                    v-if="report.concluded"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
-                  >
-                    Decided
-                  </span>
+                 
                   <span 
                     v-else-if="report.dismissed"
-                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                    @click="handleRestore(report.id)"
+                    class="inline-flex cursor-pointer items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   >
-                    Dismissed
+                    Restore
                   </span>
                 </div>
               </div>
@@ -347,19 +370,31 @@
             </div>
           </div>
         </div>
+        <div v-if="hasNextPage" class="flex justify-center py-4">
+          <button 
+            @click="loadMore" 
+            :disabled="loadingMore"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {{ loadingMore ? 'Loading...' : 'Load More' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { api } from '@/main';
 import { MessageCircle, Forward, Eye, Heart, Reply, FileText, User, Image as ImageIcon, AlertCircle } from 'lucide-vue-next';
 import AppealsModal from '@/components/admin/AppealsModal.vue';
 import DecisionModal from '@/components/admin/DecisionModal.vue';
 import ShowMore from '@/components/ShowMore.vue';
+import { useRoute, useRouter } from 'vue-router'
 
+const route = useRoute()
+const router = useRouter();
 const reports = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
@@ -373,6 +408,35 @@ const selectedDecisionId = ref(null);
 const selectedReportId = ref(null);
 const decisionReason = ref('');
 const isSubmitting = ref(false);
+const loadingMore = ref(false);
+const nextPage = ref(null);
+const hasNextPage = computed(() => !!nextPage.value);
+const dismissed = computed(() => 'dismissed' in route.query);
+const concluded = computed(() => 'concluded' in route.query); 
+// Toggle function to add/remove query param
+const toggleDismissed = () => {
+  const query = { ...route.query };
+  
+  if (dismissed.value) {
+    delete query.dismissed; // remove flag
+  } else {
+    query.dismissed = ''; // add flag (presence matters, value doesn't)
+  }
+
+  router.push({ path: route.path, query });
+};
+// Toggle function to add/remove query param
+const toggleConcluded = () => {
+  const query = { ...route.query };
+  
+  if (concluded.value) {
+    delete query.concluded; // remove flag
+  } else {
+    query.concluded = ''; // add flag (presence matters, value doesn't)
+  }
+
+  router.push({ path: route.path, query });
+};
 
 // Modal handlers
 const openAppealsModal = (decisionId) => {
@@ -416,7 +480,21 @@ const handleDismiss = async (reportId) => {
   if (confirm('Are you sure you want to dismiss this report?')) {
     try {
       await api.post(`/report/reports/${reportId}/dismiss/`);
-      await fetchReports(); // Refresh the reports list
+
+      reports.value = reports.value.filter(report => report.id !== reportId);
+    } catch (error) {
+      console.error('Error dismissing report:', error);
+      alert('Failed to dismiss report. Please try again.');
+    }
+  }
+};
+
+// API Handlers
+const handleRestore = async (reportId) => {
+  if (confirm('Are you sure you want to restore this report?')) {
+    try {
+      await api.post(`/report/reports/${reportId}/restore/`);
+      reports.value = reports.value.filter(report => report.id !== reportId);
     } catch (error) {
       console.error('Error dismissing report:', error);
       alert('Failed to dismiss report. Please try again.');
@@ -450,21 +528,67 @@ const handleReject = async ({ reason }) => {
   }
 };
 
-const fetchReports = async () => {
+const fetchReports = async (page=1) => {
   try {
-    isLoading.value = true;
-    const response = await api.get('/report/reports/');
-    reports.value = response.data;
+    let params = { page }
+
+    if (route.params.type) {
+      params.type = route.params.type
+    }
+
+    const showDismissed = 'dismissed' in route.query
+    const showConcluded = 'concluded' in route.query
+
+    if (showDismissed) params.dismissed = true
+    if (showConcluded) params.concluded = true
+
+    // If neither checkbox is selected, explicitly filter for not dismissed AND not concluded
+    if (!showDismissed && !showConcluded) {
+      params.dismissed = false
+      params.concluded = false
+    }
+
+    const response = await api.get('/report/reports/', { params })
+
+    if (page > 1) {
+      reports.value = [...reports.value, ...response.data.results]; 
+    } else {
+      reports.value = response.data.results;
+    }
+    nextPage.value = response.data.next;
   } catch (err) {
     console.error('Error fetching reports:', err);
     error.value = 'Failed to load reports. Please try again later.';
   } finally {
     isLoading.value = false;
+    loadingMore.value = false;
   }
 };
 
-onMounted(() => {
-  fetchReports();
+const loadMore = async () => {
+  if (!hasNextPage.value) return;
+  loadingMore.value = true;
+  const next = new URL(nextPage.value, window.location.origin);
+  const page = next.searchParams.get("page");
+  await fetchReports(page);
+}
+
+watch(() => route.params.type, async () => {
+  await fetchReports();
+})
+
+watch(() => route.query.dismissed, async () => {
+  await fetchReports();
+})
+
+watch(() => route.query.concluded, async () => {
+  await fetchReports();
+})
+
+onMounted(async () => {
+  isLoading.value = true;
+
+  await fetchReports();
 });
 
 // Filter to capitalize first letter

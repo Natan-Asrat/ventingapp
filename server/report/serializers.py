@@ -188,6 +188,8 @@ class ReportsWithDecisionsSerializer(serializers.ModelSerializer):
             'reason', 
             'decisions',
             'active', 
+            'concluded',
+            'dismissed',
             'report_type', 
             'created_at', 
             'updated_at', 

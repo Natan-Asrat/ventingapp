@@ -13,19 +13,40 @@ from .models import ReportTypes
 from account.permissions import IsConnectedUser
 from account.models import Connection
 from .query import optimize_report_queryset
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import ReportFilter
+from .pagination import ReportPagination
 
 class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = optimize_report_queryset(Report.objects.all().order_by("-created_at"))
     serializer_class = ReportsWithDecisionsSerializer
     permission_classes = [IsAdminUser]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ReportFilter
+    pagination_class = ReportPagination
 
     @action(detail=True, methods=['post'])
     def dismiss(self, request, pk=None):
         report = self.get_object()
+        if report.dismissed:
+            return Response({"error", "This report is already dismissed!"}, status=status.HTTP_400_BAD_REQUEST)
         report.dismissed = True
         report.save()
-        return Response(status=200)
+        qs = optimize_report_queryset(Report.objects.filter(pk=report.pk))
+        serializer = ReportsWithDecisionsSerializer(qs.first())
+        return Response(serializer.data, status=200)
     
+    @action(detail=True, methods=['post'])
+    def restore(self, request, pk=None):
+        report = self.get_object()
+        if not report.dismissed:
+            return Response({"error", "This report is not dismissed!"}, status=status.HTTP_400_BAD_REQUEST)
+        report.dismissed = False
+        report.save()
+        qs = optimize_report_queryset(Report.objects.filter(pk=report.pk))
+        serializer = ReportsWithDecisionsSerializer(qs.first())
+        return Response(serializer.data, status=200)
+        
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         report = self.get_object()

@@ -88,16 +88,16 @@ Essential features.
 
 ### Reports Management
 
-- *FR14.1*: The system shall allow admins to see all reported posts.
-- *FR14.2*: The system shall allow admins to moderate reported posts.
+- ✅ *FR14.1*: The system shall allow admins to see all reported posts.
+- ✅ *FR14.2*: The system shall allow admins to moderate reported posts.
 - 🟥 *FR14.3*: The system shall allow admins to temporarily disable posting, liking and commenting for users.
 - 🟥 *FR14.4*: The system shall allow Users to see banned Users.
-- *FR14.5*: The system shall allow admins to view reported messages.
+- ✅ *FR14.5*: The system shall allow admins to view reported messages.
 - ✅ *FR14.6*: The system shall allow admins to remove a connection (permanently) based on a reported message.
 - ✅ *FR14.7*: The system shall allow admins to view, approve and reject appeals.
 - ✅ *FR14.8*: The system shall allow admins to dismiss reports.
-- *FR14.9*: The system shall allow admins to see dismissed reports.
-- *FR14.10*: The system shall allow admins to restore dismissed reports.
+- ✅ *FR14.9*: The system shall allow admins to see dismissed reports.
+- ✅ *FR14.10*: The system shall allow admins to restore dismissed reports.
 
 ### Track Admin Actions
 

@@ -136,7 +136,7 @@ const routes = [
         meta: { title: 'Pending Payments' }
       },
       {
-        path: 'reports',
+        path: 'reports/:type?',
         name: 'AdminReports',
         component: () => import('@/views/admin/ReportsView.vue'),
         meta: { title: 'Reports' }
