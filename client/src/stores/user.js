@@ -23,6 +23,8 @@ export const useUserStore = defineStore('user', () => {
     localStorage.removeItem('refresh_token');
     delete api.defaults.headers.common['Authorization'];
     user.value = null;
+    window.location.reload();
+
   };
 
   const fetch_subscriptions = async () => {

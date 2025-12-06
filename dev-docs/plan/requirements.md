@@ -106,83 +106,83 @@ Essential features.
 ## Non-Functional Requirements
 
 ### Account Management
-- *NFR1.1*: Login sessions must persist across devices, with instant logout when a session is revoked.
-- *NFR1.2*: Passwords must never be visible to admins, even in logs or exports.
+- ✅ *NFR1.1*: Login sessions must persist across devices, with instant logout when a session is revoked.
+- ✅ *NFR1.2*: Passwords must never be visible to admins, even in logs or exports.
 
 ### Posts
-- *NFR2.1*: Post creation must support background upload for media (user can continue app use).
-- *NFR2.2*: Archived posts must remain accessible only to the post owner, with no public links available.
+- 🟧 *NFR2.1*: Post creation must support background upload for media (user can continue app use).
+- ✅ *NFR2.2*: Archived posts must remain accessible only to the post owner, with no public links available.
 
 ### Interactions
-- *NFR3.1*: Likes, comments, shares, and saves must update dynamically without requiring page refresh.
-- *NFR3.2*: Comment threads must auto-update when new replies arrive.
-- *NFR3.3*: Duplicate reactions (same user liking multiple times) must be prevented in real-time.
+- ✅ *NFR3.1*: Likes, comments, shares, and views must update dynamically without requiring page refresh.
+- 🟧 *NFR3.2*: Comment threads must auto-update when new replies arrive.
+- ✅ *NFR3.3*: Duplicate reactions (same user liking multiple times) must be prevented in real-time.
 
 ### Analytics
-- *NFR4.1*: Analytics must not expose private user identities (only counts unless user made public).
+- 🟧 *NFR4.1*: Analytics must not expose private user identities (only counts unless user made public).
 
 ### Buying Connects
-- *NFR5.1*: Payment gateway integrations must return clear error messages when a payment fails.
+- 🟧 *NFR5.1*: Payment gateway integrations must return clear error messages when a payment fails.
 
-- *NFR5.2*: Manual payment instructions must be localized (currency, method) for user’s region.
+- ✅ *NFR5.2*: Manual payment instructions must be localized (currency, method) for user’s region.
 
-- *NFR5.3*: Users must be redirected to support within the flow if their preferred payment method isn’t found.
+- ✅ *NFR5.3*: Users must be redirected to support within the flow if their preferred payment method isn’t found.
 
 ### Manual Payments & Appeals
-- *NFR6.1*: Appeals must be immutable once submitted (cannot be edited afterward).
-- *NFR6.2*: Users must receive real-time notification when appeal results are updated.
+- 🟧 *NFR6.1*: Appeals must be immutable once submitted (cannot be edited afterward).
+- ✅ *NFR6.2*: Users must receive real-time notification when appeal results are updated.
 
 ### Connections
-- *NFR7.1*: Users must not be able to view another user’s payment details unless they are connected.
-- *NFR7.2*: Chat initiation must only be possible between connected users (no bypassing).
+- ✅ *NFR7.1*: Users must not be able to view another user’s payment details unless they are connected.
+- ✅ *NFR7.2*: Chat initiation must only be possible between connected users (no bypassing).
 
 ### Connects History & Monthly Free Connects
-- *NFR8.1*: Connects history must remain immutable (no retroactive edits/deletions).
+- 🟧 *NFR8.1*: Connects history must remain immutable (no retroactive edits/deletions).
 
-- *NFR8.2*: Monthly free connects must auto-renew without manual claim by users.
+- ✅ *NFR8.2*: Monthly free connects must auto-renew without manual claim by users.
 
-- *NFR8.3*: Connects balances must update instantly after a transaction.
+- ✅ *NFR8.3*: Connects balances must update instantly after a transaction.
 
 ### Chat
-- *NFR9.1*: Messages must appear in real-time without refresh (WebSockets).
+- ✅ *NFR9.1*: Messages must appear in real-time without refresh (Polling).
 
-- *NFR9.2*: Typing indicators and message read status must sync across all active devices.
+- 🟧 *NFR9.2*: Typing indicators and message read status must sync across all active devices.
 
-- *NFR9.3*: Archived conversations must not generate notifications.
+- 🟧 *NFR9.3*: Archived conversations must not generate notifications.
 
-- *NFR9.4*: Forwarded messages must preserve original metadata (sender, timestamp).
+- ✅ *NFR9.4*: Forwarded messages must preserve original metadata (sender).
 
-- *NFR9.5*: Reactions must update instantly for all participants in the conversation.
+- ✅ *NFR9.5*: Reactions must update instantly for all participants in the conversation.
 
-- *NFR9.6*: Reported messages must show in a warning background from the reporting user's view.
+- ✅ *NFR9.6*: Reported messages must show in a warning background from the reporting user's view.
 
 ### Feed & Search
 No non-functional requirements.
 
 ### Reporting
-- *NFR11.1*: Reported content must be hidden from the reporter’s view immediately.
+- 🟧 *NFR11.1*: Reported content must be hidden from the reporter’s view immediately.
 
-- *NFR11.2*: Duplicate reports from the same user on the same content must be blocked.
+- ✅ *NFR11.2*: Duplicate reports from the same user on the same content must be blocked.
 
 ### Support
-- *NFR12.1*: Admin availability must update in real-time (online/offline indicators).
+- 🟧 *NFR12.1*: Admin availability must update in real-time (online/offline indicators).
 
 ### Manual Payments Management
-- *NFR13.1*: Admin approval/rejection must trigger immediate updates for the user.
+- ✅ *NFR13.1*: Admin approval/rejection must trigger immediate updates for the user.
 
-- *NFR13.2*: Admin actions must be logged with timestamp and actor ID.
+- 🟧 *NFR13.2*: Admin actions must be logged with timestamp and actor ID.
 
 ### Reports Management
-- *NFR14.1*: Admin moderation actions must propagate immediately (e.g., disabling a user).
+- ✅ *NFR14.1*: Admin moderation actions must propagate immediately (e.g., banning a post).
 
-- *NFR14.2*: Temporarily disabled users must see a clear in-app notice about restrictions.
+- 🟥 *NFR14.2*: Temporarily disabled users must see a clear in-app notice about restrictions.
 
-- *NFR14.3*: Restored dismissed reports must return to the active moderation queue automatically.
+- ✅ *NFR14.3*: Restored dismissed reports must return to the active moderation queue automatically.
 
 ### Admin – Tracking Actions
-- *NFR15.1*: All admin actions must be immutable and exportable for audits.
+- 🟧 *NFR15.1*: All admin actions must be immutable and exportable for audits.
 
-- *NFR15.2*: Audit logs must be viewable by superuser and all admins.
+- 🟧 *NFR15.2*: Audit logs must be viewable by superuser and all admins.
 
 ## Use Case Model
 

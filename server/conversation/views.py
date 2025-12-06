@@ -91,6 +91,8 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         connection = conversation.connection
         if connection.banned:
             return Response({"error": "Your can no longer text this person! Connection Banned!"}, status=400)
+        if connection.removed:
+            return Response({"error": "You need to be connected to text this person!"}, status=400)
         conversation.updated_at = timezone.now()
         conversation.save()
         user = request.user
