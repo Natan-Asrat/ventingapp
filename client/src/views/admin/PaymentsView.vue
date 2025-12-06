@@ -1,42 +1,41 @@
 <template>
   <div class="space-y-6">
-    <div class="flex justify-between items-center">
-      <h2 class="text-xl font-semibold text-gray-900">Pending Transactions</h2>
-      <button 
-        @click="refreshTransactions" 
-        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-        :disabled="isLoading"
-      >
-        <svg v-if="isRefreshing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <svg v-else class="-ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-        </svg>
-        Refresh
-      </button>
-    </div>
-
-    <!-- Loading state -->
-    <div v-if="isLoading && transactions.length === 0" class="bg-white shadow overflow-hidden sm:rounded-lg p-6 text-center">
-      <div class="flex justify-center">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+    <div class="bg-white shadow rounded-lg p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-semibold text-gray-900">Pending Transactions</h2>
+        <button 
+          @click="refreshTransactions" 
+          class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+          :disabled="isLoading"
+        >
+          <svg v-if="isRefreshing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <svg v-else class="-ml-1 mr-2 h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
       </div>
-      <p class="mt-2 text-sm text-gray-500">Loading transactions...</p>
-    </div>
 
-    <!-- Empty state -->
-    <div v-else-if="!isLoading && transactions.length === 0" class="bg-white shadow overflow-hidden sm:rounded-lg p-6 text-center">
-      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-      <h3 class="mt-2 text-sm font-medium text-gray-900">No pending transactions</h3>
-      <p class="mt-1 text-sm text-gray-500">Get started by approving or rejecting transactions as they come in.</p>
-    </div>
+      <!-- Loading State -->
+      <div v-if="isLoading && transactions.length === 0" class="flex justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+      </div>
 
-    <!-- Transactions list -->
-    <div v-else class="bg-white shadow overflow-hidden sm:rounded-md">
+      <!-- Error State -->
+      <div v-else-if="error" class="text-red-500 text-center py-8">
+        {{ error }}
+      </div>
+
+      <!-- Empty State -->
+      <div v-else-if="transactions.length === 0" class="text-center py-8 text-gray-500">
+        No transactions found.
+      </div>
+
+      <!-- Transactions list -->
+      <div v-else class="space-y-4">
       <ul role="list" class="divide-y divide-gray-200">
         <li v-for="transaction in transactions" :key="transaction.id">
           <div class="px-4 py-4 sm:px-6">
@@ -81,6 +80,23 @@
           </div>
         </li>
       </ul>
+      </div>
+
+      <!-- Load More Button -->
+      <div v-if="hasMore" class="flex justify-center mt-6">
+        <button
+          @click="loadMore"
+          :disabled="loadingMore"
+          :class="{'cursor-pointer': !loadingMore}"
+          class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center"
+        >
+          <span v-if="!loadingMore">Load More</span>
+          <span v-else class="flex items-center">
+            <Loader2 class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+            Loading...
+          </span>
+        </button>
+      </div>
     </div>
 
     <!-- Transaction Modal -->
@@ -95,9 +111,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { api } from '@/main';
 import { message } from 'ant-design-vue';
+import { Loader2 } from 'lucide-vue-next';
 import TransactionModal from '@/components/admin/TransactionModal.vue';
 
 const transactions = ref([]);
@@ -105,17 +122,40 @@ const isLoading = ref(true);
 const isRefreshing = ref(false);
 const isModalOpen = ref(false);
 const selectedTransaction = ref(null);
+const nextPage = ref(null);
+const loadingMore = ref(false);
+const error = ref(null);
 
-const fetchTransactions = async () => {
+const hasMore = computed(() => !!nextPage.value);
+
+const fetchTransactions = async (page = 1) => {
   try {
-    const response = await api.get('/transaction/transactions/pending_transactions/');
-    transactions.value = response.data;
-  } catch (error) {
-    console.error('Error fetching transactions:', error);
+    const response = await api.get('/transaction/transactions/pending_transactions/', { params: { page } });
+    
+    if (page === 1) {
+      transactions.value = response.data.results || [];
+    } else {
+      transactions.value = [...transactions.value, ...(response.data.results || [])];
+    }
+    
+    nextPage.value = response.data.next;
+    error.value = null;
+  } catch (err) {
+    console.error('Error fetching transactions:', err);
+    error.value = 'Failed to load transactions. Please try again.';
     message.error('Failed to load transactions. Please try again.');
   } finally {
     isLoading.value = false;
     isRefreshing.value = false;
+    loadingMore.value = false;
+  }
+};
+
+const loadMore = () => {
+  if (hasMore.value && !loadingMore.value) {
+    loadingMore.value = true;
+    const page = nextPage.value ? new URL(nextPage.value).searchParams.get('page') : 2;
+    fetchTransactions(parseInt(page));
   }
 };
 

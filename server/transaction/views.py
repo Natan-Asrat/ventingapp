@@ -242,6 +242,10 @@ class TransactionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
     def pending_transactions(self, request):
         transactions = Transaction.objects.filter(requires_approval=True, approved=False, rejected=False).order_by('-created_at')
+        paginated_qs = self.paginate_queryset(transactions)
+        if paginated_qs is not None:
+            serializer = TransactionsSimpleSerializer(paginated_qs, many=True)
+            return self.get_paginated_response(serializer.data)
         serializer = TransactionsSimpleSerializer(transactions, many=True)
         return Response(serializer.data)
 
