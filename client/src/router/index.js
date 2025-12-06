@@ -141,6 +141,13 @@ const routes = [
         component: () => import('@/views/admin/ReportsView.vue'),
         meta: { title: 'Reports' }
       },
+      // In router/index.js, add this to the admin children array
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/UsersView.vue'),
+        meta: { title: 'Users' }
+      }
       // Add more admin routes here as needed
     ]
   },
