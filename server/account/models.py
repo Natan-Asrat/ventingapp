@@ -63,6 +63,11 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     @property
     def formatted_date_joined(self):
+        return self.date_joined.strftime("%B %d, %Y")
+
+
+    @property
+    def date_joined_since(self):
         return get_readable_time_since(self.date_joined)
 
 

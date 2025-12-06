@@ -50,7 +50,7 @@
             <div>
               <h3 class="font-medium text-gray-900">{{ user.name || 'Unnamed User' }}</h3>
               <p class="text-sm text-gray-500">@{{ user.username }}</p>
-              <p class="text-xs text-gray-400">Joined {{ user.formatted_date_joined }}</p>
+              <p class="text-xs text-gray-400">Joined {{ user.date_joined_since }}</p>
               <div class="flex items-center space-x-2 mt-1">
                 <span class="text-xs px-2 py-0.5 rounded-full" 
                       :class="user.banned_connection ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'">

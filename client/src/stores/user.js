@@ -152,67 +152,7 @@ export const useUserStore = defineStore('user', () => {
       };
     }
   };
-
-  // Update user profile
-  const updateProfile = async (userData) => {
-    try {
-      const response = await api.patch('account/users/me/', userData);
-      user.value = { ...user.value, ...response.data };
-      return { success: true };
-    } catch (err) {
-      return {
-        success: false,
-        error: err.response?.data || 'Failed to update profile'
-      };
-    }
-  };
-
-  // Change password
-  const changePassword = async (currentPassword, newPassword) => {
-    try {
-      await api.post('account/password/change/', {
-        current_password: currentPassword,
-        new_password: newPassword
-      });
-      return { success: true };
-    } catch (err) {
-      return {
-        success: false,
-        error: err.response?.data || 'Failed to change password'
-      };
-    }
-  };
-
-  // Request password reset
-  const requestPasswordReset = async (email) => {
-    try {
-      await api.post('account/password/reset/', { email });
-      return { success: true };
-    } catch (err) {
-      return {
-        success: false,
-        error: err.response?.data || 'Failed to request password reset'
-      };
-    }
-  };
-
-  // Reset password with token
-  const resetPassword = async (token, uid, newPassword) => {
-    try {
-      await api.post('account/password/reset/confirm/', {
-        token,
-        uid,
-        new_password: newPassword
-      });
-      return { success: true };
-    } catch (err) {
-      return {
-        success: false,
-        error: err.response?.data || 'Failed to reset password'
-      };
-    }
-  };
-
+    
   return {
     user,
     loading,

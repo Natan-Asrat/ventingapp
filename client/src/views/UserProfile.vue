@@ -46,7 +46,7 @@
                     <div class="flex-1">
                       <h2 class="text-2xl font-semibold text-gray-900">{{ profileStore?.profile?.name || 'User' }}</h2>
                       <p class="text-sm text-gray-500">@{{ profileStore?.profile?.username }}</p>
-                      <p class="mt-1 text-sm text-gray-500">Joined {{ profileStore?.profile?.formatted_date_joined }}</p>
+                      <p class="mt-1 text-sm text-gray-500">Joined {{ profileStore?.profile?.date_joined_since }}</p>
                     </div>
                   </div>
                   

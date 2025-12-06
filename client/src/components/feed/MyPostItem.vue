@@ -57,7 +57,6 @@
           :src="post.image_url" 
           :alt="'Post by ' + (post.posted_by?.username || 'user')" 
           class="w-full h-auto object-cover cursor-zoom-in"
-          @load="$emit('image-loaded')"
           @click="openImageViewer"
         />
       </div>
@@ -127,9 +126,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { Trash2, MessageCircle, Share2, Heart, MoreHorizontal, X, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-vue-next';
-import { message } from 'ant-design-vue';
-import api from '@/api/axios';
+import { Trash2, MessageCircle, Share2, RotateCcw } from 'lucide-vue-next';
 import CommentModal from '@/components/feed/CommentModal.vue';
 import ShareModal from '@/components/feed/ShareModal.vue';
 import ImageViewer from '@/components/common/ImageViewer.vue';
@@ -143,7 +140,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['update:post', 'image-loaded', 'archive']);
+const emit = defineEmits(['update:post', 'archive', 'restore']);
 
 // State
 const showCommentModal = ref(false);

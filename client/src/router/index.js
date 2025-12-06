@@ -5,7 +5,7 @@ import AuthPage from '@/views/auth/AuthPage.vue';
 import Feed from '@/views/Feed.vue';
 import NewPost from '@/views/NewPost.vue';
 import ForgotPassword from '@/views/auth/ForgotPassword.vue';
-import Profile from '@/views/Profile.vue';
+import Profile from '@/views/MyProfile.vue';
 import UserProfile from '@/views/UserProfile.vue';
 import ManualPayment from '@/views/ManualPayment.vue';
 import AdminLayout from '@/layouts/AdminLayout.vue';
