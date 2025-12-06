@@ -12,6 +12,7 @@
       :user-name="user?.name || ''"
       @logout="logout"
     />
+    <SearchProfileResults />
 
     <FeedList />
 
@@ -21,7 +22,7 @@
 </template>
 
 <script setup>
-import { computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
@@ -31,6 +32,7 @@ import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
 import { useConnectsStore } from '@/stores/connect';
 import { usePostStore } from '@/stores/post';
 import FeedList from '@/components/feed/FeedList.vue';
+import SearchProfileResults from '@/components/feed/SearchProfileResults.vue';
 const connectsStore = useConnectsStore();
 const userStore = useUserStore();
 const postStore = usePostStore();

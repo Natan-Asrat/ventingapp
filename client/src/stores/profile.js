@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import api from '@/api/axios';
 import { useRouter, useRoute } from 'vue-router';
@@ -9,7 +9,7 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
     const route = useRoute();
 
     // State
-    const profileId = ref(route.params.userId);
+    const profileId = ref(null);
     const profile = ref(null);
     const posts = ref([]);
     const postCount = ref(0);
@@ -46,7 +46,8 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
     }
 
     const fetchUserProfile = async () => {
-        if (profileId.value) {
+        if (route.params.userId) {
+            profileId.value = route.params.userId;
             try {            
                 const response = await api.get(`/account/users/${profileId.value}/profile/`);
                 profile.value = response.data;
@@ -548,15 +549,9 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
         if (profilePollingInterval) clearInterval(profilePollingInterval);
     }
 
-    
-    watch(() => route.params.userId, async (newUserId, oldUserId) => {
-        if (newUserId && newUserId !== oldUserId) {
-            profileId.value = newUserId;
-            await fetchUserProfile();
-            await fetchUserPosts();
-        }
-    });
-
+    const resetProfileId = () => {
+        profileId.value = null;
+    }
 
 
     return {
@@ -569,6 +564,7 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
         handleProfileFollow,
         setShowConnectionProfileModal,
         showConnectionProfileModal,
+        resetProfileId,
 
         posts,
         loading,

@@ -7,6 +7,28 @@
         </div>
         
         <div class="flex items-center space-x-6">
+          <!-- Search Bar -->
+          <div class="flex-1 max-w-xl px-4">
+            <div class="relative">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search class="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                v-model="searchQuery"
+                @keyup.enter="handleSearch"
+                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Search..."
+              />
+              <button
+                v-if="postStore.isInSearch"
+                @click="closeSearch"
+                class="absolute cursor-pointer inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <X class="h-5 w-5 text-gray-400 hover:text-gray-500" />
+              </button>
+            </div>
+          </div>
           <router-link
             :to="{name: 'Feed'}"
             class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
@@ -144,6 +166,8 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
+import { Search, X } from 'lucide-vue-next';
+import { usePostStore } from '@/stores/post';
 import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
 import { Wallet, BadgeCheck, Bell, Headset, Clock, MessageCircleMore, Plus } from 'lucide-vue-next';
@@ -169,7 +193,18 @@ const profilePicture = computed(() => {
 
 const emit = defineEmits(['logout']);
 const router = useRouter();
+const postStore = usePostStore();
+const searchQuery = ref('');
 
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    postStore.search(searchQuery.value.trim());
+  }
+};
+const closeSearch = () => {
+  searchQuery.value = '';
+  postStore.closeSearch();
+}
 const isProfileMenuOpen = ref(false);
 const isConnectsModalOpen = ref(false);
 const currentConnects = computed(() => userStore?.user?.connects);

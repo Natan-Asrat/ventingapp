@@ -161,7 +161,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useOtherProfilePostStore } from '@/stores/profile';
@@ -277,18 +277,29 @@ const handleLogout = () => {
   router.push('/login');
 };
 
+const loadProfile = async () => {
+  console.log("user id", route.params.userId)
+  console.log("username", route.params.username)
+  profileStore.resetProfileId();
+  if (route.params.userId || route.params.username) {
+      profileStore.setLoading(true);
+      await profileStore.fetchUserProfile();
+      profileStore.setLoading(false);
+  } else {
+      profileStore.setLoading(false);
+  }
+  profileStore.startProfilePolling();
+
+}
+watch(() => route.params.userId, async (newUserId, oldUserId) => {
+  if (newUserId && newUserId !== oldUserId) {
+    await loadProfile();
+  }
+});
+
 // Initial load
 onMounted(async () => {
-    console.log("user id", route.params.userId)
-    console.log("username", route.params.username)
-    if (route.params.userId || route.params.username) {
-        profileStore.setLoading(true);
-        await profileStore.fetchUserProfile();
-        profileStore.setLoading(false);
-    } else {
-        profileStore.setLoading(false);
-    }
-    profileStore.startProfilePolling();
+    await loadProfile();
 });
 
 onUnmounted(() => {

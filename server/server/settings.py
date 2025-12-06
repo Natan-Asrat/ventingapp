@@ -54,6 +54,8 @@ INSTALLED_APPS = [
 
     "rest_framework",
     "rest_framework_simplejwt",
+    "django_filters",
+
     "corsheaders",
     "debug_toolbar"
 ]

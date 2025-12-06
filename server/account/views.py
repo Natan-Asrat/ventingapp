@@ -1,5 +1,5 @@
 from rest_framework.viewsets import GenericViewSet
-from rest_framework.mixins import CreateModelMixin
+from rest_framework.mixins import CreateModelMixin, ListModelMixin
 from .models import User, Connection
 from .serializers import (
     UserCreateSerializer, 
@@ -16,24 +16,41 @@ from rest_framework.decorators import action
 from .utils import send_email_otp, verify_email_otp
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db.models import Q, F
+from django.db.models import Q, F, ExpressionWrapper, FloatField, Value
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .pagination import CustomPagination
-from .query import get_other_profile_queryset
+from .query import get_other_profile_queryset, annotate_user_qs
+from rest_framework.filters import SearchFilter
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 
-class UserViewset(CreateModelMixin, GenericViewSet):
+class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSimpleSerializer
     pagination_class = CustomPagination
-
+    filter_backends = [SearchFilter]
+    search_fields = ['username', 'name']
     def get_permissions(self):
         if self.action == 'create':
             return [AllowAny()]
         return super().get_permissions()
+
+    def get_queryset(self):
+        if self.action == 'list':
+            return annotate_user_qs(self.queryset, self.request.user).annotate(
+                rank=ExpressionWrapper(
+                    (F('post_likes') + F('followers')) / Value(2.0),
+                    output_field=FloatField()
+                )
+            ).order_by('-rank')
+        return super().get_queryset()
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return OtherProfileSerializer
+        return super().get_serializer_class()
 
     def create(self, request, *args, **kwargs):
         serializer = UserCreateSerializer(data=request.data)

@@ -24,11 +24,14 @@ from django.db.models import F, Case, Count, Exists, OuterRef, Subquery, Value, 
 from .query import get_posts_queryset
 from django.db.models.functions import Coalesce
 from django.conf import settings
+from rest_framework.filters import SearchFilter
 
 class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Post.objects.filter(archived=False, banned=False).prefetch_related("payment_info_list").select_related("posted_by")
     serializer_class = PostSimpleSerializer
     pagination_class = CustomPagination
+    filter_backends = [SearchFilter]
+    search_fields = ['description']
 
     @action(detail=False, methods=["get"])
     def recommended_posts(self, request):

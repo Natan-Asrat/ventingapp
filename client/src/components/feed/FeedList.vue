@@ -1,6 +1,6 @@
 <template>
   <div>
-    <main :class="[ user_id == null && 'pt-16 pb-16 md:pt-0 md:pb-0']">
+    <main :class="[ user_id == null && 'pb-16 md:pt-0 md:pb-0', user_id == null && postStore.searchProfileResults.length == 0 && 'pt-16']">
       <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:max-w-4xl lg:px-8 py-6">
         <!-- Posts Feed -->
         <div v-if="loading" class="flex justify-center py-8">
@@ -8,11 +8,15 @@
         </div>
         
         <div v-else-if="posts.length === 0" class="text-center py-12">
-          <p class="text-gray-500">No posts to show. Be the first to post something!</p>
+          <p class="text-gray-500">{{ noPostPlaceholder }}</p>
         </div>
         
         <div v-else class="space-y-6" id="post-list">
-          <FeedItem
+            <h2 v-if="postStore.isInSearch" class="text-lg font-medium text-gray-900">
+                Search Results
+                <span v-if="postStore.searchQuery" class="text-indigo-600">"{{ postStore.searchQuery }}"</span>
+            </h2>          
+        <FeedItem
             v-for="post in posts"
             :key="post.id"
             :post="post"
@@ -97,7 +101,24 @@ const props = defineProps({
 })
 
 const loading = computed(() => props.user_id == null ? postStore.loading : profileStore.loading)
-const posts = computed(() => props.user_id == null ? postStore.posts : profileStore.posts)
+const posts = computed(() => {
+    if (props.user_id == null) {
+        if (postStore.isInSearch) {
+            return postStore.searchPostResults
+        }
+        return postStore.posts
+    }
+    return profileStore.posts
+})
+const noPostPlaceholder = computed(() => {
+    if (props.user_id == null) {
+        return postStore.isInSearch
+            ? "No posts match your search."
+            : "No posts yet. Start the conversation!"
+    }
+    return "This user hasn't posted anything yet."
+});
+
 const likingPostId = computed(() => props.user_id == null ? postStore.likingPostId : profileStore.likingPostId)
 const savingPostId = computed(() => props.user_id == null ? postStore.savingPostId : profileStore.savingPostId)
 

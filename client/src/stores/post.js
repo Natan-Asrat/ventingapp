@@ -10,13 +10,27 @@ export const usePostStore = defineStore('post', () => {
 
     const showRecommended = ref(true);
     const hasLoadedCount = ref(false);
+    const isInSearch = ref(false);
+    const searchQuery = ref(null);
+    const searchPostResults = ref([]);
+    const searchNextPage = ref(null);
+
+    const searchProfileResults = ref([]);  
+    const searchProfileNextPage = ref(null);
+    const searchProfileHasNextPage = computed(() => {
+        return !!searchProfileNextPage.value;
+    });
+    const loadingMoreProfiles = ref(false);
 
     // State
     const posts = ref([]);
     const loading = ref(true);
     const loadingMore = ref(false);
     const nextPage = ref(null);
-    const hasNextPage = computed(() => !!nextPage.value);
+    const hasNextPage = computed(() => {
+        if (isInSearch.value) return !!searchNextPage.value;
+        return !!nextPage.value;
+    });
     const showDonationModal = ref(false);
     const selectedPost = ref(null);
     const likingPostId = ref(null);
@@ -63,17 +77,22 @@ export const usePostStore = defineStore('post', () => {
         }
     }
 
-    const fetchPosts = async (url = null) => {
+    const fetchPosts = async (page = 1) => {
         try {
+            let url = null;
+            let response = null;
             if(!hasLoadedCount.value) await fetchCount();
-            if(url == null) {
-                if (showRecommended.value) {
-                    url = '/post/posts/recommended_posts/';
-                } else {
-                    url = '/post/posts/';
-                }
+            if (showRecommended.value) {
+                url = '/post/posts/recommended_posts/';
+                response = await api.get(url);
+            } else {
+                url = '/post/posts/';
+                response = await api.get(url, {
+                    params: {
+                        page: page
+                    }
+                });
             }
-            const response = await api.get(url);
             if (showRecommended.value) {
                 for (const newPost of response.data) {
                     const index = posts.value.findIndex(p => p.id === newPost.id);
@@ -83,7 +102,7 @@ export const usePostStore = defineStore('post', () => {
                         posts.value[index] = { ...posts.value[index], ...newPost };
                     }
                 }
-            } else if (url.includes('page=')) {
+            } else if (page > 1) {
                 posts.value = [...posts.value, ...response.data.results]; 
                 nextPage.value = response.data.next;
             } else {
@@ -99,21 +118,81 @@ export const usePostStore = defineStore('post', () => {
         }
     };
 
+    const searchPosts = async (query, page = 1) => {
+        try {
+            const response = await api.get("/post/posts/", {
+                params: {
+                    search: query,
+                    page: page
+                }
+            });
+            if (page > 1) {
+                searchPostResults.value = [...searchPostResults.value, ...response.data.results]; 
+                searchNextPage.value = response.data.next;
+            } else {
+                searchPostResults.value = response.data.results;
+                searchNextPage.value = response.data.next;
+            }
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+            message.error('Failed to load posts. Please try again later.');
+        } finally {
+            loading.value = false;
+            loadingMore.value = false;
+        }
+    };
+    
+    const searchProfiles = async (query, page=1) => {
+        try {
+            const response = await api.get("/account/users/", {
+                params: {
+                    search: query,
+                    page: page
+                }
+            });
+            if (page > 1) {
+                searchProfileResults.value = [...searchProfileResults.value, ...response.data.results]; 
+                searchProfileNextPage.value = response.data.next;
+            }  else {
+                searchProfileResults.value = response.data.results;
+                searchProfileNextPage.value = response.data.next;
+            }
+        } catch (error) {
+            console.error('Error fetching posts:', error);
+            message.error('Failed to load posts. Please try again later.');
+        } finally {
+            loadingMoreProfiles.value = false;
+        }
+    }
+
     const loadMore = () => {
-        if (showRecommended.value && !loadingMore.value) {
+        if (isInSearch.value && !loadingMore.value) {
+            loadingMore.value = true;
+            
+            const next = new URL(searchNextPage.value, window.location.origin);
+            const page = next.searchParams.get("page");
+            searchPosts(searchQuery.value, page);
+        } else if (showRecommended.value && !loadingMore.value) {
             loadingMore.value = true;
             fetchPosts();
         } else if (nextPage.value && !loadingMore.value) {
             loadingMore.value = true;
-
-            const url = new URL(nextPage.value, window.location.origin);
-            // Remove the first path segment
-            const segments = url.pathname.split('/').filter(Boolean); // ["api", "post", "posts"]
-            const relativePath = '/' + segments.slice(1).join('/') + url.search; // "/post/posts/?page=2"
-
-            fetchPosts(relativePath);
+            
+            const next = new URL(nextPage.value, window.location.origin);
+            const page = next.searchParams.get("page");
+            fetchPosts(page);
         }
     };
+
+    const loadMoreProfiles = () => {
+        if (isInSearch.value && !loadingMoreProfiles.value) {
+            loadingMoreProfiles.value = true;
+            
+            const next = new URL(searchProfileNextPage.value, window.location.origin);
+            const page = next.searchParams.get("page");
+            searchProfiles(searchQuery.value, page);
+        }
+    }
 
 
     const handleChat = async (post) => {
@@ -484,8 +563,50 @@ export const usePostStore = defineStore('post', () => {
     };
 
 
+    // Search posts
+    const search = async (query) => {
+        try {
+            searchQuery.value = query;
+            loading.value = true;
+            isInSearch.value = true;
+            
+            // If not on the feed page, navigate to it
+            if (route.name !== 'Feed') {
+                await router.push({ name: 'Feed' });
+            }
+            
+            // This is a dummy implementation - you'll need to implement the actual API call
+            console.log('Searching for:', query);
+
+            isInSearch.value = true
+            searchPosts(query);
+            searchProfiles(query);
+            
+        } catch (error) {
+            console.error('Error searching posts:', error);
+            message.error('Failed to search posts');
+        } finally {
+            loading.value = false;
+        }
+    };
+    const closeSearch = () => {
+        isInSearch.value = false
+        searchProfileResults.value = []
+        searchPostResults.value = []
+        searchProfileNextPage.value = null;
+        searchNextPage.value = null;
+    }
 
     return {
+        isInSearch,
+        searchPostResults,
+        searchQuery,
+        searchProfileResults,
+        searchProfileHasNextPage,
+        loadMoreProfiles,
+        closeSearch,
+        loadingMoreProfiles,
+        search,
         posts,
         loading,
         loadingMore,

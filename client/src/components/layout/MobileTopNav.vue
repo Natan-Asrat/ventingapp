@@ -7,8 +7,39 @@
           <h1 class="text-xl font-bold text-indigo-600">VentingApp</h1>
         </div>
         
-        <!-- Connects Counter -->
+        <!-- Search and Actions -->
         <div class="flex items-center space-x-2">
+          <!-- Search Icon (only visible when search is not active) -->
+          <button 
+            v-if="!showSearch"
+            @click="toggleSearch"
+            class="p-2 rounded-full text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            <Search class="h-5 w-5" />
+          </button>
+          
+          <!-- Search Input (full width when active) -->
+          <div v-if="showSearchorInSearch" class="absolute left-0 right-0 top-0 h-16 bg-white flex items-center px-4 z-50">
+            <div class="relative w-full">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search class="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                v-model="searchQuery"
+                @keyup.enter="handleSearch"
+                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                placeholder="Search..."
+                ref="searchInput"
+              />
+              <button
+                @click="closeSearch"
+                class="absolute cursor-pointer inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <X class="h-5 w-5 text-gray-400 hover:text-gray-500" />
+              </button>
+            </div>
+          </div>
           <button
             @click="openConnectsModal"
             class="flex items-center space-x-1 px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 cursor-pointer"
@@ -33,7 +64,7 @@
           </button>
 
           <!-- Mobile menu button -->
-          <div class="flex items-center">
+          <div class="flex items-center" :class="{ 'ml-2': showSearch }">
           <button
             @click="isMenuOpen = !isMenuOpen"
             class="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
@@ -124,16 +155,42 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
-import { Wallet, Headset, Menu, X, MessageCircleMore } from 'lucide-vue-next';
+import { usePostStore } from '@/stores/post';
+import { Wallet, Headset, Menu, X, MessageCircleMore, Search } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import api from '@/api/axios';
 import { useConnectsStore } from '@/stores/connect';
 const router = useRouter();
 const userStore = useUserStore();
+const postStore = usePostStore();
 const supportStore = useSupportStore();
-const isMenuOpen = ref(false);
-const isConnectsModalOpen = ref(false);
 const connectsStore = useConnectsStore();
+const isMenuOpen = ref(false);
+const showSearch = ref(false);
+const searchQuery = ref('');
+const showSearchorInSearch = computed (() => showSearch.value || postStore.isInSearch)
+
+const toggleSearch = () => {
+  showSearch.value = !showSearch.value;
+  if (!showSearch.value) {
+    searchQuery.value = '';
+  }
+};
+
+const closeSearch = () => {
+  searchQuery.value = '';
+  showSearch.value = false;
+  postStore.closeSearch();
+}
+
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    postStore.search(searchQuery.value.trim());
+    showSearch.value = false;
+  }
+};
+
+const isConnectsModalOpen = ref(false);
 const currentConnects = computed(() => userStore?.user?.connects || 0);
 
 const props = defineProps({
