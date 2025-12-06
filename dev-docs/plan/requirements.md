@@ -36,7 +36,7 @@ Essential features.
 - ✅ *FR3.2*: The system shall allow Users to like and comment on comments.
 
 ### Analytics
-- *FR4.1*: The system shall allow Users to see their own Analytics summary (views, likes, comments).
+- 🟧 *FR4.1*: The system shall allow Users to see their own Analytics summary (views, likes, comments).
 
 ### Buying Connects
 - ✅ *FR5.1*: The system shall allow Users to buy connects either with card or manual payments (transfers).
@@ -65,13 +65,13 @@ Essential features.
 - ✅ *FR9.1*: The system shall categorize incoming text as Requests and allow Users to move the conversation to `Primary` and `Secondary`
 - ✅ *FR9.2*: The system shall allow Users to `Archive` conversations and add them to `Archived` category.
 - ✅ *FR9.3*: The system shall allow Users to send posts to conversations in the system chat.
-- *FR9.5*: The system shall allow Users to create group conversations (v2).
-- *FR9.6*: The system shall allow Users to react (emojis), reply, forward (in the same conversation), report messages in a conversation.
+- 🟧 *FR9.5*: The system shall allow Users to create group conversations (v2).
+- ✅ *FR9.6*: The system shall allow Users to react (emojis), reply, forward (in the same conversation), report messages in a conversation.
 
 ### Feed & Search
 - ✅ *FR10.1*: The system shall allow Users to discover other posts in their feed.
-- *FR10.2*: The system shall allow Users to Search for posts.
-- *FR10.3*: The system shall allow Users to Search other users by their Username, visit their profile and view their previous posts.
+- ✅ *FR10.2*: The system shall allow Users to Search for posts.
+- ✅ *FR10.3*: The system shall allow Users to Search other users by their Username, visit their profile and view their previous posts.
 
 ### Reporting
 
@@ -90,10 +90,10 @@ Essential features.
 
 - *FR14.1*: The system shall allow admins to see all reported posts.
 - *FR14.2*: The system shall allow admins to moderate reported posts.
-- *FR14.3*: The system shall allow admins to temporarily disable posting, liking and commenting for users.
-- *FR14.4*: The system shall allow Users to see banned Users.
+- 🟥 *FR14.3*: The system shall allow admins to temporarily disable posting, liking and commenting for users.
+- 🟥 *FR14.4*: The system shall allow Users to see banned Users.
 - *FR14.5*: The system shall allow admins to view reported messages.
-- *FR14.6*: The system shall allow admins to remove a connection (permanently) based on a reported message.
+- ✅ *FR14.6*: The system shall allow admins to remove a connection (permanently) based on a reported message.
 - ✅ *FR14.7*: The system shall allow admins to view, approve and reject appeals.
 - ✅ *FR14.8*: The system shall allow admins to dismiss reports.
 - *FR14.9*: The system shall allow admins to see dismissed reports.
