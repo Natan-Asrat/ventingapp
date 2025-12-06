@@ -9,6 +9,7 @@ export const usePostStore = defineStore('post', () => {
     const route = useRoute();
 
     const showRecommended = ref(true);
+    const hasLoadedCount = ref(false);
 
     // State
     const posts = ref([]);
@@ -52,8 +53,26 @@ export const usePostStore = defineStore('post', () => {
         }
     }
 
-    const fetchPosts = async (url = '/post/posts/recommended_posts/') => {
+    const fetchCount = async () => {
         try {
+            const response = await api.get("/post/posts/post_count/")
+            showRecommended.value = response.data.show_recommended;
+            hasLoadedCount.value = true;
+        } catch (error) {
+            console.error('Error fetching post count:', error);
+        }
+    }
+
+    const fetchPosts = async (url = null) => {
+        try {
+            if(!hasLoadedCount.value) await fetchCount();
+            if(url == null) {
+                if (showRecommended.value) {
+                    url = '/post/posts/recommended_posts/';
+                } else {
+                    url = '/post/posts/';
+                }
+            }
             const response = await api.get(url);
             if (showRecommended.value) {
                 for (const newPost of response.data) {
@@ -66,6 +85,7 @@ export const usePostStore = defineStore('post', () => {
                 }
             } else if (url.includes('page=')) {
                 posts.value = [...posts.value, ...response.data.results]; 
+                nextPage.value = response.data.next;
             } else {
                 posts.value = response.data.results;
                 nextPage.value = response.data.next;

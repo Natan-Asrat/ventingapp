@@ -23,6 +23,7 @@ from .permissions import IsPostOwner
 from django.db.models import F, Case, Count, Exists, OuterRef, Subquery, Value, When
 from .query import get_posts_queryset
 from django.db.models.functions import Coalesce
+from django.conf import settings
 
 class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Post.objects.filter(archived=False, banned=False).prefetch_related("payment_info_list").select_related("posted_by")
@@ -284,7 +285,12 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
             serializer = PostSimpleSerializer(paginated_posts, many=True)
             return self.get_paginated_response(serializer.data)
         return Response(PostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
-
+    
+    @action(detail=False, methods=['get'])
+    def post_count(self, request):
+        count = Post.objects.count()
+        show_recommended = count > settings.START_RECOMMENDATION_AT_POST_COUNT
+        return Response({"count": count, "show_recommended": show_recommended}, status=status.HTTP_200_OK)
 
 class CommentViewSet(viewsets.GenericViewSet):
     queryset = Comment.objects.all()
