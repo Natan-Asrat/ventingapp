@@ -1,17 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Desktop Navigation -->
-    <desktop-top-nav 
-      :user-initials="userInitials"
-      @logout="handleLogout"
-    />
-    
-    <!-- Mobile Top Navigation -->
-    <mobile-top-nav 
-      :user-initials="userInitials"
-      :user-name="userName"
-      @logout="handleLogout"
-    />
+    <DesktopTopNav />    
+    <MobileTopNav />
     
     <!-- Main Content -->
     <div class="pt-16 pb-16 md:pt-0 md:pb-0">
@@ -27,13 +17,13 @@
           </button>
         </div>
 
-        <div v-if="loading" class="flex justify-center py-12">
+        <div v-if="manualPaymentStore.loading" class="flex justify-center py-12">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
         </div>
 
         <div v-else class="space-y-4">
           <div 
-            v-for="option in paymentOptions" 
+            v-for="option in manualPaymentStore.paymentOptions" 
             :key="option.pk"
             class="bg-white overflow-hidden shadow rounded-lg border border-gray-200 hover:shadow-md transition-shadow duration-200 cursor-pointer"
             @click="openPaymentModal(option)"
@@ -56,25 +46,20 @@
                   <p class="mt-1 text-sm text-gray-500">{{ option.currency }} - {{ option.account }}</p>
                 </div>
                 <div class="ml-4">
-                  <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ChevronRight class="h-5 w-5 text-gray-400" />
                 </div>
               </div>
             </div>
           </div>
 
-          <div v-if="paymentOptions.length === 0" class="text-center py-12">
+          <div v-if="manualPaymentStore.paymentOptions.length === 0" class="text-center py-12">
             <p class="text-gray-500">No payment options available at the moment.</p>
           </div>
         </div>
       </div>
     </div>
     
-    <!-- Mobile Bottom Navigation -->
-    <mobile-bottom-nav :user-initials="userInitials" />
-    
-    <!-- Payment Modal -->
+    <MobileBottomNav />    
     <PaymentModal 
       :is-open="isModalOpen" 
       :payment-option="selectedOption"
@@ -85,57 +70,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { api } from '@/main';
+import { ref, onMounted } from 'vue';
 import PaymentModal from '@/components/payment/PaymentModal.vue';
 import { message } from 'ant-design-vue';
 import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
-import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
+import { useManualPaymentStore } from '@/stores/manual_payment';
+import { ChevronRight } from 'lucide-vue-next';
+const manualPaymentStore = useManualPaymentStore();
 const supportStore = useSupportStore();
-const userStore = useUserStore();
-const router = useRouter();
-
-const userInitials = computed(() => {
-  if (!userStore.user?.name) return 'U';
-  return userStore.user.name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
-});
-
-const userName = computed(() => userStore.user?.name || 'User');
-
-const handleLogout = async () => {
-  try {
-    await userStore.logout();
-    router.push({ name: 'Login' });
-  } catch (error) {
-    console.error('Logout error:', error);
-    message.error('Failed to logout. Please try again.');
-  }
-};
-
-const paymentOptions = ref([]);
-const loading = ref(true);
 const isModalOpen = ref(false);
 const selectedOption = ref(null);
 
-const fetchPaymentOptions = async () => {
-  try {
-    const response = await api.get('transaction/transactions/manual_payment_options/');
-    paymentOptions.value = response.data;
-  } catch (error) {
-    console.error('Error fetching payment options:', error);
-  } finally {
-    loading.value = false;
-  }
-};
 
 const openPaymentModal = (option) => {
   selectedOption.value = option;
@@ -149,11 +97,7 @@ const closeModal = () => {
 
 const handlePaymentSubmit = async (formData) => {
   try {
-    const response = await api.post(`transaction/manual_payments/${selectedOption.value.pk}/submit_payment/`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await manualPaymentStore.submitManualPayment(formData, selectedOption.value.pk)
     
     // Handle successful submission
     closeModal();
@@ -167,7 +111,7 @@ const handlePaymentSubmit = async (formData) => {
   }
 };
 
-onMounted(() => {
-  fetchPaymentOptions();
+onMounted(async () => {
+  await manualPaymentStore.fetchPaymentOptions();
 });
 </script>
