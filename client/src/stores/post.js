@@ -8,7 +8,7 @@ export const usePostStore = defineStore('post', () => {
     const router = useRouter();
     const route = useRoute();
 
-    const showRecommended = ref(true);
+    const showRecommended = ref(false);
     const hasLoadedCount = ref(false);
     const isInSearch = ref(false);
     const searchQuery = ref(null);

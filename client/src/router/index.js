@@ -6,7 +6,7 @@ import Feed from '@/views/Feed.vue';
 import NewPost from '@/views/NewPost.vue';
 import ForgotPassword from '@/views/auth/ForgotPassword.vue';
 import Profile from '@/views/MyProfile.vue';
-import UserProfile from '@/views/UserProfile.vue';
+import OtherProfile from '@/views/OtherProfile.vue';
 import ManualPayment from '@/views/ManualPayment.vue';
 import AdminLayout from '@/layouts/AdminLayout.vue';
 import AdminDashboard from '@/views/admin/DashboardView.vue';
@@ -29,15 +29,15 @@ const routes = [
   },
   {
     path: '/profile/:userId',
-    name: 'UserProfile',
-    component: UserProfile,
+    name: 'OtherProfile',
+    component: OtherProfile,
     meta: { requiresAuth: true },
     props: true
   },
   {
     path: '/@:username',
     name: 'UsernameProfile',
-    component: UserProfile,
+    component: OtherProfile,
     meta: { requiresAuth: true },
     props: true
   },
