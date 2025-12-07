@@ -104,10 +104,10 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import api from '@/api/axios';
 import { debounce } from 'lodash';
 import { Loader2, Search } from 'lucide-vue-next';
-
+import { useAdminStore } from '@/stores/admin';
+const adminStore = useAdminStore();
 const route = useRoute();
 const users = ref([]);
 const isLoading = ref(true);
@@ -125,7 +125,7 @@ const fetchUsers = async (page = 1, search = '') => {
       params.search = search;
     }
 
-    const response = await api.get('/account/users/', { params });
+    const response = await adminStore.getUsers(params)
     
     if (page === 1) {
       users.value = response.data.results;
@@ -159,8 +159,7 @@ const toggleBan = async (user) => {
 
   try {
     const action = user.banned_connection ? 'unban' : 'ban';
-    await api.post(`/account/users/${user.id}/${action}/`);
-    
+    await adminStore.applyUserAction(user.id, action);
     // Update the local state
     user.banned_connection = !user.banned_connection;
   } catch (err) {

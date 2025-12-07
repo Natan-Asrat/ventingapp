@@ -44,8 +44,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import api from '@/api/axios';
-
+import { useAdminStore } from '@/stores/admin';
+const adminStore = useAdminStore();
 const isLoading = ref(true);
 const isConnected = ref(true);
 const pollInterval = ref(null);
@@ -59,7 +59,7 @@ const stats = ref({
 
 const fetchDashboardStats = async () => {
   try {
-    const response = await api.get('/analytics/analytics/admin_dashboard/');
+    const response = await adminStore.getDashboardStats();
     stats.value = response.data;
     isConnected.value = true;
     lastUpdated.value = new Date();

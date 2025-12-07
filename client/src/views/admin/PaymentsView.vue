@@ -112,11 +112,11 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { api } from '@/main';
 import { message } from 'ant-design-vue';
 import { Loader2 } from 'lucide-vue-next';
 import TransactionModal from '@/components/admin/TransactionModal.vue';
-
+import { useAdminStore } from '@/stores/admin';
+const adminStore = useAdminStore();
 const transactions = ref([]);
 const isLoading = ref(true);
 const isRefreshing = ref(false);
@@ -130,8 +130,8 @@ const hasMore = computed(() => !!nextPage.value);
 
 const fetchTransactions = async (page = 1) => {
   try {
-    const response = await api.get('/transaction/transactions/pending_transactions/', { params: { page } });
-    
+    const response = await adminStore.getPendingTransactions(page);
+
     if (page === 1) {
       transactions.value = response.data.results || [];
     } else {

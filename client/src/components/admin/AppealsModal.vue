@@ -174,8 +174,7 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { X } from 'lucide-vue-next';
-import { api } from '@/main';
-
+import { useAdminStore } from '@/stores/admin';
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -198,7 +197,7 @@ const showDecisionForm = ref(false);
 const selectedAppealId = ref(null);
 const decisionReason = ref('');
 const isSubmitting = ref(false);
-
+const adminStore = useAdminStore();
 // Computed to check if any appeal is being decided
 const isDeciding = computed(() => selectedAppealId.value !== null);
 
@@ -222,7 +221,7 @@ const fetchAppeals = async (decisionId) => {
   error.value = null;
   
   try {
-    const response = await api.get(`/report/report-decisions/${decisionId}/appeals/`);
+    const response = await adminStore.getAppeals(decisionId);
     appeals.value = response.data;
   } catch (err) {
     console.error('Error fetching appeals:', err);
@@ -253,9 +252,7 @@ const handleApprove = async () => {
 
   isSubmitting.value = true;
   try {
-    await api.post(`/report/appeals/${selectedAppealId.value}/approve/`, {
-      reason: decisionReason.value
-    });
+    await adminStore.approveAppeal(selectedAppealId.value, decisionReason.value);
     await fetchAppeals(props.decisionId);
     selectedAppealId.value = null;
     showDecisionForm.value = false;
@@ -276,9 +273,7 @@ const handleReject = async () => {
 
   isSubmitting.value = true;
   try {
-    await api.post(`/report/appeals/${selectedAppealId.value}/reject/`, {
-      reason: decisionReason.value
-    });
+    await adminStore.rejectAppeal(selectedAppealId.value, decisionReason.value)
     await fetchAppeals(props.decisionId);
     selectedAppealId.value = null;
     showDecisionForm.value = false;

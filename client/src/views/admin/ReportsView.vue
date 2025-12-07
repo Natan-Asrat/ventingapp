@@ -386,13 +386,13 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { api } from '@/main';
 import { MessageCircle, Forward, Eye, Heart, Reply, FileText, User, Image as ImageIcon, AlertCircle } from 'lucide-vue-next';
 import AppealsModal from '@/components/admin/AppealsModal.vue';
 import DecisionModal from '@/components/admin/DecisionModal.vue';
 import ShowMore from '@/components/ShowMore.vue';
 import { useRoute, useRouter } from 'vue-router'
-
+import { useAdminStore } from '@/stores/admin';
+const adminStore = useAdminStore();
 const route = useRoute()
 const router = useRouter();
 const reports = ref([]);
@@ -479,8 +479,7 @@ const closeDecisionModal = () => {
 const handleDismiss = async (reportId) => {
   if (confirm('Are you sure you want to dismiss this report?')) {
     try {
-      await api.post(`/report/reports/${reportId}/dismiss/`);
-
+      await adminStore.dismissReport(reportId);
       reports.value = reports.value.filter(report => report.id !== reportId);
     } catch (error) {
       console.error('Error dismissing report:', error);
@@ -493,7 +492,7 @@ const handleDismiss = async (reportId) => {
 const handleRestore = async (reportId) => {
   if (confirm('Are you sure you want to restore this report?')) {
     try {
-      await api.post(`/report/reports/${reportId}/restore/`);
+      await adminStore.restoreReport(reportId);
       reports.value = reports.value.filter(report => report.id !== reportId);
     } catch (error) {
       console.error('Error dismissing report:', error);
@@ -506,7 +505,7 @@ const handleApprove = async ({ reason }) => {
   if (!selectedReportId.value) return;
 
   try {
-    await api.post(`/report/reports/${selectedReportId.value}/approve/`, { reason });
+    await adminStore.approveReport(selectedReportId.value, reason)
     await fetchReports(); // Refresh the reports list
   } catch (error) {
     console.error('Error approving report:', error);
@@ -519,7 +518,7 @@ const handleReject = async ({ reason }) => {
   if (!selectedReportId.value) return;
 
   try {
-    await api.post(`/report/reports/${selectedReportId.value}/reject/`, { reason });
+    await adminStore.rejectReport(selectedReportId.value, reason)
     await fetchReports(); // Refresh the reports list
   } catch (error) {
     console.error('Error rejecting report:', error);
@@ -547,8 +546,7 @@ const fetchReports = async (page=1) => {
       params.dismissed = false
       params.concluded = false
     }
-
-    const response = await api.get('/report/reports/', { params })
+    const response = await adminStore.getReports(params)
 
     if (page > 1) {
       reports.value = [...reports.value, ...response.data.results]; 

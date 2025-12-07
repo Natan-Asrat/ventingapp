@@ -192,10 +192,11 @@
 import { ref, computed } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { X } from 'lucide-vue-next';
-import { api } from '@/main';
 import { useUserStore } from '@/stores/user';
 import { message } from 'ant-design-vue';
+import { useAdminStore } from '@/stores/admin';
 
+const adminStore = useAdminStore();
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -244,9 +245,7 @@ const handleApprove = async () => {
   isLoading.value = true;
   
   try {
-    const response = await api.post(`/transaction/transactions/${props.transaction.pk}/approve_transaction/`, {
-      transaction_id: transactionId.value.trim(),
-    });
+    const response = await adminStore.approveTransaction(props.transaction.pk, transactionId.value.trim())
     
     message.success('Transaction approved');
     const updatedTransaction = { 
@@ -279,9 +278,7 @@ const handleReject = async () => {
   isLoading.value = true;
   
   try {
-    const response = await api.post(`/transaction/transactions/${props.transaction.pk}/reject_transaction/`, {
-      reason: rejectReason.value.trim(),
-    });
+    const response = await adminStore.rejectTransaction(props.transaction.pk, rejectReason.value.trim())
     
     message.success('Transaction rejected');
     const updatedTransaction = { 
