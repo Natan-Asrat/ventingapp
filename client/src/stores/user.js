@@ -174,6 +174,40 @@ export const useUserStore = defineStore('user', () => {
       };
     }
   };
+  const sendOtp = async (email) => {
+    await api.post('/account/users/send_reset_otp/', {
+      email: email
+    });
+  }
+  const sendResendOtp = async (email) => {
+    await api.post('/account/users/send_reset_otp/', {
+      email: email
+    });
+  }
+
+  const verifyOtp = async (email, otp) => {
+    const response = await api.post('/account/users/verify_reset_otp/', {
+      email: email,
+      otp: otp
+    });
+    return response;
+  }
+
+  const updatePassword = async (password1, password2, token) => {
+    await api.post(
+      '/account/users/reset_password/',
+      {
+        password1: password1,
+        password2: password2
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  }
 
   return {
     user,
@@ -187,6 +221,10 @@ export const useUserStore = defineStore('user', () => {
     resendOtp,
     checkAuth,
     subscriptions,
-    userInitials
+    userInitials,
+    sendOtp,
+    sendResendOtp,
+    verifyOtp,
+    updatePassword
   };
 });

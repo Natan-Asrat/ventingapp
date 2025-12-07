@@ -178,10 +178,9 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Eye, EyeOff, Loader2 } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
-import axios from 'axios';
-
+import { useUserStore } from '@/stores/user';
 const router = useRouter();
-
+const userStore = useUserStore();
 const currentStep = ref('email');
 const loading = ref(false);
 const email = ref('');
@@ -231,9 +230,7 @@ const sendOtp = async () => {
 
   loading.value = true;
   try {
-    await axios.post('http://localhost:8000/api/account/users/send_reset_otp/', {
-      email: email.value
-    });
+    await userStore.sendOtp(email.value);
     
     localStorage.setItem('resetEmail', email.value);
     currentStep.value = 'verify';
@@ -254,9 +251,7 @@ const resendOtp = async () => {
   
   loading.value = true;
   try {
-    await axios.post('http://localhost:8000/api/account/users/send_reset_otp/', {
-      email: email.value
-    });
+    await userStore.sendResendOtp(email.value);
     startCountdown();
     message.success('Verification code resent!');
   } catch (error) {
@@ -275,10 +270,7 @@ const verifyOtp = async () => {
 
   loading.value = true;
   try {
-    const response = await axios.post('http://localhost:8000/api/account/users/verify_reset_otp/', {
-      email: email.value,
-      otp: otp.value
-    });
+    const response = await userStore.verifyOtp(email.value, otp.value); 
 
     const { access } = response.data;
     localStorage.setItem('resetToken', access);
@@ -311,19 +303,11 @@ const updatePassword = async () => {
 
   loading.value = true;
   try {
-    await axios.post(
-      'http://localhost:8000/api/account/users/reset_password/',
-      {
-        password1: password1.value,
-        password2: password2.value
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    await userStore.updatePassword(
+      password1.value,
+      password2.value,
+      token
+    )
 
     message.success('Password updated successfully! Please login with your new password.');
     resetFlow();
