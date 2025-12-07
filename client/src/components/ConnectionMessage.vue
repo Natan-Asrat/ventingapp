@@ -1,6 +1,6 @@
 <template>
   <div v-if="connection.message" class="mt-2">
-    <div class="text-xs font-medium text-gray-500 mb-1">
+    <div v-if="connection.reconnection_requested_by" class="text-xs font-medium text-gray-500 mb-1">
       {{ connection.reconnection_requested_by ? 'Reconnection Request' : 'Connection Request' }}
       <span v-if="showRequestedBy" class="text-xs font-normal text-gray-400 ml-1">
         ({{ requestedByText }})
