@@ -220,9 +220,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick, onUnmounted, computed } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import api from '@/api/axios';
 import { useUserStore } from '@/stores/user';
 import CommentModal from './CommentModal.vue';
 import ShareModal from './ShareModal.vue';
@@ -231,6 +230,8 @@ import ImageViewer from '@/components/common/ImageViewer.vue';
 import ShowMore from '@/components/ShowMore.vue';
 import { Heart, MessageCircle, Bookmark, Share2, Loader2, UserPlus, UserCheck, Clock, UserX, Send } from 'lucide-vue-next';
 import ConnectionPromptModal from './ConnectionPromptModal.vue';
+import { useConnectionStore } from '@/stores/connection';
+const connectionStore = useConnectionStore();
 
 const getFollowButtonTooltip = (post) => {
   if (post.connected) return 'Connected';
@@ -297,7 +298,7 @@ const fetchConnections = async () => {
   
   try {
     loadingConnections.value = true;
-    const response = await api.get(`/account/users/${props.post.posted_by.id}/our_connection/`);
+    const response = await connectionStore.fetchOurConnections(props.post?.posted_by?.id)
     connections.value = response.data;
     showConnectionsModal.value = true;
   } catch (error) {

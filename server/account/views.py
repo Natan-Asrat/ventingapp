@@ -356,9 +356,9 @@ class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
 
     @action(detail=True, methods=['get'])
     def our_connection(self, request, pk=None):
-        user = self.get_object()
+        target_user = self.get_object()
         connection = Connection.objects.filter(
-            Q(initiating_user=user) | Q(connected_user=user)
+            Q(initiating_user=request.user, connected_user=target_user) | Q(connected_user=request.user, initiating_user=target_user)
         ).select_related('initiating_user', 'connected_user').order_by('-reconnection_count', '-updated_at')
         serializer = ConnectionListSerializer(connection, many=True)
         return Response(serializer.data)

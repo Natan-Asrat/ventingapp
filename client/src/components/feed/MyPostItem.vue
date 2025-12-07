@@ -182,7 +182,7 @@ const openImageViewer = (e) => {
 
 const handlePaymentInfoUpdate = (updatedPaymentInfo) => {
   emit('update:post', {
-    ...post,
+    ...props.post,
     payment_info_list: updatedPaymentInfo
   });
 };

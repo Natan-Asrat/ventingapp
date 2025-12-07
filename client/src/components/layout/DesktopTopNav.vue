@@ -105,7 +105,7 @@
                     <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
                   </div>
                   <div v-else class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span class="text-indigo-600 font-medium">{{ userInitials }}</span>
+                    <span class="text-indigo-600 font-medium">{{ userStore.userInitials }}</span>
                   </div>
                   <BadgeCheck 
                     v-if="hasActiveSubscription"
@@ -165,7 +165,6 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
 import { Search, X } from 'lucide-vue-next';
 import { usePostStore } from '@/stores/post';
 import { useUserStore } from '@/stores/user';
@@ -176,23 +175,11 @@ import { useConnectsStore } from '@/stores/connect';
 const userStore = useUserStore();
 const connectsStore = useConnectsStore();
 const supportStore = useSupportStore();
-const userInitials = computed(() => {
-  if (!userStore.user) return 'ME';
-  const { first_name, last_name, email } = userStore.user;
-  if (first_name && last_name) {
-    return `${first_name[0]}${last_name[0]}`.toUpperCase();
-  }
-  if (first_name) return first_name[0].toUpperCase();
-  if (email) return email[0].toUpperCase();
-  return 'ME';
-});
 
 const profilePicture = computed(() => {
   return userStore.user?.profile_picture;
 });
 
-const emit = defineEmits(['logout']);
-const router = useRouter();
 const postStore = usePostStore();
 const searchQuery = ref('');
 
@@ -219,12 +206,7 @@ const toggleProfileMenu = () => {
 };
 
 const handleLogout = async () => {
-  try {
-    await userStore.logout();
-    router.push('/login');
-  } catch (error) {
-    console.error('Logout error:', error);
-  }
+  userStore.logout();
 };
 
 // Handle click outside to close the dropdown

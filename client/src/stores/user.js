@@ -1,12 +1,27 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { api } from '../main';
+import { message } from 'ant-design-vue';
+import { useRouter } from 'vue-router';
 
 export const useUserStore = defineStore('user', () => {
   const user = ref(null);
   const loading = ref(false);
   const error = ref(null);
   const subscriptions = ref([]);
+  const router = useRouter();
+
+
+  const userInitials = computed(() => {
+    if (!user.value?.name) return 'U';
+    return user.value.name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .substring(0, 2);
+  });
+
 
   const isAuthenticated = computed(() => !!user.value);
 
@@ -104,8 +119,15 @@ export const useUserStore = defineStore('user', () => {
 
   // Logout user
   const logout = () => {
-    clearAuth();
-  };
+    try {
+      clearAuth();
+      message.success('Successfully logged out');
+      router.push('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      message.error('Failed to logout. Please try again.');
+    }
+  }
 
   // Register new user
   const register = async (userData) => {
@@ -152,7 +174,7 @@ export const useUserStore = defineStore('user', () => {
       };
     }
   };
-    
+
   return {
     user,
     loading,
@@ -164,6 +186,7 @@ export const useUserStore = defineStore('user', () => {
     verifyEmail,
     resendOtp,
     checkAuth,
-    subscriptions
+    subscriptions,
+    userInitials
   };
 });

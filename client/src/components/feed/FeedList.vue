@@ -16,38 +16,38 @@
                 Search Results
                 <span v-if="postStore.searchQuery" class="text-indigo-600">"{{ postStore.searchQuery }}"</span>
             </h2>          
-        <FeedItem
-            v-for="post in posts"
-            :key="post.id"
-            :post="post"
-            :data-id="`post-${post.id}`"
-            :liking="likingPostId === post.id"
-            :saving="savingPostId === post.id"
-            @donate="openDonationModal"
-            @chat="handleChat"
-            @save="handleSave"
-            @like="handleLike"
-            @follow="handleFollowClick"
-            @update:post="handleUpdatePostObj"
-            @connection-updated="handleConnectionsUpdated(post.id)"
-          />
+            <FeedItem
+                v-for="post in posts"
+                :key="post.id"
+                :post="post"
+                :data-id="`post-${post.id}`"
+                :liking="likingPostId === post.id"
+                :saving="savingPostId === post.id"
+                @donate="openDonationModal"
+                @chat="handleChat"
+                @save="handleSave"
+                @like="handleLike"
+                @follow="handleFollowClick"
+                @update:post="handleUpdatePostObj"
+                @connection-updated="handleConnectionsUpdated(post.id)"
+            />
           
-          <!-- Load More Button -->
-          <div v-if="hasNextPage || postStore.showRecommended" class="flex justify-center py-4">
-            <button 
-              @click="loadMore" 
-              :disabled="loadingMore"
-              class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {{ loadingMore ? 'Loading...' : 'Load More' }}
-            </button>
+            <!-- Load More Button -->
+            <div v-if="hasNextPage || postStore.showRecommended" class="flex justify-center py-4">
+                <button 
+                    @click="loadMore" 
+                    :disabled="loadingMore"
+                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                >
+                    {{ loadingMore ? 'Loading...' : 'Load More' }}
+                </button>
           </div>
         </div>
       </div>
     </main>
     
     <!-- Donation Modal -->
-    <donate-modal
+    <DonateModal
       :model-value="showDonationModal"
       @update:model-value="setShowDonationModal"
       :payment-methods="selectedPost?.payment_info_list || []"
@@ -77,8 +77,6 @@
 
 <script setup>
 import { onMounted, computed, watch, onUnmounted, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
-import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 import FeedItem from '@/components/feed/FeedItem.vue';
 import DonateModal from '@/components/feed/DonateModal.vue';
@@ -91,7 +89,6 @@ const connectsStore = useConnectsStore();
 const userStore = useUserStore();
 const postStore = usePostStore();
 const profileStore = useOtherProfilePostStore();
-const router = useRouter();
 
 const props = defineProps({
     user_id: {
@@ -289,10 +286,3 @@ onUnmounted(() => {
     }
 });
 </script>
-
-<style scoped>
-/* Add any custom styles here */
-.rotate-180 {
-  transform: rotate(180deg);
-}
-</style>

@@ -174,12 +174,12 @@ import { message } from 'ant-design-vue';
 import FeedList from '@/components/feed/FeedList.vue';
 import ConnectionModal from '@/components/feed/ConnectionsModal.vue';
 import ConnectionRequestModal from '@/components/feed/ConnectionRequestModal.vue';
-
+import { useConnectionStore } from '@/stores/connection';
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 const profileStore = useOtherProfilePostStore();
-
+const connectionStore = useConnectionStore();
 // State
 const loading = ref(true);
 const user = ref(null);
@@ -216,7 +216,7 @@ const handleConnectionsUpdated = async () => {
 const fetchConnections = async () => {  
   try {
     loadingConnections.value = true;
-    const response = await api.get(`/account/users/${profileStore.profileId}/our_connection/`);
+    const response = await connectionStore.fetchOurConnections(profileStore.profileId);
     connections.value = response.data;
     showConnectionsModal.value = true;
   } catch (error) {

@@ -4,9 +4,7 @@
       <div class="p-4 border-b border-gray-200 flex justify-between items-center">
         <h3 class="text-lg font-medium text-gray-900">Donation Methods</h3>
         <button @click="close" class="text-gray-400 hover:text-gray-500 cursor-pointer">
-          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
+          <X class="h-6 w-6" />
         </button>
       </div>
       
@@ -17,15 +15,12 @@
             class="w-full flex justify-between items-center text-left cursor-pointer"
           >
             <span class="font-medium">{{ method.method }}</span>
-            <svg 
+            <ChevronDown v-if="activeIndex != index "
               class="h-5 w-5 text-gray-400 transform transition-transform duration-200"
-              :class="{ 'rotate-180': activeIndex === index }"
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
+            />
+            <ChevronUp v-else
+              class="h-5 w-5 text-gray-400 transform transition-transform duration-200"
+            />
           </button>
           
           <div v-if="activeIndex === index" class="mt-3 space-y-3">
@@ -35,12 +30,10 @@
                 <p class="font-mono">{{ method.account }}</p>
               </div>
               <button 
-                class="text-indigo-600 hover:text-indigo-800 p-1"
+                class="text-indigo-600 hover:text-indigo-800 p-1 cursor-pointer"
                 title="Copy to clipboard"
               >
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                </svg>
+                <ClipboardCopy class="h-5 w-5" />
               </button>
             </div>
             
@@ -50,13 +43,10 @@
                 <p>{{ method.nameOnAccount }}</p>
               </div>
               <button 
-                
-                class="text-indigo-600 hover:text-indigo-800 p-1"
+                class="text-indigo-600 hover:text-indigo-800 p-1 cursor-pointer"
                 title="Copy to clipboard"
               >
-                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                </svg>
+                <ClipboardCopy class="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -73,6 +63,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { message } from 'ant-design-vue';
+import { ChevronDown, ChevronUp, ClipboardCopy, X } from 'lucide-vue-next';
 
 const props = defineProps({
   modelValue: {
@@ -121,9 +112,3 @@ const close = () => {
   show.value = false;
 };
 </script>
-
-<style scoped>
-.rotate-180 {
-  transform: rotate(180deg);
-}
-</style>

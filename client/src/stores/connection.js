@@ -37,10 +37,17 @@ export const useConnectionStore = defineStore('connection', () => {
             ? connection.connected_user 
             : connection.initiating_user;
     };
+
+    const fetchOurConnections = async (user_id) => {
+        if (!user_id) return;
+        const response = await api.get(`/account/users/${user_id}/our_connection/`);
+        return response;
+    };
     return {
         handleAcceptConnection,
         handleRejectConnection,
         processingAction,
-        getOtherUser
+        getOtherUser,
+        fetchOurConnections
     }
 });

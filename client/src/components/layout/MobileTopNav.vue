@@ -118,11 +118,11 @@
         <div class="flex items-center px-5">
           <div class="flex-shrink-0">
             <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-              <span class="text-indigo-600 font-medium">{{ userInitials }}</span>
+              <span class="text-indigo-600 font-medium">{{ userStore.userInitials }}</span>
             </div>
           </div>
           <div class="ml-3">
-            <div class="text-base font-medium text-gray-800">{{ userName || 'User' }}</div>
+            <div class="text-base font-medium text-gray-800">{{ userStore?.user?.name || 'User' }}</div>
             <div class="text-sm font-medium text-gray-500">View profile</div>
           </div>
         </div>
@@ -158,7 +158,6 @@ import { useSupportStore } from '@/stores/support';
 import { usePostStore } from '@/stores/post';
 import { Wallet, Headset, Menu, X, MessageCircleMore, Search } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
-import api from '@/api/axios';
 import { useConnectsStore } from '@/stores/connect';
 const router = useRouter();
 const userStore = useUserStore();
@@ -193,32 +192,13 @@ const handleSearch = () => {
 const isConnectsModalOpen = ref(false);
 const currentConnects = computed(() => userStore?.user?.connects || 0);
 
-const props = defineProps({
-  userInitials: {
-    type: String,
-    default: 'ME'
-  },
-  userName: {
-    type: String,
-    default: ''
-  }
-});
-
-const emit = defineEmits(['logout']);
-
 
 const closeMenu = () => {
   isMenuOpen.value = false;
 };
 
 const handleLogout = async () => {
-  closeMenu();
-  try {
-    await userStore.logout();
-    router.push('/login');
-  } catch (error) {
-    console.error('Logout error:', error);
-  }
+  userStore.logout();
 };
 
 // Close menu when route changes
