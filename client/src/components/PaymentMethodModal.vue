@@ -26,7 +26,7 @@
           >
             <DialogPanel class="relative transform overflow-hidden rounded-lg bg-white px-4 pt-5 pb-4 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
               <div class="absolute top-0 right-0 hidden pt-4 pr-4 sm:block">
-                <button type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2" @click="$emit('close')">
+                <button type="button" class="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer" @click="$emit('close')">
                   <span class="sr-only">Close</span>
                   <X class="h-6 w-6" aria-hidden="true" />
                 </button>
@@ -82,13 +82,13 @@
                 <div class="mt-5 sm:mt-6 sm:grid sm:grid-flow-row-dense sm:grid-cols-2 sm:gap-3">
                   <button
                     type="submit"
-                    class="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-2 sm:text-sm"
+                    class="inline-flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-2 sm:text-sm cursor-pointer"
                   >
                     Save
                   </button>
                   <button
                     type="button"
-                    class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-1 sm:mt-0 sm:text-sm"
+                    class="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:col-start-1 sm:mt-0 sm:text-sm cursor-pointer"
                     @click="$emit('close')"
                   >
                     Cancel
@@ -103,56 +103,38 @@
   </TransitionRoot>
 </template>
 
-<script>
+<script setup>
 import { ref, watch } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { CreditCard, X } from 'lucide-vue-next';
 
-export default {
-  name: 'PaymentMethodModal',
-  components: {
-    Dialog,
-    DialogPanel,
-    DialogTitle,
-    TransitionChild,
-    TransitionRoot,
-    CreditCard,
-    X
+
+const props = defineProps({
+  isOpen: {
+    type: Boolean,
+    required: true
   },
-  props: {
-    isOpen: {
-      type: Boolean,
-      required: true
-    },
-    initialData: {
-      type: Object,
-      default: () => ({
-        method: '',
-        account: '',
-        nameOnAccount: ''
-      })
-    }
-  },
-  emits: ['save', 'close'],
-  setup(props, { emit }) {
-    const paymentData = ref({ ...props.initialData });
+  initialData: {
+    type: Object,
+    default: () => ({
+      method: '',
+      account: '',
+      nameOnAccount: ''
+    })
+  }
+});
+const emit = defineEmits(['save', 'close'])
+const paymentData = ref({ ...props.initialData });
 
     // Watch for changes in initialData prop
-    watch(() => props.initialData, (newVal) => {
-      paymentData.value = { ...newVal };
-    }, { deep: true });
+watch(() => props.initialData, (newVal) => {
+  paymentData.value = { ...newVal };
+}, { deep: true });
 
-    const handleSubmit = () => {
-      // HTML5 form validation will handle the required fields
-      // If we reach here, the form is valid
-      emit('save', { ...paymentData.value });
-      emit('close');
-    };
-
-    return {
-      paymentData,
-      handleSubmit
-    };
-  }
+const handleSubmit = () => {
+  // HTML5 form validation will handle the required fields
+  // If we reach here, the form is valid
+  emit('save', { ...paymentData.value });
+  emit('close');
 };
 </script>
