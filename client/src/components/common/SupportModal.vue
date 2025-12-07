@@ -51,11 +51,11 @@
                   <div v-for="contact in supportContacts" :key="contact.id" class="border border-gray-200 rounded-lg p-4">
                     <h4 class="font-medium text-gray-900">{{ contact.name }}</h4>
                     <div class="mt-2 space-y-1 text-sm text-gray-600">
-                      <div class="flex items-center">
+                      <div v-if="contact.email" class="flex items-center">
                         <Mail class="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
                         <a :href="'mailto:' + contact.email" class="hover:text-indigo-600 break-all">{{ contact.email }}</a>
                       </div>
-                      <div class="flex items-center">
+                      <div v-if="contact.phone" class="flex items-center">
                         <Phone class="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
                         <a :href="'tel:' + contact.phone" class="hover:text-indigo-600">{{ contact.phone }}</a>
                       </div>
@@ -82,11 +82,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted } from 'vue';
 import { X, Mail, Phone } from 'lucide-vue-next';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
-import api from '@/api/axios';
-
+import { useSupportStore } from '@/stores/support';
+const supportStore = useSupportStore();
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -111,7 +111,7 @@ const fetchSupportContacts = async () => {
   error.value = null;
   
   try {
-    const response = await api.get('/support/contacts/');
+    const response = await supportStore.fetchContacts();
     supportContacts.value = response.data;
   } catch (err) {
     console.error('Error fetching support contacts:', err);

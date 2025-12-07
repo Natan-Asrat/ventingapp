@@ -67,10 +67,11 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { watch } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { PartyPopper } from 'lucide-vue-next';
-import api from '@/api/axios';
+import { useTransactionStore } from '@/stores/transaction';
+const transactionStore = useTransactionStore();
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -85,7 +86,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const closeModal = () => {
-  api.post('/transaction/transactions/celebrated/')
+  transactionStore.celebrate();
   
   emit('close');
 };

@@ -1,22 +1,23 @@
 <script setup>
 import { RouterView, useRoute } from 'vue-router';
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
-import api from '@/api/axios';
 import SupportModal from '@/components/common/SupportModal.vue';
 
 import CelebrationModal from '@/components/transaction/CelebrationModal.vue';
 import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
+import { useTransactionStore } from '@/stores/transaction';
 const route = useRoute();
 const showCelebration = ref(false);
 const recentTransaction = ref(null);
 const userStore = useUserStore();
 const supportStore = useSupportStore();
+const transactionStore = useTransactionStore();
 const checkForSuccess = async () => {
   if(!userStore.isAuthenticated) return;
   console.log("checking for success")
     try {
-      const response = await api.get('/transaction/transactions/recent_success/');
+      const response = await transactionStore.getRecentSuccess();
       console.log("recent success", response.data)
       if (response.data && response.data.connects) {
         recentTransaction.value = response.data;

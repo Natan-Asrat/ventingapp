@@ -120,10 +120,11 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onMounted } from 'vue';
+import { ref, nextTick } from 'vue';
 import { ChevronDown, ChevronUp, Heart, Loader2 } from 'lucide-vue-next';
-import api from '@/api/axios';
 import { message } from 'ant-design-vue';
+import { useCommentStore } from '@/stores/comment';
+const commentStore = useCommentStore();
 
 const props = defineProps({
   comment: {
@@ -193,12 +194,10 @@ const formatNumber = (num) => {
 
 const toggleLike = async () => {
   try {
-    const endpoint = props.comment.liked 
-      ? `/post/comments/${props.comment.id}/unlike_comment/`
-      : `/post/comments/${props.comment.id}/like_comment/`;
-    
-    const response = await api.post(endpoint);
-    
+    const response = await commentStore.likeComment(
+      props.comment.id,
+      props.comment.liked
+    )
     // Update the comment with the server's response
     emit('like', {
       ...props.comment,
@@ -236,9 +235,7 @@ const submitReply = async () => {
   if (!replyContent.value.trim()) return;
   
   try {
-    const response = await api.post(`/post/comments/${props.comment.id}/reply/`, {
-      message: replyContent.value.trim()
-    });
+    const response = await commentStore.replyComment(props.comment.id, replyContent.value.trim())
     
     // Add the reply to the UI immediately
     const newReply = response.data;

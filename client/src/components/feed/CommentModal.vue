@@ -219,13 +219,14 @@
 import { ref, watch, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { useRouter, useRoute } from 'vue-router';
-import api from '@/api/axios';
 import { message } from 'ant-design-vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import ShowMore from '@/components/ShowMore.vue';
 import CommentItem from './CommentItem.vue';
 import ReportModal from './ReportModal.vue';
 import { EllipsisVertical } from 'lucide-vue-next';
+import { usePostStore } from '@/stores/post';
+import { useCommentStore } from '@/stores/comment';
 // Click outside directive
 const vClickOutside = {
   beforeMount(el, binding) {
@@ -269,7 +270,8 @@ const emit = defineEmits([
 
 const router = useRouter();
 const route = useRoute();
-
+const postStore = usePostStore();
+const commentStore = useCommentStore();
 // Handle browser back button
 const handlePopState = () => {
   if (props.show) {
@@ -322,10 +324,7 @@ const submitReport = async (reason) => {
   isSubmittingReport.value = true;
   
   try {
-    const response = await api.post('report/reports/report_post/', {
-      post_id: props.post.id,
-      reason: reason
-    });
+    const response = await postStore.submitReport(props.post.id, reason);
     
     if (response.data.error) {
       message.error(response.data.error);
@@ -384,7 +383,7 @@ const fetchComments = async () => {
   
   try {
     loading.value = true;
-    const response = await api.get(`/post/posts/${props.post.id}/comments/`);
+    const response = await postStore.fetchComments(props.post.id);
     comments.value = response.data.results || [];
   } catch (error) {
     console.error('Error fetching comments:', error);
@@ -459,9 +458,7 @@ const addComment = async () => {
   if (!newComment.value.trim()) return;
   
   try {
-    const response = await api.post(`/post/posts/${props.post.id}/comment/`, {
-      message: newComment.value.trim()
-    });
+    const response = await postStore.submitComment(props.post.id, newComment.value.trim());
     const post_comments_count = response.data.post_comments;
     const new_comment_obj = response.data.comment;
     
@@ -496,7 +493,7 @@ const toggleReplies = async (comment) => {
 const fetchReplies = async (commentId) => {
   try {
     loadingReplies.value[commentId] = true;
-    const response = await api.get(`/post/comments/${commentId}/replies/`);
+    const response = await commentStore.getReplies(commentId);
     commentReplies.value[commentId] = response.data.results || [];
   } catch (error) {
     console.error('Error fetching replies:', error);

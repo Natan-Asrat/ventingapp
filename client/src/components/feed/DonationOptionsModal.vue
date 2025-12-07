@@ -87,7 +87,7 @@
             <button
               v-if="editingIndex !== index && !archived"
               @click="removePaymentMethod(index)"
-              class="ml-4 p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-100"
+              class="ml-4 p-1 text-gray-400 hover:text-red-600 rounded-full hover:bg-gray-100 cursor-pointer"
               title="Remove payment method"
             >
               <Trash2 class="h-4 w-4" />
@@ -127,8 +127,7 @@
 import { ref, computed, watch } from 'vue';
 import { Pencil, X, Plus, Trash2 } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
-import api from '@/api/axios';
-
+import { usePostStore } from '@/stores/post';
 const props = defineProps({
   show: {
     type: Boolean,
@@ -149,7 +148,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close', 'update:payment-info-list']);
-
+const postStore = usePostStore();
 // Local state
 const paymentMethods = ref([...props.paymentInfoList]);
 const editingIndex = ref(-1);
@@ -211,24 +210,21 @@ const savePaymentMethod = async (index) => {
     
     if (methodData.pk) {
       // Update existing payment method
-      response = await api.put(
-        `/post/payment_info/${methodData.pk}/`,
-        {
-          method: methodData.method,
-          account: methodData.account,
-          nameOnAccount: methodData.nameOnAccount
-        }
-      );
+      const data = {
+        method: methodData.method,
+        account: methodData.account,
+        nameOnAccount: methodData.nameOnAccount
+      }
+      response = await postStore.updatePaymentMethod(methodData.pk, data);
     } else {
+      const data = {
+        method: methodData.method,
+        account: methodData.account,
+        nameOnAccount: methodData.nameOnAccount
+      }
+      response = await postStore.addPaymentMethod(props.postId, data);
       // Create new payment method
-      response = await api.post(
-        `/post/posts/${props.postId}/add_payment_info/`,
-        {
-          method: methodData.method,
-          account: methodData.account,
-          nameOnAccount: methodData.nameOnAccount
-        }
-      );
+      
     }
     
     // Update local state with server response
@@ -248,7 +244,7 @@ const removePaymentMethod = async (index) => {
     
     // If the payment method has a pk, delete it from the server
     if (methodToDelete.pk) {
-      await api.delete(`/post/payment_info/${methodToDelete.pk}/`);
+      await postStore.removePaymentMethod(methodToDelete.pk)
     }
     
     // Remove from local state

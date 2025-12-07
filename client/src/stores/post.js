@@ -589,6 +589,41 @@ export const usePostStore = defineStore('post', () => {
             loading.value = false;
         }
     };
+
+    const submitReport = async (post_id, reason) => {
+        const response = await api.post('report/reports/report_post/', {
+            post_id: post_id,
+            reason: reason
+        });
+        return response;
+    }
+
+    const fetchComments = async (post_id) => {
+        const response = await api.get(`/post/posts/${post_id}/comments/`);
+        return response;
+    }
+
+    const submitComment = async (post_id, message) => {
+        const response = await api.post(`/post/posts/${post_id}/comment/`, {
+            message: message.trim()
+        });
+        return response;
+    }
+
+    const updatePaymentMethod = async (id, data) => {
+        const response = await api.put(`/post/payment_info/${id}/`, data);
+        return response;
+    }
+
+    const addPaymentMethod = async (post_id, data) => {
+        const response = await api.post(`/post/posts/${post_id}/add_payment_info/`, data);
+        return response;
+    }
+
+    const removePaymentMethod = async (id) => {
+        await api.delete(`/post/payment_info/${id}/`);
+    }
+
     const closeSearch = () => {
         isInSearch.value = false
         searchProfileResults.value = []
@@ -605,6 +640,12 @@ export const usePostStore = defineStore('post', () => {
         searchProfileHasNextPage,
         loadMoreProfiles,
         closeSearch,
+        submitReport,
+        fetchComments,
+        submitComment,
+        updatePaymentMethod,
+        addPaymentMethod,
+        removePaymentMethod,
         loadingMoreProfiles,
         search,
         posts,

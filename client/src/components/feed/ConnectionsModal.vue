@@ -96,9 +96,7 @@
   </Dialog>
 </template>
 <script setup>
-import { ref } from 'vue';
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/vue';
-import api from '@/api/axios';
 import { Loader2, Check, X } from 'lucide-vue-next';
 import { useUserStore } from '@/stores/user';
 import { useConnectionStore } from '@/stores/connection';
