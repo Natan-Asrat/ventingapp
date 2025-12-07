@@ -8,8 +8,8 @@
             </div>
             <div class="px-4 py-5 sm:p-6">
                 <div class="space-y-6">
-                    <ProfilePictureAndName />
-                    <ProfileDetailAndSubscriptions />
+                    <MyProfilePictureAndName />
+                    <MyProfileDetailAndSubscriptions />
                     <div class="pt-4 border-t border-gray-200">
                         <router-link 
                             to="/home"
@@ -25,6 +25,6 @@
 </template>
 
 <script setup>
-import ProfilePictureAndName from '@/components/my_profile/my_profile_detail/MyProfilePictureAndName.vue';
-import ProfileDetailAndSubscriptions from '@/components/my_profile/my_profile_detail/MyProfileDetailAndSubscriptions.vue';
+import MyProfilePictureAndName from '@/components/my_profile/my_profile_detail/MyProfilePictureAndName.vue';
+import MyProfileDetailAndSubscriptions from '@/components/my_profile/my_profile_detail/MyProfileDetailAndSubscriptions.vue';
 </script>

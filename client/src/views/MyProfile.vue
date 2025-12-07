@@ -1,31 +1,18 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Desktop Navigation -->
-    <desktop-top-nav 
-      :user-initials="userInitials"
-      @logout="handleLogout"
-    />
-    
-    <!-- Mobile Top Navigation -->
-    <mobile-top-nav 
-      :user-initials="userInitials"
-      :user-name="user?.name || 'User'"
-      @logout="handleLogout"
-    />
+    <DesktopTopNav />    
+    <MobileTopNav />
     
     <!-- Main Content -->
     <div class="pt-16 pb-16 md:pt-0 md:pb-0">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex flex-col md:flex-row gap-6">
-          <ProfileDetail />
-          
-          <ProfilePosts />
+          <MyProfileDetail />
+          <MyProfilePosts />
         </div>
       </div>
     </div>
-    
-    <!-- Mobile Bottom Navigation -->
-    <mobile-bottom-nav :user-initials="userInitials" />
+    <MobileBottomNav />
   </div>
 </template>
 
@@ -36,8 +23,8 @@ import { useUserStore } from '@/stores/user';
 import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
-import ProfileDetail from '@/components/my_profile/MyProfileDetail.vue';
-import ProfilePosts from '@/components/my_profile/MyProfilePosts.vue';
+import MyProfileDetail from '@/components/my_profile/MyProfileDetail.vue';
+import MyProfilePosts from '@/components/my_profile/MyProfilePosts.vue';
 import { useMyProfileStore } from '@/stores/my_profile';
 const router = useRouter();
 const userStore = useUserStore();

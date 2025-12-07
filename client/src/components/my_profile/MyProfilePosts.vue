@@ -2,7 +2,7 @@
     <!-- Right Column - User Posts -->
     <div class="w-full md:w-2/3">
         <div class="bg-white shadow sm:rounded-lg overflow-hidden">
-            <ProfilePostsTabs />
+            <MyProfilePostsTabs />
             
             <!-- Loading State -->
             <div v-if="myProfileStore.loading" class="p-6 text-center">
@@ -72,7 +72,7 @@ import { FileText, Loader2, PlusIcon } from 'lucide-vue-next';
 import { useMyProfileStore } from '@/stores/my_profile';
 
 import MyPostItem from '@/components/feed/MyPostItem.vue';
-import ProfilePostsTabs from '@/components/my_profile/my_profile_posts/MyProfilePostsTabs.vue';
+import MyProfilePostsTabs from '@/components/my_profile/my_profile_posts/MyProfilePostsTabs.vue';
 
 const myProfileStore = useMyProfileStore();
 </script>
