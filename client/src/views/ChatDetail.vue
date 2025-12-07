@@ -244,7 +244,7 @@
                 </button>
                 <div class="relative">
                   <button 
-                    @click.stop="showReportMenu = !showReportMenu" 
+                    @click.stop="messageStore.toggleReportMenu()" 
                     class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
                     title="More">
                     <EllipsisVertical class="h-4 w-4"/>
@@ -252,9 +252,9 @@
                   
                   <!-- Dropdown menu ABOVE -->
                   <div 
-                    v-if="showReportMenu" 
+                    v-if="messageStore.showReportMenu" 
                     class="absolute right-0 bottom-full mb-1 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-                    v-click-outside="() => showReportMenu = false"
+                    v-click-outside="() => messageStore.setShowReportMenu(false)"
                   >
                     <button 
                       @click="handleReportMessage(message.id)"
@@ -319,11 +319,11 @@
 
     <!-- Report Modal -->
     <ReportModal
-      v-if="isReportModalOpen"
-      :is-open="isReportModalOpen"
-      :is-submitting="isSubmittingReport"
-      @close="isReportModalOpen = false"
-      @submit="submitReport"
+      v-if="messageStore.isReportModalOpen"
+      :is-open="messageStore.isReportModalOpen"
+      :is-submitting="messageStore.isSubmittingReport"
+      @close="messageStore.setIsReportModalOpen(false)"
+      @submit="messageStore.submitReport"
     />
 
     <!-- Message Input -->
@@ -367,15 +367,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { useRoute } from 'vue-router';
 import ReportModal from '@/components/feed/ReportModal.vue';
 import SharedPostPreview from '@/components/chat/SharedPostPreview.vue';
 import { useUserStore } from '@/stores/user';
-import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft, Flag } from 'lucide-vue-next';
-import api from '@/api/axios';
+import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft } from 'lucide-vue-next';
 import { MessageCircle, Forward } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
+import { useMessageStore } from '@/stores/message';
+const messageStore = useMessageStore();
+
 const visibleMessages = ref([]);
 let visibilityObserver = null;
 let mutationObserver = null;
@@ -386,7 +388,6 @@ const isAtBottom = ref(true);
 const newMessagesCount = ref(0);
 const hasSentNewMessage = ref(false);
 const loadingMessages = ref(false)
-const showReportMenu = ref(false);
 
 // Emoji Picker
 import data from 'emoji-mart-vue-fast/data/all.json';
@@ -412,7 +413,6 @@ const vClickOutside = {
 const emojiIndex = new EmojiIndex(data);
 
 const route = useRoute();
-const router = useRouter();
 const userStore = useUserStore();
 const currentUser = computed(() => userStore.user);
 
@@ -424,9 +424,6 @@ const replyingTo = ref(null);
 const highlightedMessageId = ref(null);
 const showActions = ref(null);
 const emojiPickerForMessage = ref(null);
-const isReportModalOpen = ref(false);
-const isSubmittingReport = ref(false);
-const selectedMessageId = ref(null);
 const pagination = ref({
   next: null,
   previous: null,
@@ -436,39 +433,15 @@ const pagination = ref({
 let closeTimeout = null;
 
 const handleReportMessage = (messageId) => {
-  selectedMessageId.value = messageId;
-  showReportMenu.value = false;
-  isReportModalOpen.value = true;
+  messageStore.setSelectedMessageId(messageId);
+  messageStore.setShowReportMenu(false);
+  messageStore.setIsReportModalOpen(true);
 };
 
-
-const submitReport = async (reason) => {
-  isSubmittingReport.value = true;
-  
-  try {
-    const response = await api.post('report/reports/report_message/', {
-      message_id: selectedMessageId.value,
-      reason: reason
-    });
-    
-    if (response.data.error) {
-      message.error(response.data.error);
-    } else {
-      message.success('Message reported successfully');
-    }
-  } catch (error) {
-    console.error('Error reporting message:', error);
-    const errorMessage = error.response?.data?.error || 'Failed to report message';
-    message.error(errorMessage);
-  } finally {
-    isSubmittingReport.value = false;
-    isReportModalOpen.value = false;
-  }
-};
 // Fetch conversation details
 const fetchConversation = async () => {
   try {
-    const response = await api.get(`chat/conversations/${route.params.id}/`);
+    const response = await messageStore.fetchConversationById(route.params.id);
     conversation.value = response.data;
     await fetchMessages();
   } catch (error) {
@@ -481,17 +454,13 @@ const fetchMessages = async (loadMore = false) => {
   try {
     pagination.value.isLoading = true;
     let url = `chat/conversations/${route.params.id}/messages/`;
-    const first_message_id = messages.value.length > 0 ? messages.value[0].id : null;
     
     if (loadMore && pagination.value.next) {
       // Use the next page URL if loading more
       url = pagination.value.next;
-    } else if (!loadMore) {
-      // Reset messages if it's a fresh load
-      // messages.value = [];
     }
     
-    const response = await api.get(url);
+    const response = await messageStore.fetchMessagesByURL(url);
 
     const container = messagesContainer.value;
 
@@ -543,10 +512,7 @@ const sendMessage = async () => {
   if (!newMessage.value.trim()) return;
 
   try {
-    await api.post(`chat/conversations/${route.params.id}/send_message/`, {
-      message: newMessage.value,
-      reply_to: replyingTo.value?.id || null
-    });
+    await messageStore.sendMessage(newMessage.value, route.params.id, replyingTo.value?.id)
     newMessage.value = '';
     replyingTo.value = null;
     hasSentNewMessage.value = true;
@@ -573,7 +539,7 @@ const handleReply = (message) => {
 
 const handleForward = async (message_data) => {
   try{
-    await api.post(`chat/messages/${message_data.id}/forward/`);
+    await messageStore.forwardMessage(message_data.id);
   } catch(error){
     message.error(error.response.data.error)
     console.error('Error forwarding message:', error);
@@ -589,10 +555,10 @@ const scrollToMessage = async (messageId) => {
   if (!messageExists) {
     try {
       // If message is not loaded, fetch it
-      const response = await api.get(`chat/messages/get_bulk/?ids=${messageId}`);
-      if (response.data.results.length > 0) {
+      const response = await messageStore.getBulkMessages(messageId);
+      if (response.data.length > 0) {
         // Add the message to the beginning of the messages array
-        messages.value.unshift(response.data.results[0]);
+        messages.value.unshift(response.data[0]);
         // Update the firstNewMessageIndex to account for the new message
         if (firstNewMessageIndex.value !== -1) {
           firstNewMessageIndex.value += 1;
@@ -700,10 +666,7 @@ const cancelClose = () => {
 // Handle emoji selection
 const onEmojiSelect = async (message_data, emoji) => {
   try {
-    // Send reaction to the server and get the updated message
-    const response = await api.post(`chat/messages/${message_data.id}/react/`, {
-      emoji: emoji.native
-    });
+    const response = await messageStore.reactToMessage(message_data.id, emoji.native)
     
     // Update the message in the messages array with the server response
     const updatedMessage = response.data;
@@ -842,7 +805,7 @@ const fetchVisibleMessages = async () => {
 
   try {
     const ids = visibleMessages.value.join(',');
-    const response = await api.get(`chat/messages/get_bulk/?id=${ids}`);
+    const response = await messageStore.getBulkMessages(ids);
     const fetchedMessages = response.data; // assume array of message objects
 
     // Update messages in place
@@ -892,9 +855,7 @@ const fetchNewMessages = async () => {
 
   const latestId = messages.value[messages.value.length - 1].id;
   try {
-    const response = await api.get(
-      `chat/conversations/${route.params.id}/new_messages/?after_id=${latestId}`
-    );
+    const response = await messageStore.getMessagesAfterId(route.params.id, latestId);
     const newMsgs = response.data.results;
 
     if (newMsgs.length) {
