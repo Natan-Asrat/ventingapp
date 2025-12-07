@@ -35,7 +35,7 @@ export const useNewPostStore = defineStore('newpost', () => {
     }
 
     const setPostImage = (value) => {
-        post.value.image = null;
+        post.value.image = value;
     }
 
     const resetPaymentForm = () => {
@@ -169,7 +169,7 @@ export const useNewPostStore = defineStore('newpost', () => {
         setPostImage,
         newPaymentInfo,
         isPaymentModalOpen,
-        
+
         setIsPaymentModalOpen
     }
 
