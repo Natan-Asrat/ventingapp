@@ -70,7 +70,7 @@
                 <UserX :size="16" class="stroke-[2.5]" />
             </template>
             <template v-else-if="post.rejected_connection">
-                <UserX :size="16" class="stroke-[2.5]" />
+                <UserX :size="16" class="stroke-[2.5] text-red-600" />
             </template>
             <UserPlus v-else :size="16" class="stroke-[2.5]" />
         </button>

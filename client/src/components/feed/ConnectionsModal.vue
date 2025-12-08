@@ -61,7 +61,7 @@
 
               <div v-if="connection.reconnection_requested_by === userStore.user?.id" class="mt-2 text-sm text-zinc-600 flex items-center bg-amber-50 text-amber-800 px-4 py-3 rounded-xl border border-amber-100">
                 <Loader2 class="w-4 h-4 animate-spin mr-2.5" />
-                <span class="font-medium">Waiting for approval since {{ connection.formatted_created_at }}</span>
+                <span class="font-medium">Waiting for approval since {{ connection.formatted_updated_at }}</span>
               </div>
               
               <div v-else class="mt-1">
