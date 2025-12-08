@@ -299,11 +299,11 @@ onBeforeUnmount(() => {
 });
 
 const closeModal = () => {
-  // Remove the post ID from URL when closing
-  if (route.query.p) {
-    const query = { ...route.query };
-    delete query.p;
-    router.replace({ query });
+  // Remove the post ID from URL when closing using window.history to prevent router refresh
+  const url = new URL(window.location.href);
+  if (url.searchParams.has('p')) {
+    url.searchParams.delete('p');
+    window.history.replaceState({}, '', url);
   }
   
   emit('close');
@@ -515,18 +515,25 @@ const fetchReplies = async (commentId) => {
 // Handle URL and fetch comments when modal is opened/closed
 watch(() => props.show, (newVal) => {
   if (newVal) {
-    // Add post ID to URL when modal opens
-    if (props.post?.id && route.query.p !== String(props.post.id)) {
-      router.replace({
-        query: { ...route.query, p: props.post.id }
-      });
+    // Add post ID to URL when modal opens using window.history to prevent router refresh
+    if (props.post?.id) {
+        const url = new URL(window.location.href);
+        // Only update if not already there
+        if (url.searchParams.get('p') !== String(props.post.id)) {
+            url.searchParams.set('p', props.post.id);
+            window.history.replaceState({}, '', url);
+        }
     }
     fetchComments();
-  } else if (route.query.p) {
-    // Remove post ID from URL when modal closes
-    const query = { ...route.query };
-    delete query.p;
-    router.replace({ query });
+  } else {
+    // URL cleanup handled in closeModal if triggered by UI, or here if triggered by prop change.
+    // To be safe, we can check and clean here too, but closeModal does it. 
+    // If show becomes false from external source, we might want to clean up.
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('p')) {
+        url.searchParams.delete('p');
+        window.history.replaceState({}, '', url);
+    }
   }
 }, { immediate: true });
 </script>

@@ -180,6 +180,7 @@
                 <SharedPostPreview 
                     :post="message.shared_post || message.forwarded_from?.shared_post" 
                     :is-mine="message.user.id === currentUser.id"
+                    @open-post="openPostModal"
                 />
               </div>
               
@@ -195,7 +196,7 @@
                 </span>
               </div>
 
-              <!-- Hover actions menu - Moved to BOTTOM to avoid blocking Reply banner -->
+              <!-- Hover actions menu -->
               <div 
                 v-if="showActions === message.id"
                 class="absolute z-10 flex items-center space-x-0.5 bg-white rounded-full shadow-lg border border-zinc-100 p-1 transition-all duration-200 animate-in fade-in zoom-in-95"
@@ -294,6 +295,39 @@
       </form>
     </div>
 
+    <!-- Post Detail Modal -->
+    <PostDetailModal
+        :is-open="isPostModalOpen"
+        :post-id="viewingPost?.id"
+        :liking="postStore.likingPostId === (viewingPost && viewingPost.id)"
+        :saving="postStore.savingPostId === (viewingPost && viewingPost.id)"
+        @close="closePostModal"
+        @like="handlePostLike"
+        @save="handlePostSave"
+        @chat="handlePostChat"
+        @donate="handlePostDonate"
+        @follow="handlePostFollow"
+        @update:post="handlePostUpdate"
+        @archive="handlePostArchive"
+        @restore="handlePostRestore"
+    />
+
+    <!-- Donation Modal (for FeedItem in modal) -->
+    <DonateModal
+      :model-value="postStore.showDonationModal"
+      @update:model-value="postStore.setShowDonationModal($event)"
+      :payment-methods="postStore.selectedPost?.payment_info_list || []"
+    />
+    
+    <!-- Connection Request Modal (for FeedItem in modal) -->
+    <ConnectionRequestModal
+      v-if="postStore.showConnectionModal"
+      :is-open="postStore.showConnectionModal"
+      :user-name="postStore.selectedUserForConnection?.posted_by?.name || 'this user'"
+      @close="postStore.closeConnectionModal()"
+      @confirm="confirmConnectionRequest"
+    />
+
     <!-- Global Emoji Picker (Teleported to Body) -->
     <Teleport to="body">
       <div 
@@ -325,11 +359,15 @@ import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ReportModal from '@/components/feed/ReportModal.vue';
 import SharedPostPreview from '@/components/chat/SharedPostPreview.vue';
+import PostDetailModal from '@/components/feed/PostDetailModal.vue';
+import DonateModal from '@/components/feed/DonateModal.vue';
+import ConnectionRequestModal from '@/components/feed/ConnectionRequestModal.vue';
 import { useUserStore } from '@/stores/user';
+import { usePostStore } from '@/stores/post';
+import { useMessageStore } from '@/stores/message';
+import { useMyProfileStore } from '@/stores/my_profile';
 import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft, MessageCircle, Forward, Check, ArrowDown, AlertTriangle } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
-import { useMessageStore } from '@/stores/message';
-const messageStore = useMessageStore();
 
 // Click outside directive logic
 const vClickOutside = {
@@ -356,6 +394,9 @@ const emojiIndex = new EmojiIndex(data);
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const messageStore = useMessageStore();
+const postStore = usePostStore();
+const myProfileStore = useMyProfileStore();
 const currentUser = computed(() => userStore.user);
 
 const conversation = ref({});
@@ -367,6 +408,59 @@ const highlightedMessageId = ref(null);
 const showActions = ref(null);
 const pagination = ref({ next: null, previous: null, count: 0, isLoading: false });
 let closeTimeout = null;
+
+// Viewing Post Modal State
+const viewingPost = ref(null);
+const isPostModalOpen = ref(false);
+
+const isMyViewingPost = computed(() => {
+    return viewingPost.value && currentUser.value && viewingPost.value.posted_by?.id === currentUser.value.id;
+});
+
+const openPostModal = (post) => {
+    if(!post) return;
+    viewingPost.value = post;
+    isPostModalOpen.value = true;
+};
+
+const closePostModal = () => {
+    isPostModalOpen.value = false;
+    viewingPost.value = null;
+};
+
+// Post Action Handlers
+const handlePostLike = (post) => postStore.handleLike(post);
+const handlePostSave = (post) => postStore.handleSave(post);
+const handlePostChat = (post) => postStore.handleChat(post);
+const handlePostDonate = (post) => postStore.openDonationModal(post);
+const handlePostFollow = async (post, showDonate) => {
+    await postStore.handleFollow(post, showDonate);
+    await userStore.checkAuth();
+};
+const handlePostArchive = async (post) => {
+    try {
+        await myProfileStore.archivePost(post.id);
+        message.success("Post archived");
+        closePostModal();
+    } catch(e) {
+        console.error("Archive failed", e);
+    }
+};
+const handlePostRestore = async (post) => {
+    try {
+        await myProfileStore.restorePost(post.id);
+        message.success("Post restored");
+        closePostModal();
+    } catch(e) {
+        console.error("Restore failed", e);
+    }
+};
+const handlePostUpdate = (updatedPost) => {
+    viewingPost.value = updatedPost;
+};
+const confirmConnectionRequest = async (messageText) => {
+    await postStore.confirmConnectionRequest(messageText);
+};
 
 // Emoji Picker State
 const emojiPickerState = ref({
@@ -823,14 +917,3 @@ onUnmounted(() => {
   }
 });
 </script>
-
-<style scoped>
-.highlight-message {
-  animation: highlight 2s ease-out;
-}
-
-@keyframes highlight {
-  0% { background-color: rgba(139, 92, 246, 0.1); }
-  100% { background-color: transparent; }
-}
-</style>

@@ -662,7 +662,7 @@ export const usePostStore = defineStore('post', () => {
         selectedUserForConnection,
 
         handleUpdatePostObj,
-
+        fetchPostById,
         fetchPosts,
         loadMore,
 
