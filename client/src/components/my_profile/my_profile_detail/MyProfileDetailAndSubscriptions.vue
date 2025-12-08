@@ -1,27 +1,24 @@
 <template>
-  <div class="border-t border-gray-200 pt-4">
-    <dl class="divide-y divide-gray-200">
-      <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-        <dt class="text-sm font-medium text-gray-500">Email address</dt>
-        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ user?.email || 'Not provided' }}</dd>
+  <div class="pt-2">
+    <dl class="space-y-4">
+      <div class="flex justify-between py-2 border-b border-zinc-50">
+        <dt class="text-sm font-medium text-zinc-500">Email</dt>
+        <dd class="text-sm font-semibold text-zinc-900 text-right">{{ user?.email || 'Not provided' }}</dd>
       </div>
-      <div v-if="user?.username" class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-        <dt class="text-sm font-medium text-gray-500">Username</dt>
-        <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{{ user.username }}</dd>
+      <div v-if="user?.username" class="flex justify-between py-2 border-b border-zinc-50">
+        <dt class="text-sm font-medium text-zinc-500">Username</dt>
+        <dd class="text-sm font-semibold text-zinc-900 text-right">@{{ user.username }}</dd>
       </div>
-      <div class="py-4 sm:grid sm:grid-cols-3 sm:gap-4">
-        <dt class="text-sm font-medium text-gray-500">Account created</dt>
-        <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{{ user?.formatted_date_joined }}</dd>
-      </div>
+
       <!-- Subscriptions Section -->
-      <div class="py-4">
-        <h3 class="text-sm font-medium text-gray-500 mb-3">Subscriptions</h3>
-        <div v-if="subscriptions.length > 0" class="space-y-4">
-          <div v-for="(sub, index) in subscriptions" :key="index" class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <div class="flex justify-between items-start">
+      <div class="pt-4">
+        <h3 class="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-4">Active Subscriptions</h3>
+        <div v-if="subscriptions.length > 0" class="space-y-3">
+          <div v-for="(sub, index) in subscriptions" :key="index" class="bg-zinc-50/50 border border-zinc-200 rounded-xl p-4 hover:border-violet-200 transition-colors">
+            <div class="flex justify-between items-start mb-2">
                 <div>
-                  <h4 class="font-medium text-gray-900">{{ sub.product_name }}</h4>
-                  <p class="text-sm text-gray-500 mt-1">
+                  <h4 class="font-bold text-zinc-900">{{ sub.product_name }}</h4>
+                  <p class="text-xs text-zinc-500 font-medium">
                       {{ 
                         Intl.NumberFormat(
                           'en-US', 
@@ -30,30 +27,32 @@
                             currency: 'USD' 
                           }
                         ).format(sub.amount) 
-                      }} per {{ formatInterval(sub) }}
+                      }} / {{ formatInterval(sub) }}
                   </p>
                 </div>
-                <span v-if="sub.is_active" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span v-if="sub.is_active" class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 uppercase tracking-wide">
                   Active
                 </span>
-                <span v-else class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                <span v-else class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 uppercase tracking-wide">
                   Inactive
                 </span>
             </div>
-            <div class="mt-3 pt-3 border-t border-gray-100 text-sm text-gray-600">
-                <p class="flex items-center">
-                  <Calendar class="h-4 w-4 text-gray-400 mr-2" />
-                  Renews on {{ sub.formatted_current_period_end }}
+            <div class="pt-2 border-t border-zinc-200/50 flex items-center justify-between text-xs">
+                <p class="flex items-center text-zinc-500">
+                  <Calendar class="h-3.5 w-3.5 mr-1.5 opacity-70" />
+                  Renews {{ sub.formatted_current_period_end }}
                 </p>
-                <p class="mt-1 flex items-center text-indigo-600">
-                  <Clock class="h-4 w-4 text-indigo-400 mr-2" />
+                <p class="flex items-center text-violet-600 font-semibold">
+                  <Clock class="h-3.5 w-3.5 mr-1.5" />
                   {{ sub.days_left }}
                 </p>
             </div>
           </div>
         </div>
-        <p v-else class="text-sm text-gray-500">No active subscriptions</p>
+        <div v-else class="text-center py-6 bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+             <p class="text-sm text-zinc-500 font-medium">No active subscriptions</p>
         </div>
+      </div>
     </dl>
   </div>             
 </template>

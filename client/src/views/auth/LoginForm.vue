@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="handleSubmit" class="space-y-6">
     <div>
-      <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+      <label for="email" class="block text-sm font-bold text-zinc-700 mb-1">Email address</label>
       <div class="mt-1">
         <input
           id="email"
@@ -11,13 +11,16 @@
           autocomplete="email"
           required
           :class="[
-            'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm',
-            errors.email && errors.email.length > 0 ? 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+            'block w-full rounded-xl px-4 py-3 text-zinc-900 placeholder-zinc-400 shadow-sm focus:outline-none focus:ring-4 transition-all sm:text-sm',
+            errors.email && errors.email.length > 0 
+                ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500 focus:ring-rose-500/20' 
+                : 'border border-zinc-200 bg-zinc-50 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20'
           ]"
+          placeholder="you@example.com"
           @input="clearError('email')"
         />
-        <div v-if="errors.email" class="mt-2 space-y-1">
-          <p v-for="(error, index) in errors.email" :key="`email-error-${index}`" class="text-sm text-red-600">
+        <div v-if="errors.email" class="mt-1.5 space-y-1">
+          <p v-for="(error, index) in errors.email" :key="`email-error-${index}`" class="text-xs text-rose-600 font-medium">
             {{ error }}
           </p>
         </div>
@@ -25,7 +28,12 @@
     </div>
 
     <div>
-      <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+      <div class="flex items-center justify-between mb-1">
+        <label for="password" class="block text-sm font-bold text-zinc-700">Password</label>
+        <router-link to="/forgot-password" class="text-xs font-semibold text-violet-600 hover:text-violet-500 transition-colors">
+          Forgot password?
+        </router-link>
+      </div>
       <div class="mt-1">
         <input
           id="password"
@@ -35,36 +43,31 @@
           autocomplete="current-password"
           required
           :class="[
-            'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm',
-            errors.password && errors.password.length > 0 ? 'border-red-300 text-red-900 focus:ring-red-500 focus:border-red-500' : 'border-gray-300 focus:ring-indigo-500 focus:border-indigo-500'
+            'block w-full rounded-xl px-4 py-3 text-zinc-900 placeholder-zinc-400 shadow-sm focus:outline-none focus:ring-4 transition-all sm:text-sm',
+            errors.password && errors.password.length > 0 
+                ? 'border-rose-300 bg-rose-50 text-rose-900 focus:border-rose-500 focus:ring-rose-500/20' 
+                : 'border border-zinc-200 bg-zinc-50 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20'
           ]"
+          placeholder="Enter your password"
           @input="clearError('password')"
         />
-        <div v-if="errors.password" class="mt-2 space-y-1">
-          <p v-for="(error, index) in errors.password" :key="`password-error-${index}`" class="text-sm text-red-600">
+        <div v-if="errors.password" class="mt-1.5 space-y-1">
+          <p v-for="(error, index) in errors.password" :key="`password-error-${index}`" class="text-xs text-rose-600 font-medium">
             {{ error }}
           </p>
         </div>
       </div>
     </div>
 
-    <div class="flex items-center justify-end">
-
-      <div class="text-sm">
-        <router-link to="/forgot-password" class="font-medium text-indigo-600 hover:text-indigo-500">
-          Forgot your password?
-        </router-link>
-      </div>
-    </div>
-
-    <div>
+    <div class="pt-2">
       <button
         type="submit"
         :disabled="loading"
-        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-lg shadow-zinc-900/10 text-sm font-bold text-white bg-zinc-900 hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 cursor-pointer"
       >
-        <span v-if="loading">
-          <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+        <span v-if="loading" class="flex items-center">
+          <Loader2 class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+          Signing in...
         </span>
         <span v-else>Sign in</span>
       </button>

@@ -10,7 +10,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black/25" />
+        <div class="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm" />
       </TransitionChild>
 
       <div class="fixed inset-0 overflow-y-auto">
@@ -25,33 +25,33 @@
             leave-to="opacity-0 scale-95"
           >
             <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-              <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
-                Send Connection Request
+              <DialogTitle as="h3" class="text-lg font-bold leading-6 text-zinc-900">
+                Reconnect with {{ userName }}
               </DialogTitle>
               
               <div class="mt-4">
-                <p class="text-sm text-gray-500">
-                  You've connected with this user before. Would you like to send a message with your connection request?
+                <p class="text-sm text-zinc-500 leading-relaxed">
+                  You've connected with this user before. Adding a personal note can help you reconnect.
                 </p>
                 
-                <div class="mt-4">
-                  <label for="message" class="block text-sm font-medium text-gray-700 mb-1">
+                <div class="mt-5">
+                  <label for="message" class="block text-xs font-semibold text-zinc-700 mb-2 uppercase tracking-wide">
                     Message (optional)
                   </label>
                   <textarea
                     id="message"
                     v-model="message"
-                    rows="3"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                    placeholder="Hi, I'd like to reconnect..."
+                    rows="4"
+                    class="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl shadow-sm placeholder-zinc-400 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 focus:bg-white transition-all sm:text-sm resize-none"
+                    placeholder="Hi, I'd like to reconnect because..."
                   ></textarea>
                 </div>
               </div>
 
-              <div class="mt-6 flex justify-end space-x-3">
+              <div class="mt-8 flex justify-end space-x-3">
                 <button
                   type="button"
-                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  class="px-5 py-2.5 text-sm font-medium text-zinc-600 bg-white border border-zinc-200 rounded-full hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 transition-colors cursor-pointer"
                   @click="closeModal"
                   :disabled="isLoading"
                 >
@@ -59,7 +59,7 @@
                 </button>
                 <button
                   type="button"
-                  class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                  class="px-5 py-2.5 text-sm font-medium text-white bg-zinc-900 border border-transparent rounded-full hover:bg-violet-600 shadow-lg shadow-violet-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:bg-zinc-400 disabled:cursor-not-allowed disabled:shadow-none transition-all cursor-pointer"
                   @click="sendRequest"
                   :disabled="isLoading"
                 >

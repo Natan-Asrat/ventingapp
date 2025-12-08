@@ -1,9 +1,13 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-zinc-50/50 font-sans">
     <DesktopTopNav />
     <MobileTopNav />
-    <SearchProfileResults />
-    <FeedList />
+    
+    <div class="relative z-0">
+        <SearchProfileResults />
+        <FeedList />
+    </div>
+
     <MobileBottomNav />
   </div>
 </template>

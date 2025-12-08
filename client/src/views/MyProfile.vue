@@ -1,12 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-zinc-50/50 font-sans">
     <DesktopTopNav />    
     <MobileTopNav />
     
     <!-- Main Content -->
-    <div class="pt-16 pb-16 md:pt-0 md:pb-0">
+    <div class="pt-20 pb-20 md:pt-6 md:pb-0 relative z-0">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="flex flex-col md:flex-row gap-6">
+        <div class="flex flex-col md:flex-row gap-8">
           <MyProfileDetail />
           <MyProfilePosts />
         </div>

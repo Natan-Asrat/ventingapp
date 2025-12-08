@@ -1,316 +1,245 @@
 <template>
-  <div class="max-w-4xl mx-auto h-screen flex flex-col relative">
+  <div class="bg-zinc-50 h-screen flex flex-col relative font-sans">
     <!-- New Messages Indicator -->
     <div 
       v-if="showNewMessagesIndicator" 
       @click="scrollToNewMessages"
-      class="fixed bottom-24 mt-2 right-6 bg-indigo-600 text-white rounded-full p-3 shadow-lg cursor-pointer hover:bg-indigo-700 transition-colors z-10"
+      class="fixed bottom-24 mt-2 left-1/2 transform -translate-x-1/2 bg-zinc-900 text-white rounded-full px-4 py-2 shadow-lg cursor-pointer hover:bg-zinc-800 transition-all z-20 flex items-center space-x-2 animate-bounce"
       :title="`${newMessagesCount} new message${newMessagesCount > 1 ? 's' : ''}`"
     >
-      <div class="flex items-center">
-        <span class="text-xs mr-2">{{ newMessagesCount }}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-        </svg>
+      <div class="flex items-center space-x-2 text-sm font-semibold">
+        <ArrowDown class="h-4 w-4" />
+        <span>{{ newMessagesCount }} new messages</span>
       </div>
     </div>
+
     <!-- Header -->
-    <div class="border-b border-gray-200 p-4 flex items-center">
+    <div class="bg-white/80 backdrop-blur-md border-b border-zinc-200/80 px-4 py-3 flex items-center shadow-sm sticky top-0 z-20">
       <button 
         @click="$router.back()" 
-        class="mr-4 p-2 rounded-full hover:bg-gray-100 cursor-pointer"
+        class="mr-3 p-2 rounded-full hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer"
       >
-        <ArrowLeft class="h-5 w-5 text-gray-500"/>
+        <ArrowLeft class="h-5 w-5"/>
       </button>
       
-      <div class="flex items-center space-x-3 flex-1">
+      <div class="flex items-center space-x-3 flex-1 cursor-pointer" @click="goToProfile">
         <!-- Profile Picture -->
-        <div v-if="otherUser?.profile_picture" class="flex-shrink-0">
+        <div v-if="otherUser?.profile_picture" class="flex-shrink-0 relative">
           <img 
             :src="otherUser.profile_picture" 
             :alt="otherUser.name || otherUser.username"
-            class="h-10 w-10 rounded-full object-cover"
+            class="h-10 w-10 rounded-full object-cover ring-2 ring-white shadow-sm"
           >
         </div>
-        <div v-else class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0">
-          <span class="text-indigo-600 font-medium">
+        <div v-else class="h-10 w-10 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 ring-2 ring-white shadow-sm">
+          <span class="text-violet-600 font-bold">
             {{ (otherUser?.name || otherUser?.username || 'U').charAt(0).toUpperCase() }}
           </span>
         </div>
         
         <!-- User Info -->
         <div class="min-w-0">
-          <h2 class="text-base font-medium text-gray-900 truncate">
+          <h2 class="text-base font-bold text-zinc-900 truncate flex items-center gap-1">
             {{ conversation.name || otherUser?.name || otherUser?.username || 'Chat' }}
           </h2>
-          <p v-if="otherUser?.username" class="text-sm text-gray-500 truncate">
+          <p v-if="otherUser?.username" class="text-xs text-zinc-500 truncate font-medium">
             @{{ otherUser.username }}
           </p>
         </div>
+      </div>
+      
+      <!-- Conversation Actions -->
+      <div class="relative">
+         <button 
+            @click.stop="toggleConversationMenu" 
+            class="p-2 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-colors"
+         >
+            <EllipsisVertical class="h-5 w-5" />
+         </button>
       </div>
     </div>
 
 
     <!-- Messages -->
-    <div ref="messagesContainer" class="flex-1 overflow-y-auto p-4 space-y-4 messages-container" style="scroll-behavior: smooth;">
+    <div ref="messagesContainer" class="flex-1 overflow-y-auto px-4 py-4 space-y-6 messages-container scroll-smooth">
       <!-- Load More Button -->
-      <div v-if="loadingMessages" class="flex justify-center py-8">
-        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
-      
-      <!-- Empty state -->
-      <div v-else-if="!loadingMessages && messages.length === 0" class="h-full flex flex-col items-center justify-center text-center p-8 text-gray-500">
-        <MessageCircle class="h-12 w-12 text-gray-300 mb-4" />
-        <h3 class="text-lg font-medium text-gray-700">No messages yet</h3>
-        <p class="mt-1 text-gray-500">Send the first message to start the conversation</p>
-      </div>
-      <div v-if="pagination.next" class="flex justify-center mb-4">
+      <div v-if="pagination.next" class="flex justify-center py-2">
         <button 
           @click="fetchMessages(true)" 
           :disabled="pagination.isLoading"
-          :class="{'cursor-pointer': !pagination.isLoading}"
-          class="px-4 py-2 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-full flex items-center space-x-2 transition-colors"
+          class="px-4 py-1.5 text-xs font-medium text-zinc-500 bg-white border border-zinc-200 shadow-sm hover:bg-zinc-50 rounded-full flex items-center space-x-2 transition-colors cursor-pointer"
         >
-          <svg v-if="pagination.isLoading" class="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span>{{ pagination.isLoading ? 'Loading...' : 'Load More' }}</span>
+          <span v-if="pagination.isLoading" class="animate-spin h-3 w-3 border-2 border-zinc-400 border-t-zinc-600 rounded-full"></span>
+          <span>{{ pagination.isLoading ? 'Loading...' : 'Load previous messages' }}</span>
         </button>
       </div>
+      
+      <div v-if="loadingMessages" class="flex justify-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-[3px] border-violet-200 border-t-violet-600"></div>
+      </div>
+      
+      <!-- Empty state -->
+      <div v-else-if="!loadingMessages && messages.length === 0" class="h-full flex flex-col items-center justify-center text-center p-8">
+        <div class="w-20 h-20 bg-zinc-100 rounded-full flex items-center justify-center mb-4">
+            <MessageCircle class="h-10 w-10 text-zinc-300" />
+        </div>
+        <h3 class="text-lg font-bold text-zinc-900">No messages yet</h3>
+        <p class="mt-1 text-sm text-zinc-500 max-w-xs">Send a message to start the conversation with {{ otherUser?.name || 'this user' }}.</p>
+      </div>
+
       <div 
         v-for="(message, index) in messages" 
         :key="message.id"
         :id="`message-${message.id}`"
         :class="[
-          'relative',
-          'flex', 
+          'relative flex w-full', 
           message.user.id === currentUser.id ? 'justify-end' : 'justify-start',
-          { 'bg-blue-50 rounded-lg transition-colors duration-1000': highlightedMessageId === message.id }
+          { 'highlight-message': highlightedMessageId === message.id }
         ]"
       >
-        <!-- New messages indicator -->
+        <!-- New messages divider -->
         <div 
           v-if="showNewMessageDivider && index === firstNewMessageIndex" 
-          class="w-full mt-2 text-center py-2 text-xs text-gray-500 flex items-center absolute -top-8 left-0 right-0"
+          class="absolute -top-8 left-0 right-0 flex items-center justify-center"
         >
-          <span class="flex-grow border-t border-gray-300"></span>
-          <span class="mx-2">New messages</span>
-          <span class="flex-grow border-t border-gray-300"></span>
+          <div class="bg-violet-100 text-violet-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm border border-violet-200">
+            New Messages
+          </div>
         </div>
-        <!-- Avatar for received messages only -->
-        <div v-if="message.user.id !== currentUser.id" class="flex-shrink-0 mr-2 self-end">
+
+        <!-- Avatar for received messages -->
+        <div v-if="message.user.id !== currentUser.id" class="flex-shrink-0 mr-3 self-end mb-1">
           <img 
             v-if="message.user.profile_picture"
             :src="message.user.profile_picture"
             :alt="message.user.name"
-            class="h-8 w-8 rounded-full object-cover"
+            class="h-8 w-8 rounded-full object-cover ring-2 ring-white shadow-sm"
           >
-          <div v-else class="h-8 w-8 rounded-full bg-gray-300 flex items-center justify-center text-sm text-gray-600">
+          <div v-else class="h-8 w-8 rounded-full bg-violet-100 flex items-center justify-center text-xs font-bold text-violet-600 ring-2 ring-white shadow-sm">
             {{ message.user.name ? message.user.name.charAt(0).toUpperCase() : 'U' }}
           </div>
         </div>
 
         <!-- Message container -->
-        <div class="relative group">
-          <!-- Reply preview (not part of hover area) -->
+        <div class="relative group max-w-[85%] sm:max-w-[70%]">
+          <!-- Reply preview -->
           <div v-if="message.reply_to" 
-               class="bg-gray-50 rounded-lg p-2 mb-1 text-xs text-gray-500 w-full max-w-xs cursor-pointer"
+               class="mb-1 text-xs cursor-pointer bg-zinc-100/80 backdrop-blur-sm p-2 rounded-xl border border-zinc-200 hover:bg-zinc-200/80 transition-colors relative"
+               :class="message.user.id === currentUser.id ? 'mr-1 rounded-br-none' : 'ml-1 rounded-bl-none'"
                @click="scrollToMessage(message.reply_to.id)">
-            <div class="font-medium mr-2">
-              Replied to {{ message.reply_to.user.id === currentUser.id ? 'You' : `@${message.reply_to.user.username}` }}
+            <div class="flex items-center gap-1 text-zinc-500 font-semibold mb-0.5">
+               <Reply class="w-3 h-3" />
+               <span>Reply to {{ message.reply_to.user.id === currentUser.id ? 'You' : message.reply_to.user.name }}</span>
             </div>
-            <div class="truncate">
-              {{ 
+            <div class="truncate text-zinc-600 italic px-1">
+              "{{ 
                 message.reply_to.message || 
                 message.reply_to?.forwarded_from?.message  ||
                 (message?.reply_to?.shared_post?.description && "Post: " + message?.reply_to?.shared_post?.description)
-
-              }}
+              }}"
             </div>
           </div>
           
-          <!-- Message bubble with hover area -->
-           <div :class="[message.user.id !== currentUser.id && 'flex-row-reverse']" class="flex gap-2">
-            <span 
-              v-if="message.banned"
-              class="text-red-600 font-bold text-lg mt-1"
-              title="This message was banned"
-            >!</span>
+          <!-- Message bubble -->
+           <div class="flex gap-2" :class="[message.user.id === currentUser.id ? 'flex-row-reverse' : 'flex-row']">
             <div 
               :class="[
-                'max-w-xs md:max-w-md lg:max-w-lg rounded-lg relative',
+                'relative px-4 py-2.5 shadow-sm text-sm break-words',
                 message.user.id === currentUser.id 
-                  ? 'bg-indigo-100 text-indigo-900' 
-                  : 'bg-gray-100 text-gray-900',
-                'hover:bg-opacity-90 transition-colors duration-200',
-                'px-4 py-2',
-                'flex flex-col',
-                message.user.id === currentUser.id ? 'ml-auto' : 'mr-auto'
+                  ? 'bg-zinc-900 text-white rounded-2xl rounded-tr-sm' 
+                  : 'bg-white text-zinc-800 border border-zinc-200 rounded-2xl rounded-tl-sm',
               ]"
               @mouseenter="showActions = message.id"
               @mouseleave="handleMouseLeave">
               
+              <!-- Banned Warning -->
+              <div v-if="message.banned" class="mb-1 flex items-center text-xs text-rose-500 font-bold bg-rose-50 px-2 py-1 rounded">
+                 <AlertTriangle class="h-3 w-3 mr-1" />
+                 <span>Message Content Hidden (Banned)</span>
+              </div>
+
               <!-- Forwarded message indicator -->
-              <div v-if="message.forwarded_from" class="mb-1 flex items-center text-xs text-gray-500">
+              <div v-if="message.forwarded_from" class="mb-1.5 flex items-center text-xs opacity-70 italic">
                 <Forward class="h-3 w-3 mr-1" />
-                <span>Forwarded from @{{ message.forwarded_from.user.username }}</span>
+                <span>Forwarded from {{ message.forwarded_from.user.name }}</span>
               </div>
               
               <!-- Original forwarded message preview -->
               <div 
                 v-if="message.forwarded_from" 
-                class="rounded p-2 mb-2 text-xs border-l-2 border-gray-300"
-                :class="[
-                  message.user.id === currentUser.id 
-                  ? 'bg-indigo-200/50 text-indigo-900' 
-                  : 'bg-gray-200/50 text-gray-900',
-                ]"
+                class="rounded-lg p-2 mb-2 text-xs border-l-2 bg-black/5 border-current"
               >
-                <p class="truncate">{{ message.forwarded_from.message || 'Media' }}</p>
+                <p class="truncate">{{ message.forwarded_from.message || 'Shared content' }}</p>
               </div>
               
               <!-- Current message content -->
-              <p v-if="message.message" class="text-sm">{{ message.message }}</p>
+              <p v-if="message.message" class="whitespace-pre-wrap leading-relaxed">{{ message.message }}</p>
               
               <!-- Shared Post Preview -->
-              <div v-if="message.shared_post || message.forwarded_from?.shared_post" class="mt-2">
-                <SharedPostPreview :post="message.shared_post || message.forwarded_from?.shared_post" />
+              <div v-if="message.shared_post || message.forwarded_from?.shared_post" class="mt-2 -mx-2 mb-1">
+                <SharedPostPreview 
+                    :post="message.shared_post || message.forwarded_from?.shared_post" 
+                    :is-mine="message.user.id === currentUser.id"
+                />
               </div>
               
-              <!-- Hover actions -->
+              <!-- Timestamp & Status -->
+              <div 
+                class="flex items-center justify-end gap-1 mt-1 select-none"
+                :class="message.user.id === currentUser.id ? 'text-zinc-400' : 'text-zinc-400'"
+              >
+                <span class="text-[10px] opacity-70">{{ formatTime(message.created_at) }}</span>
+                <span v-if="message.user.id === currentUser.id" class="ml-0.5">
+                    <Check v-if="message.read" class="w-3 h-3 text-emerald-400" />
+                    <Check v-else class="w-3 h-3 opacity-60" />
+                </span>
+              </div>
+
+              <!-- Hover actions menu - Moved to BOTTOM to avoid blocking Reply banner -->
               <div 
                 v-if="showActions === message.id"
-                class="absolute flex items-center space-x-1 bg-white rounded-full shadow-md p-1 transition-opacity duration-200"
+                class="absolute z-10 flex items-center space-x-0.5 bg-white rounded-full shadow-lg border border-zinc-100 p-1 transition-all duration-200 animate-in fade-in zoom-in-95"
                 :class="{
-                  'right-0 -bottom-6': message.user.id === currentUser.id,
-                  'left-0 -bottom-6': message.user.id !== currentUser.id,
-                  'ml-12': (message.my_reaction_list?.length || message.other_reactions_list?.length) && message.user.id !== currentUser.id,
-                  'mr-12': (message.my_reaction_list?.length || message.other_reactions_list?.length) && message.user.id === currentUser.id,
-                  '!left-4': message.user.id !== currentUser.id
+                  'right-0 -bottom-10': message.user.id === currentUser.id,
+                  'left-0 -bottom-10': message.user.id !== currentUser.id,
                 }"
                 @mouseenter="showActions = message.id">
                 
-                <button 
-                  @click.stop="handleReply(message)"
-                  class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                  title="Reply">
+                <button @click.stop="handleReply(message)" class="p-1.5 text-zinc-500 hover:text-violet-600 hover:bg-violet-50 rounded-full transition-colors cursor-pointer" title="Reply">
                   <Reply class="h-4 w-4"/>
                 </button>
                 
-                <div class="relative">
-                  <button 
-                    @click.stop="toggleEmojiPicker(message.id, $event)"
-                    @mouseenter="cancelClose()"
-                    class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                    title="React">
-                    <Smile class="h-4 w-4"/>
-                  </button>
-                  
-                  <!-- Emoji Picker Popup -->
-                  <div 
-                    v-if="emojiPickerForMessage === message.id"
-                    class="absolute left-0 z-50 shadow-lg rounded-lg overflow-hidden bg-white"
-                    :style="{ 
-                      left: message.user.id === currentUser.id ? 'auto' : '0px',
-                      right: message.user.id === currentUser.id ? '-50px' : 'auto',
-                      width: '300px',
-                      maxHeight: '300px',
-                      overflowY: 'auto' 
-                    }"
-                    @mouseenter="cancelClose(); showActions = message.id">
-                    <Picker 
-                      :data="emojiIndex" 
-                      set="twitter" 
-                      @select="(emoji) => onEmojiSelect(message, emoji)" 
-                      :perLine="7"
-                      :showPreview="false"
-                      :showSearch="true"
-                      :showSkinTones="false"
-                      :emojiSize="24"
-                      :native="true"
-                      :autoFocus="true"
-                      :enableFrequentEmojiSort="true"
-                      title="Pick an emoji"
-                      style="width: 300px;"
-                    />
-                  </div>
-                </div>
-                <button 
-                  @click.stop="handleForward(message)"
-                  class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                  title="Forward">
+                <button @click.stop="toggleEmojiPicker(message.id, $event)" @mouseenter="cancelClose()" class="p-1.5 text-zinc-500 hover:text-amber-500 hover:bg-amber-50 rounded-full transition-colors cursor-pointer" title="React">
+                  <Smile class="h-4 w-4"/>
+                </button>
+                
+                <button @click.stop="handleForward(message)" class="p-1.5 text-zinc-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer" title="Forward">
                   <Forward class="h-4 w-4"/>
                 </button>
+                
                 <div class="relative">
-                  <button 
-                    @click.stop="messageStore.toggleReportMenu()" 
-                    class="p-1 cursor-pointer text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-full"
-                    title="More">
+                  <button @click.stop="messageStore.toggleReportMenu()" class="p-1.5 text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100 rounded-full transition-colors cursor-pointer">
                     <EllipsisVertical class="h-4 w-4"/>
                   </button>
-                  
-                  <!-- Dropdown menu ABOVE -->
-                  <div 
-                    v-if="messageStore.showReportMenu" 
-                    class="absolute right-0 bottom-full mb-1 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-                    v-click-outside="() => messageStore.setShowReportMenu(false)"
-                  >
-                    <button 
-                      @click="handleReportMessage(message.id)"
-                      class="block cursor-pointer w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                    >
-                      Report Message
-                    </button>
+                  <!-- Report menu dropdown -->
+                  <div v-if="messageStore.showReportMenu" class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 w-32 bg-white rounded-xl shadow-xl border border-zinc-100 py-1 z-50 overflow-hidden" v-click-outside="() => messageStore.setShowReportMenu(false)">
+                    <button @click="handleReportMessage(message.id)" class="block w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer">Report</button>
                   </div>
                 </div>
-
               </div>
             </div>
-          </div>
-
-          <!-- Message timestamp -->
-          <div class="flex justify-end mt-1">
-            <p class="text-xs text-gray-500">
-              {{ formatTime(message.created_at) }}
-            </p>
           </div>
           
-          <!-- Reactions (always visible) -->
+          <!-- Reactions -->
           <div v-if="message.my_reaction_list?.length || message.other_reactions_list?.length" 
-               class="flex items-center space-x-1 mt-1">
-            <!-- My reaction -->
-            <div v-if="message.my_reaction_list?.length" class="flex items-center">
-              <div class="flex items-center -space-x-1">
-                <span class="text-sm z-2">{{ message.my_reaction_list[0].reaction }}</span>
-                <img v-if="currentUser.profile_picture" 
-                     :src="currentUser.profile_picture" 
-                     class="h-5 w-5 rounded-full border-2 border-white" 
-                     :alt="currentUser.name" />
-                <div v-else 
-                     class="h-5 w-5 rounded-full bg-indigo-100 text-indigo-600 text-xs flex items-center justify-center border-2 border-white">
-                  {{ currentUser.name?.charAt(0) || 'U' }}
-                </div>
-              </div>
-            </div>
+               class="flex flex-wrap items-center gap-1 mt-1 px-1"
+               :class="message.user.id === currentUser.id ? 'justify-end' : 'justify-start'">
             
-            <!-- Other users' reactions -->
-            <div v-for="reaction in message.other_reactions_list" 
-                 :key="reaction.id" 
-                 class="flex items-center">
-              <div class="flex items-center -space-x-1">
-                <span class="text-sm z-2">{{ reaction.reaction }}</span>
-                <img v-if="reaction.user.profile_picture" 
-                     :src="reaction.user.profile_picture" 
-                     class="h-5 w-5 rounded-full border-2 border-white" 
-                     :alt="reaction.user.name" 
-                     :title="reaction.user.name" />
-                <div v-else 
-                     class="h-5 w-5 rounded-full bg-gray-200 text-gray-600 text-xs flex items-center justify-center border-2 border-white"
-                     :title="reaction.user.name">
-                  {{ reaction.user.name?.charAt(0) || 'U' }}
-                </div>
-              </div>
+            <div v-for="reaction in [...(message.my_reaction_list || []), ...(message.other_reactions_list || [])]" 
+                 :key="reaction.id"
+                 class="bg-white border border-zinc-200 rounded-full px-1.5 py-0.5 shadow-sm flex items-center space-x-1 text-xs transform hover:scale-110 transition-transform cursor-default select-none"
+                 :title="reaction.user.name">
+                <span>{{ reaction.reaction }}</span>
             </div>
           </div>
         </div>
@@ -327,74 +256,82 @@
     />
 
     <!-- Message Input -->
-    <div class="border-t border-gray-200">
+    <div class="bg-white border-t border-zinc-200 px-4 py-3 pb-safe sticky bottom-0 z-20">
       <!-- Reply Preview -->
-      <div v-if="replyingTo" class="bg-gray-50 p-3 flex justify-between items-start border-b border-gray-100">
-        <div 
-          class="text-xs cursor-pointer text-gray-700 flex-1 cursor-pointer hover:bg-gray-100 -m-1 p-1 rounded"
-          @click="scrollToMessage(replyingTo.id)"
-        >
-          <div class="font-medium text-gray-900">Replying to @{{ replyingTo.user.username }}</div>
-          <div class="text-gray-500 mt-1 truncate">{{ 
-          replyingTo.message || 
-          replyingTo?.forwarded_from?.message || 
-          (replyingTo?.shared_post?.description && "Post: " + replyingTo?.shared_post?.description)
-        }}</div>
+      <div v-if="replyingTo" class="flex justify-between items-center bg-zinc-50 border border-zinc-200 rounded-xl p-3 mb-2 animate-in slide-in-from-bottom-2 fade-in">
+        <div class="flex items-center space-x-3 overflow-hidden">
+           <div class="w-1 h-8 bg-violet-500 rounded-full flex-shrink-0"></div>
+           <div class="flex-1 min-w-0">
+              <p class="text-xs font-bold text-violet-600">Replying to {{ replyingTo.user.id === currentUser.id ? 'Yourself' : replyingTo.user.name }}</p>
+              <p class="text-xs text-zinc-600 truncate mt-0.5">
+                {{ replyingTo.message || 'Attachment' }}
+              </p>
+           </div>
         </div>
-        <button 
-          @click="cancelReply" 
-          class="text-indigo-500 cursor-pointer hover:text-indigo-700 p-1 flex-shrink-0"
-        >
+        <button @click="cancelReply" class="p-1 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-200 transition-colors cursor-pointer">
           <X class="h-4 w-4" />
         </button>
       </div>
-      <form @submit.prevent="sendMessage" class="flex space-x-2 p-4">
-        <input
-          v-model="newMessage"
-          type="text"
-          placeholder="Type a message..."
-          class="flex-1 border border-gray-300 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-        />
+
+      <form @submit.prevent="sendMessage" class="flex items-end gap-2 relative">
+        <div class="flex-1 relative">
+            <textarea
+                v-model="newMessage"
+                placeholder="Type a message..."
+                class="w-full bg-zinc-100 border-none rounded-[1.5rem] px-5 py-3 pr-12 text-sm text-zinc-900 placeholder-zinc-500 focus:ring-2 focus:ring-violet-500/20 focus:bg-white transition-all resize-none max-h-32 min-h-[46px]"
+                rows="1"
+                @keydown.enter.exact.prevent="sendMessage"
+                style="field-sizing: content;"
+            ></textarea>
+        </div>
         <button
           type="submit"
-          class="bg-indigo-600 cursor-pointer text-white rounded-full p-2 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          :disabled="!newMessage.trim()"
+          class="bg-zinc-900 text-white rounded-full p-3 shadow-md hover:bg-violet-600 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none transition-all duration-300 flex-shrink-0 cursor-pointer"
         >
-            <Send class="h-5 w-5"/>
+            <Send class="h-5 w-5 ml-0.5"/>
         </button>
       </form>
     </div>
+
+    <!-- Global Emoji Picker (Teleported to Body) -->
+    <Teleport to="body">
+      <div 
+        v-if="emojiPickerState.isOpen" 
+        class="fixed z-[9999] bg-white rounded-2xl shadow-2xl border border-zinc-200 overflow-hidden animate-in fade-in zoom-in-95"
+        :style="{
+          top: `${emojiPickerState.position.top}px`,
+          left: `${emojiPickerState.position.left}px`,
+        }"
+        v-click-outside="closeEmojiPicker"
+      >
+        <Picker 
+          :data="emojiIndex" 
+          set="twitter" 
+          @select="onEmojiSelect" 
+          :showPreview="false"
+          :showSkinTones="false"
+          :emojiSize="20"
+          :native="true"
+          :autoFocus="true"
+        />
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import ReportModal from '@/components/feed/ReportModal.vue';
 import SharedPostPreview from '@/components/chat/SharedPostPreview.vue';
 import { useUserStore } from '@/stores/user';
-import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft } from 'lucide-vue-next';
-import { MessageCircle, Forward } from 'lucide-vue-next';
+import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft, MessageCircle, Forward, Check, ArrowDown, AlertTriangle } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
 import { useMessageStore } from '@/stores/message';
 const messageStore = useMessageStore();
 
-const visibleMessages = ref([]);
-let visibilityObserver = null;
-let mutationObserver = null;
-const showNewMessagesIndicator = ref(false);
-const showNewMessageDivider = ref(false);
-const firstNewMessageIndex = ref(-1);
-const isAtBottom = ref(true);
-const newMessagesCount = ref(0);
-const hasSentNewMessage = ref(false);
-const loadingMessages = ref(false)
-
-// Emoji Picker
-import data from 'emoji-mart-vue-fast/data/all.json';
-import 'emoji-mart-vue-fast/css/emoji-mart.css';
-import { Picker, EmojiIndex } from 'emoji-mart-vue-fast/src';
-
-// Click outside directive
+// Click outside directive logic
 const vClickOutside = {
   beforeMount(el, binding) {
     el.clickOutsideEvent = function(event) {
@@ -409,10 +346,15 @@ const vClickOutside = {
   },
 };
 
-// Create emoji data index
+// Emoji Picker
+import data from 'emoji-mart-vue-fast/data/all.json';
+import 'emoji-mart-vue-fast/css/emoji-mart.css';
+import { Picker, EmojiIndex } from 'emoji-mart-vue-fast/src';
+
 const emojiIndex = new EmojiIndex(data);
 
 const route = useRoute();
+const router = useRouter();
 const userStore = useUserStore();
 const currentUser = computed(() => userStore.user);
 
@@ -423,20 +365,44 @@ const messagesContainer = ref(null);
 const replyingTo = ref(null);
 const highlightedMessageId = ref(null);
 const showActions = ref(null);
-const emojiPickerForMessage = ref(null);
-const pagination = ref({
-  next: null,
-  previous: null,
-  count: 0,
-  isLoading: false
-});
+const pagination = ref({ next: null, previous: null, count: 0, isLoading: false });
 let closeTimeout = null;
+
+// Emoji Picker State
+const emojiPickerState = ref({
+  isOpen: false,
+  messageId: null,
+  position: { top: 0, left: 0 }
+});
+
+const visibleMessages = ref([]);
+let visibilityObserver = null;
+let mutationObserver = null;
+const showNewMessagesIndicator = ref(false);
+const showNewMessageDivider = ref(false);
+const firstNewMessageIndex = ref(-1);
+const isAtBottom = ref(true);
+const newMessagesCount = ref(0);
+const hasSentNewMessage = ref(false);
+const loadingMessages = ref(false);
 
 const handleReportMessage = (messageId) => {
   messageStore.setSelectedMessageId(messageId);
   messageStore.setShowReportMenu(false);
   messageStore.setIsReportModalOpen(true);
 };
+
+const formatTime = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+const goToProfile = () => {
+    if (otherUser.value?.username) {
+        router.push({ name: 'UsernameProfile', params: { username: otherUser.value.username } });
+    }
+}
 
 // Fetch conversation details
 const fetchConversation = async () => {
@@ -456,28 +422,21 @@ const fetchMessages = async (loadMore = false) => {
     let url = `chat/conversations/${route.params.id}/messages/`;
     
     if (loadMore && pagination.value.next) {
-      // Use the next page URL if loading more
       url = pagination.value.next;
     }
     
     const response = await messageStore.fetchMessagesByURL(url);
-
     const container = messagesContainer.value;
-
-    const prevBehavior = container.style.scrollBehavior;
-    container.style.scrollBehavior = 'auto';
-
-    const previousScrollHeight = container.scrollHeight;
+    const prevBehavior = container ? container.style.scrollBehavior : 'auto';
+    if(container) container.style.scrollBehavior = 'auto';
+    const previousScrollHeight = container ? container.scrollHeight : 0;
     
     if (loadMore) {
-      // When loading more, prepend the new messages (they're older)
       messages.value = [...response.data.results.reverse(), ...messages.value];
     } else {
-      // For initial load, just set the messages
       messages.value = response.data.results.reverse();
     }
     
-    // Update pagination info
     pagination.value = {
       next: response.data.next,
       previous: response.data.previous,
@@ -485,22 +444,15 @@ const fetchMessages = async (loadMore = false) => {
       isLoading: false
     };
     
-    // Scroll to maintain position when loading more
-    if (loadMore && messagesContainer.value && messages.value.length > 0) {
-      const container = messagesContainer.value;
-
+    if (loadMore && container && messages.value.length > 0) {
       nextTick(() => {
         const newScrollHeight = container.scrollHeight;
         container.scrollTop += newScrollHeight - previousScrollHeight;
-
-        // Restore smooth scrolling
         container.style.scrollBehavior = prevBehavior;
       });
     } else if (!loadMore) {
       scrollToBottom();
     }
-
-
   } catch (error) {
     console.error('Error fetching messages:', error);
     pagination.value.isLoading = false;
@@ -532,34 +484,29 @@ const handleReply = (message) => {
   replyingTo.value = message;
   scrollToMessage(message.id);
   nextTick(() => {
-    const input = document.querySelector('input[type="text"], textarea');
-    if (input) input.focus();
+    const textarea = document.querySelector('textarea');
+    if (textarea) textarea.focus();
   });
 };
 
 const handleForward = async (message_data) => {
   try{
     await messageStore.forwardMessage(message_data.id);
+    message.success("Message forwarded");
   } catch(error){
     message.error(error.response.data.error)
     console.error('Error forwarding message:', error);
   }
-
 }
 
 // Scroll to and highlight a specific message
 const scrollToMessage = async (messageId) => {
-  // Check if the message is already loaded
   const messageExists = messages.value.some(msg => msg.id === messageId);
-  
   if (!messageExists) {
     try {
-      // If message is not loaded, fetch it
       const response = await messageStore.getBulkMessages(messageId);
       if (response.data.length > 0) {
-        // Add the message to the beginning of the messages array
         messages.value.unshift(response.data[0]);
-        // Update the firstNewMessageIndex to account for the new message
         if (firstNewMessageIndex.value !== -1) {
           firstNewMessageIndex.value += 1;
         }
@@ -570,92 +517,93 @@ const scrollToMessage = async (messageId) => {
     }
   }
 
-  // Wait for the DOM to update
   await nextTick();
-  
-  // Find and scroll to the message
   const element = document.getElementById(`message-${messageId}`);
   if (element) {
-    // Highlight the message
     highlightedMessageId.value = messageId;
-    
-    // Scroll to the message
     element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    
-    // Remove highlight after a delay
     setTimeout(() => {
       highlightedMessageId.value = null;
     }, 2000);
   }
 };
 
-// Toggle emoji picker for a message
-const toggleEmojiPicker = async (messageId, event) => {
+// Toggle emoji picker with smart positioning
+const toggleEmojiPicker = (messageId, event) => {
   event.stopPropagation();
   event.preventDefault();
   
-  if (emojiPickerForMessage.value === messageId) {
-    emojiPickerForMessage.value = null;
+  if (emojiPickerState.value.isOpen && emojiPickerState.value.messageId === messageId) {
+    closeEmojiPicker();
     return;
   }
   
-  emojiPickerForMessage.value = messageId;
-  showActions.value = messageId;
+  showActions.value = messageId; // Keep actions visible while picking
   
-  // Wait for the next tick to ensure the DOM is updated
-  await nextTick();
+  // Calculate Position
+  const button = event.currentTarget;
+  const rect = button.getBoundingClientRect();
+  const pickerHeight = 430; // Approx height of picker
+  const pickerWidth = 350; // Approx width
+  const windowHeight = window.innerHeight;
+  const windowWidth = window.innerWidth;
   
-  // Get the button and picker elements
-  const button = event.target.closest('button');
-  const picker = button?.nextElementSibling;
+  let top = rect.top;
+  let left = rect.left;
   
-  if (!button || !picker) return;
-  
-  const buttonRect = button.getBoundingClientRect();
-  const pickerHeight = 300; // Approximate height of the picker
-  const viewportHeight = window.innerHeight;
-  
-  // Get the message container's scroll position
-  const messagesContainer = document.querySelector('.messages-container');
-  const containerRect = messagesContainer?.getBoundingClientRect() || { top: 0 };
-  
-  // Calculate available space below the button, considering the container's scroll position
-  const spaceBelow = viewportHeight - buttonRect.bottom - 20; // 20px buffer from bottom
-  const spaceAbove = buttonRect.top - containerRect.top - 20; // 20px buffer from top
-  
-  // Position the picker above or below based on available space
-  if (spaceBelow < pickerHeight && (spaceAbove > pickerHeight || spaceAbove > spaceBelow)) {
-    // Position above the button
-    picker.style.top = 'auto';
-    picker.style.bottom = '100%';
-    picker.style.marginTop = '0';
-    picker.style.marginBottom = '0.5rem';
-    picker.style.maxHeight = `${Math.min(spaceAbove - 20, 300)}px`; // Adjust height to fit
+  // Center vertically relative to button if possible, otherwise clamp to viewport
+  // Check space below
+  if (top + pickerHeight > windowHeight - 20) {
+      // Not enough space below, try above
+      top = rect.bottom - pickerHeight;
+      // If still overlapping top edge
+      if (top < 20) {
+          // Center on screen
+          top = (windowHeight - pickerHeight) / 2;
+      }
   } else {
-    // Position below the button (default)
-    picker.style.top = '100%';
-    picker.style.bottom = 'auto';
-    picker.style.marginTop = '0.5rem';
-    picker.style.marginBottom = '0';
-    picker.style.maxHeight = `${Math.min(spaceBelow - 20, 300)}px`; // Adjust height to fit
+      // Align top with button top if space permits
+      // Or just slightly below button
+      top = rect.top; 
+  }
+  
+  // Horizontal logic: prefer to the right of the button, or left if no space
+  if (left + pickerWidth > windowWidth - 20) {
+      left = windowWidth - pickerWidth - 20;
+  } else {
+      left = rect.left;
+  }
+  
+  // Ensure valid values
+  top = Math.max(10, Math.min(top, windowHeight - pickerHeight - 10));
+  left = Math.max(10, Math.min(left, windowWidth - pickerWidth - 10));
+
+  emojiPickerState.value = {
+    isOpen: true,
+    messageId: messageId,
+    position: { top, left }
+  };
+};
+
+const closeEmojiPicker = () => {
+  emojiPickerState.value.isOpen = false;
+  emojiPickerState.value.messageId = null;
+  // If we closed picker, we can also let the actions menu hide naturally via mouseleave logic
+  // showActions.value = null; // Optional: close actions too
+};
+
+const handleMouseLeave = () => {
+  // Delay closing actions to allow moving mouse to picker?
+  // Since picker is global and teleported, hovering it won't keep 'showActions' alive via CSS hover.
+  // But we set 'showActions = message.id' in toggle. 
+  // We can use a timeout to close actions if picker is NOT open.
+  if (!emojiPickerState.value.isOpen) {
+      closeTimeout = setTimeout(() => {
+        showActions.value = null;
+      }, 500);
   }
 };
 
-// Close emoji picker with delay
-const closeEmojiPicker = () => {
-  if (closeTimeout) clearTimeout(closeTimeout);
-  closeTimeout = setTimeout(() => {
-    emojiPickerForMessage.value = null;
-    showActions.value = null;
-  }, 1000);
-};
-
-// Handle mouse leave with delay
-const handleMouseLeave = () => {
-  closeEmojiPicker();
-};
-
-// Cancel pending close when re-entering the button or picker
 const cancelClose = () => {
   if (closeTimeout) {
     clearTimeout(closeTimeout);
@@ -664,16 +612,16 @@ const cancelClose = () => {
 };
 
 // Handle emoji selection
-const onEmojiSelect = async (message_data, emoji) => {
+const onEmojiSelect = async (emoji) => {
+  const msgId = emojiPickerState.value.messageId;
+  if (!msgId) return;
+
   try {
-    const response = await messageStore.reactToMessage(message_data.id, emoji.native)
-    
-    // Update the message in the messages array with the server response
+    const response = await messageStore.reactToMessage(msgId, emoji.native)
     const updatedMessage = response.data;
     const messageIndex = messages.value.findIndex(m => m.id === updatedMessage.id);
     
     if (messageIndex !== -1) {
-      // Create a new array to trigger reactivity
       const updatedMessages = [...messages.value];
       updatedMessages[messageIndex] = {
         ...updatedMessages[messageIndex],
@@ -683,38 +631,22 @@ const onEmojiSelect = async (message_data, emoji) => {
       };
       messages.value = updatedMessages;
     }
-    
-    // Close the picker
-    emojiPickerForMessage.value = null;
-    
+    closeEmojiPicker();
+    showActions.value = null;
   } catch (error) {
     console.error('Error sending reaction:', error);
     message.error(error.response.data.error)
   }
 };
 
-// Cancel reply
 const cancelReply = () => {
   replyingTo.value = null;
 };
 
-// Format time
-const formatTime = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-};
-
-// Scroll to the first new message
 const scrollToNewMessages = () => {
   if (firstNewMessageIndex.value >= 0) {
     const firstNewMsgId = messages.value[firstNewMessageIndex.value].id;
-    let element = document.getElementById(`message-${firstNewMsgId - 1}`);
-
-    // Fallback to the first new message if previous doesn't exist
-    if (!element) {
-      element = document.getElementById(`message-${firstNewMsgId}`);
-    }    
+    let element = document.getElementById(`message-${firstNewMsgId - 1}`) || document.getElementById(`message-${firstNewMsgId}`);   
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
@@ -724,7 +656,6 @@ const scrollToNewMessages = () => {
   }
 };
 
-// Scroll to bottom of messages
 const scrollToBottom = () => {
   if (messagesContainer.value) {
     messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
@@ -737,7 +668,6 @@ const scrollToBottom = () => {
   }
 };
 
-// Get other user in conversation
 const otherUser = computed(() => {
   if (!conversation.value.other_user_list) return null;
   return conversation.value.other_user_list.find(
@@ -745,8 +675,8 @@ const otherUser = computed(() => {
   )?.user;
 });
 
+// Observation logic for messages
 function observeMessageVisibility() {
-  // Disconnect previous observer if any
   if (visibilityObserver) visibilityObserver.disconnect();
 
   visibilityObserver = new IntersectionObserver(
@@ -756,29 +686,19 @@ function observeMessageVisibility() {
         const index = visibleMessages.value.indexOf(id);
 
         if (entry.isIntersecting) {
-          if (index === -1) {
-            visibleMessages.value.push(id);
-            console.log("VISIBLE:", id);
-          }
+          if (index === -1) visibleMessages.value.push(id);
         } else {
-          if (index !== -1) {
-            visibleMessages.value.splice(index, 1);
-            console.log("NOT VISIBLE:", id);
-          }
+          if (index !== -1) visibleMessages.value.splice(index, 1);
         }
       });
-      console.log("VISIBLE:", visibleMessages.value);
-
     },
     { threshold: 0.1 }
   );
 
-  // Observe all current messages
   document.querySelectorAll("[id^='message-']").forEach((el) => {
     visibilityObserver.observe(el);
   });
 
-  // Watch for newly added messages (pagination or new messages)
   if (!mutationObserver) {
     const container = document.querySelector(".messages-container");
     if (!container) return;
@@ -792,23 +712,17 @@ function observeMessageVisibility() {
         });
       });
     });
-
     mutationObserver.observe(container, { childList: true, subtree: true });
   }
 }
 
 let visibleMessagesInterval = null;
-
-// Fetch and update messages that are currently visible
 const fetchVisibleMessages = async () => {
   if (!visibleMessages.value.length) return;
-
   try {
     const ids = visibleMessages.value.join(',');
     const response = await messageStore.getBulkMessages(ids);
-    const fetchedMessages = response.data; // assume array of message objects
-
-    // Update messages in place
+    const fetchedMessages = response.data;
     fetchedMessages.forEach(fetchedMsg => {
       const index = messages.value.findIndex(m => m.id === fetchedMsg.id);
       if (index !== -1) {
@@ -820,24 +734,20 @@ const fetchVisibleMessages = async () => {
   }
 };
 
-// Start polling
 const startVisibleMessagesPolling = () => {
   if (visibleMessagesInterval) clearInterval(visibleMessagesInterval);
   visibleMessagesInterval = setInterval(fetchVisibleMessages, 3000);
 };
 
-// Stop polling
 const stopVisibleMessagesPolling = () => {
   if (visibleMessagesInterval) clearInterval(visibleMessagesInterval);
 };
-let newMessagesInterval = null;
 
-// Handle scroll events to track if user is at bottom
+let newMessagesInterval = null;
 const handleScroll = () => {
   if (!messagesContainer.value) return;
-  
   const { scrollTop, scrollHeight, clientHeight } = messagesContainer.value;
-  const isBottom = scrollHeight - (scrollTop + clientHeight) < 100; // 100px threshold
+  const isBottom = scrollHeight - (scrollTop + clientHeight) < 100;
   
   isAtBottom.value = isBottom;
   if (isBottom) {
@@ -849,10 +759,8 @@ const handleScroll = () => {
   }
 };
 
-// Fetch new messages since the latest one we have
 const fetchNewMessages = async () => {
   if (!messages.value.length) return;
-
   const latestId = messages.value[messages.value.length - 1].id;
   try {
     const response = await messageStore.getMessagesAfterId(route.params.id, latestId);
@@ -862,26 +770,21 @@ const fetchNewMessages = async () => {
       const prevLength = messages.value.length;
       messages.value = [...messages.value, ...newMsgs];
       
-      // Only update the firstNewMessageIndex if we don't have one yet or if user has scrolled to view previous new messages
       if (firstNewMessageIndex.value === -1 || isAtBottom.value) {
         firstNewMessageIndex.value = prevLength;
         showNewMessageDivider.value = true;
       } else {
-        // Keep the existing firstNewMessageIndex but ensure the divider is shown
         showNewMessageDivider.value = true;
       }
 
       if(hasSentNewMessage.value && newMsgs.some(msg => msg.user.id === currentUser.value.id)){
         hasSentNewMessage.value = false;
-        nextTick(() => {
-          scrollToBottom();
-        });
+        nextTick(() => { scrollToBottom(); });
         showNewMessageDivider.value = false;
       } else if (!isAtBottom.value) {
         showNewMessagesIndicator.value = true;
         newMessagesCount.value += newMsgs.length;
       } else {
-        // If at bottom, auto-scroll to show new messages
         scrollToNewMessages();
       }
     }
@@ -890,13 +793,11 @@ const fetchNewMessages = async () => {
   }
 };
 
-// Start polling for new messages every second
 const startNewMessagesPolling = () => {
   if (newMessagesInterval) clearInterval(newMessagesInterval);
   newMessagesInterval = setInterval(fetchNewMessages, 1000);
 };
 
-// Stop polling
 const stopNewMessagesPolling = () => {
   if (newMessagesInterval) clearInterval(newMessagesInterval);
 };
@@ -909,21 +810,27 @@ onMounted(async () => {
   observeMessageVisibility();
   startVisibleMessagesPolling();
   startNewMessagesPolling();
-  
-  // Add scroll event listener
   if (messagesContainer.value) {
     messagesContainer.value.addEventListener('scroll', handleScroll);
   }
 });
 
-// Stop on unmount
 onUnmounted(() => {
   stopVisibleMessagesPolling();
   stopNewMessagesPolling();
-  
-  // Remove scroll event listener
   if (messagesContainer.value) {
     messagesContainer.value.removeEventListener('scroll', handleScroll);
   }
 });
 </script>
+
+<style scoped>
+.highlight-message {
+  animation: highlight 2s ease-out;
+}
+
+@keyframes highlight {
+  0% { background-color: rgba(139, 92, 246, 0.1); }
+  100% { background-color: transparent; }
+}
+</style>

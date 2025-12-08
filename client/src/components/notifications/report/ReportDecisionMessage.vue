@@ -2,18 +2,20 @@
     <!-- Message Details -->
     <div
         v-if="reportDecision?.report?.reported_message"
-        class="border-t border-gray-200 pt-4"
+        class="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm mt-4"
     >
-        <h4 class="text-sm font-medium text-gray-500 mb-2">Reported Message</h4>
+        <div class="px-4 py-3 bg-zinc-50 border-b border-zinc-100">
+            <h4 class="text-xs font-bold text-zinc-500 uppercase tracking-wide">Reported Message Content</h4>
+        </div>
 
-        <div class="space-y-4 text-left">
+        <div class="p-5">
             <!-- Message Header -->
-            <div class="flex items-start space-x-3">
+            <div class="flex items-start space-x-3 mb-4">
                 
                 <!-- Sender Avatar -->
                 <div
                     v-if="reportDecision.report.reported_message.user?.profile_picture"
-                    class="h-10 w-10 rounded-full overflow-hidden flex-shrink-0"
+                    class="h-10 w-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-zinc-50"
                 >
                     <img
                         :src="reportDecision.report.reported_message.user.profile_picture"
@@ -24,7 +26,7 @@
 
                 <div
                     v-else
-                    class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm text-gray-600 flex-shrink-0"
+                    class="h-10 w-10 rounded-full bg-violet-100 flex items-center justify-center text-sm font-bold text-violet-600 flex-shrink-0 ring-2 ring-zinc-50"
                 >
                     {{ reportDecision.report.reported_message.user?.name
                         ? reportDecision.report.reported_message.user.name.charAt(0).toUpperCase()
@@ -35,39 +37,39 @@
                 <!-- Sender Info -->
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center space-x-2">
-                        <span class="text-sm font-medium text-gray-900 truncate">
+                        <span class="text-sm font-bold text-zinc-900 truncate">
                         {{ reportDecision.report.reported_message.user?.name || 'Unknown User' }}
                         </span>
-                        <span class="text-xs text-gray-500">
+                    </div>
+                    <span class="text-xs font-medium text-zinc-500">
                         @{{ reportDecision.report.reported_message.user?.username || 'user' }}
-                        </span>
-                    </div>
-
-                    <!-- Main Message Content -->
-                    <div
-                        v-if="reportDecision.report.reported_message.message"
-                        class="text-sm text-gray-800"
-                    >
-                        {{ reportDecision.report.reported_message.message }}
-                    </div>
+                    </span>
                 </div>
             </div>
 
-            <!-- Message Content -->
-            <div class="pl-13 -mt-2 space-y-3">
+            <!-- Message Content Block -->
+            <div class="space-y-3">
+                
+                <!-- Main Message Content -->
+                <div
+                    v-if="reportDecision.report.reported_message.message"
+                    class="text-sm text-zinc-800 bg-zinc-50 p-3 rounded-lg border border-zinc-100"
+                >
+                    {{ reportDecision.report.reported_message.message }}
+                </div>
 
                 <!-- Reply To -->
                 <div
                     v-if="reportDecision.report.reported_message.reply_to"
-                    class="bg-gray-50 rounded-lg p-2 text-xs border border-gray-100"
+                    class="bg-violet-50/50 rounded-xl p-3 text-xs border border-violet-100"
                 >
-                    <div class="flex items-center text-gray-500 mb-1">
-                        <Reply class="h-3 w-3 mr-1" />
+                    <div class="flex items-center text-violet-600 font-semibold mb-1">
+                        <Reply class="h-3.5 w-3.5 mr-1.5" />
                         <span>
                         Replying to @{{ reportDecision.report.reported_message.reply_to.user?.username || 'user' }}
                         </span>
                     </div>
-                    <p class="text-gray-700 truncate">
+                    <p class="text-zinc-600 truncate pl-5 border-l-2 border-violet-200">
                         {{ reportDecision.report.reported_message.reply_to.message || 'No message content' }}
                     </p>
                 </div>
@@ -75,15 +77,15 @@
                 <!-- Forwarded From -->
                 <div
                     v-if="reportDecision.report.reported_message.forwarded_from"
-                    class="bg-blue-50 rounded-lg p-2 text-xs border border-blue-100"
+                    class="bg-blue-50/50 rounded-xl p-3 text-xs border border-blue-100"
                 >
-                    <div class="flex items-center text-blue-600 mb-1">
-                        <Forward class="h-3 w-3 mr-1" />
+                    <div class="flex items-center text-blue-600 font-semibold mb-1">
+                        <Forward class="h-3.5 w-3.5 mr-1.5" />
                         <span>
                         Forwarded from @{{ reportDecision.report.reported_message.forwarded_from.user?.username || 'user' }}
                         </span>
                     </div>
-                    <p class="text-gray-700">
+                    <p class="text-zinc-600 pl-5 border-l-2 border-blue-200">
                         {{ reportDecision.report.reported_message.forwarded_from.message || 'No message content' }}
                     </p>
                 </div>
@@ -91,13 +93,11 @@
                 <!-- Shared Post -->
                 <div
                     v-if="reportDecision.report.reported_message.shared_post"
-                    class="border border-gray-200 rounded-lg overflow-hidden"
+                    class="border border-zinc-200 rounded-xl overflow-hidden mt-3"
                 >
-                    <div class="p-3 bg-gray-50 border-b border-gray-100">
-                        <div class="flex items-center space-x-2">
-                            <FileText class="h-4 w-4 text-gray-500" />
-                            <span class="text-xs font-medium text-gray-700">Shared Post</span>
-                        </div>
+                    <div class="px-3 py-2 bg-zinc-50 border-b border-zinc-100 flex items-center gap-2">
+                        <FileText class="h-3.5 w-3.5 text-zinc-400" />
+                        <span class="text-xs font-bold text-zinc-500 uppercase tracking-wide">Shared Post</span>
                     </div>
 
                     <div class="p-3">
@@ -115,7 +115,7 @@
                             </div>
                             <div
                                 v-else
-                                class="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600"
+                                class="h-6 w-6 rounded-full bg-zinc-100 flex items-center justify-center text-[10px] font-bold text-zinc-500"
                             >
                                 {{
                                 reportDecision.report.reported_message.shared_post.posted_by?.name
@@ -124,20 +124,22 @@
                                 }}
                             </div>
 
-                            <span class="text-xs font-medium">
+                            <span class="text-xs font-bold text-zinc-700">
                                 {{ reportDecision.report.reported_message.shared_post.posted_by?.name || 'User' }}
                             </span>
                         </div>
 
                         <!-- Description -->
-                        <ShowMore :text="reportDecision.report.reported_message.shared_post.description" />
+                        <div class="text-xs text-zinc-600 mb-2">
+                            <ShowMore :text="reportDecision.report.reported_message.shared_post.description" />
+                        </div>
 
                         <!-- Post Image -->
-                        <div v-if="reportDecision.report.reported_message.shared_post.image_url" class="mt-3 rounded-lg overflow-hidden">
+                        <div v-if="reportDecision.report.reported_message.shared_post.image_url" class="rounded-lg overflow-hidden border border-zinc-100">
                             <img 
                                 :src="reportDecision.report.reported_message.shared_post.image_url" 
                                 :alt="'Post by ' + (reportDecision.report.reported_message.shared_post.posted_by?.username || 'user')" 
-                                class="w-full h-auto object-cover cursor-zoom-in"
+                                class="w-full h-auto object-cover cursor-zoom-in max-h-48"
                                 @load="$emit('image-loaded')"
                             />
                         </div>
@@ -150,9 +152,9 @@
                             !reportDecision.report.reported_message.shared_post &&
                             !reportDecision.report.reported_message.reply_to &&
                             !reportDecision.report.reported_message.forwarded_from"
-                    class="text-sm text-gray-500 italic"
+                    class="text-sm text-zinc-400 italic text-center py-2"
                 >
-                    No message content
+                    No message content available
                 </div>
             </div>
         </div>

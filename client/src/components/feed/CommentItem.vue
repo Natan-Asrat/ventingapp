@@ -1,84 +1,95 @@
 <template>
-  <div class="space-y-2">
+  <div class="space-y-3">
     <div class="flex space-x-3 comment-item">
-      <div v-if="comment.commented_by?.profile_picture" class="flex-shrink-0 h-8 w-8 rounded-full overflow-hidden">
+      <!-- Avatar -->
+      <div v-if="comment.commented_by?.profile_picture" class="flex-shrink-0 h-9 w-9 rounded-full overflow-hidden ring-2 ring-white shadow-sm">
         <img 
           :src="comment.commented_by.profile_picture" 
           :alt="comment.commented_by.name"
           class="h-full w-full object-cover"
         />
       </div>
-      <div v-else class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
+      <div v-else class="flex-shrink-0 h-9 w-9 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-bold text-zinc-400 ring-2 ring-white shadow-sm">
         {{ comment.commented_by?.name ? comment.commented_by.name.charAt(0).toUpperCase() : 'U' }}
       </div>
+
       <div class="flex-1 min-w-0">
-        <div class="bg-gray-100 rounded-lg px-3 py-2">
-          <p class="text-sm font-medium">{{ comment.commented_by?.name || 'Anonymous' }}</p>
-          <div class="flex items-start gap-2">
-            <div class="flex-1">
-              <span class="text-sm text-blue-500 mr-1" v-if="comment.reply_to_username">@{{ comment.reply_to_username }}</span>
-              <span class="text-sm">{{ comment.message }}</span>
-            </div>
+        <!-- Comment Bubble -->
+        <div class="bg-zinc-50 rounded-2xl px-4 py-3 border border-zinc-100/50">
+          <div class="flex items-center justify-between mb-1">
+             <p class="text-sm font-bold text-zinc-900">{{ comment.commented_by?.name || 'Anonymous' }}</p>
+             <p class="text-[10px] text-zinc-400 font-medium">{{ comment.formatted_created_at }}</p>
+          </div>
+          
+          <div class="text-[15px] text-zinc-700 leading-relaxed break-words">
+              <span class="font-medium text-violet-600 mr-1" v-if="comment.reply_to_username">@{{ comment.reply_to_username }}</span>
+              {{ comment.message }}
+          </div>
+        </div>
+
+        <!-- Actions Row -->
+        <div class="flex items-center mt-1.5 space-x-4 pl-2">
+            <!-- Like -->
             <button 
               @click="toggleLike"
-              class="flex items-center space-x-1 text-xs text-gray-500 hover:text-red-500 cursor-pointer"
-              :class="{ 'text-red-500': comment.liked }"
+              class="flex items-center space-x-1.5 text-xs font-medium transition-colors cursor-pointer group"
+              :class="comment.liked ? 'text-rose-500' : 'text-zinc-500 hover:text-rose-500'"
             >
               <Heart 
                 :size="14" 
                 :fill="comment.liked ? 'currentColor' : 'none'" 
                 :stroke-width="comment.liked ? 0 : 2"
-                class="w-4 h-4"
+                class="transition-transform group-active:scale-90"
               />
-              <span>{{ formatNumber(comment.likes || 0) }}</span>
+              <span v-if="comment.likes > 0">{{ formatNumber(comment.likes) }}</span>
+              <span v-else>Like</span>
             </button>
-          </div>
-          <div class="flex items-center mt-1 space-x-4">
-            <p class="text-xs text-gray-400">{{ comment.formatted_created_at }}</p>
+
+            <!-- Reply -->
             <button 
               @click="toggleReplyInput" 
-              class="text-xs text-gray-500 hover:text-gray-700 cursor-pointer"
+              class="text-xs font-medium text-zinc-500 hover:text-violet-600 transition-colors cursor-pointer"
             >
               Reply
             </button>
-          </div>
         </div>
         
-        <!-- View replies button (only for parent comments) -->
+        <!-- View replies button -->
         <button 
           v-if="!isReply && comment.replies > 0"
           @click="$emit('toggle-replies', comment)"
-          class="flex items-center space-x-1 text-xs text-gray-500 hover:text-blue-500 mt-1 ml-11 cursor-pointer"
+          class="flex items-center space-x-1.5 text-xs font-semibold text-violet-600 hover:text-violet-700 mt-2 pl-2 transition-colors cursor-pointer"
         >
+          <div class="w-6 h-[1px] bg-violet-200"></div>
           <span>{{ showReplies ? 'Hide' : 'View' }} {{ comment.replies }} {{ comment.replies === 1 ? 'reply' : 'replies' }}</span>
-          <ChevronDown v-if="!showReplies" :size="14" class="w-4 h-4" />
-          <ChevronUp v-else :size="14" class="w-4 h-4" />
         </button>
         
         <!-- Reply input -->
-        <div v-if="isReplying" class="mt-2 ml-11">
+        <div v-if="isReplying" class="mt-3 pl-2">
           <div class="flex items-center space-x-2">
-            <input
-              ref="replyInput"
-              v-model="replyContent"
-              type="text"
-              placeholder="Write a reply..."
-              class="flex-1 text-sm border border-gray-300 rounded-full px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              @keyup.enter="submitReply"
-              @keyup.esc="cancelReply"
-            />
-            <button 
-              @click="submitReply"
-              :disabled="!replyContent.trim()"
-              class="text-blue-500 hover:text-blue-700 disabled:opacity-50 cursor-pointer"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
-              </svg>
-            </button>
-            <button 
+             <div class="relative flex-1">
+                <input
+                ref="replyInput"
+                v-model="replyContent"
+                type="text"
+                placeholder="Write a reply..."
+                class="w-full text-sm border border-zinc-200 bg-zinc-50 rounded-full px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all placeholder-zinc-400"
+                @keyup.enter="submitReply"
+                @keyup.esc="cancelReply"
+                />
+                 <button 
+                  @click="submitReply"
+                  :disabled="!replyContent.trim()"
+                  class="absolute right-1.5 top-1/2 transform -translate-y-1/2 p-1 rounded-full text-violet-600 hover:bg-violet-50 disabled:opacity-40 disabled:hover:bg-transparent transition-all cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                  </svg>
+                </button>
+             </div>
+             <button 
               @click="cancelReply"
-              class="text-gray-500 hover:text-gray-700 cursor-pointer"
+              class="p-2 text-zinc-400 hover:text-zinc-600 rounded-full hover:bg-zinc-100 cursor-pointer transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
@@ -88,17 +99,17 @@
         </div>
         
         <!-- Replies section -->
-        <div v-if="showReplies && !isReply" class="mt-2 space-y-2">
+        <div v-if="showReplies && !isReply" class="mt-3 space-y-3 pl-4 border-l-2 border-zinc-100">
           <!-- Loading indicator -->
           <div v-if="loadingReplies" class="flex justify-center py-2">
-            <Loader2 class="h-4 w-4 animate-spin text-blue-500" />
+            <Loader2 class="h-4 w-4 animate-spin text-violet-500" />
           </div>
           
-          <!-- Replies list with transition group -->
+          <!-- Replies list -->
           <TransitionGroup 
             name="comment-list" 
             tag="div" 
-            class="space-y-2"
+            class="space-y-3"
           >
             <CommentItem 
               v-for="(reply, i) in replies" 

@@ -1,35 +1,38 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-zinc-50/50 font-sans">
     <DesktopTopNav />
     <MobileTopNav />
     
     <!-- Main Content -->
-    <div class="pt-16 pb-16 md:pt-0 md:pb-0">
+    <div class="pt-20 pb-20 md:pt-6 md:pb-0 relative z-0">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="bg-white shadow sm:rounded-lg overflow-hidden">
-          <div class="px-4 py-5 sm:px-6 border-b border-gray-200 flex items-center">
-            <MessageSquare class="h-5 w-5 text-indigo-600 mr-2" />
+        <div class="bg-white shadow-sm border border-zinc-100 rounded-2xl overflow-hidden">
+          <div class="px-6 py-5 border-b border-zinc-100 bg-zinc-50/30 flex items-center">
+            <div class="h-10 w-10 bg-violet-100 rounded-full flex items-center justify-center mr-3">
+               <MessageSquare class="h-5 w-5 text-violet-600" />
+            </div>
             <div>
-              <h3 class="text-lg leading-6 font-medium text-gray-900">Are you sad?</h3>
+              <h3 class="text-lg font-bold text-zinc-900 tracking-tight">Share Your Story</h3>
+              <p class="text-sm text-zinc-500">What's on your mind today?</p>
             </div>
           </div>
           
-          <form @submit.prevent="newPostStore.submitPost" class="px-4 py-5 sm:p-6">
-            <div class="space-y-6">
+          <form @submit.prevent="newPostStore.submitPost" class="px-6 py-6">
+            <div class="space-y-8">
               <NewPostDescription />
               <NewPostImageUpload />
               <NewPostDonations />
 
-              <div class="flex justify-end pt-4">
+              <div class="pt-6 border-t border-zinc-100 flex justify-end">
                 <button
                   type="submit"
-                  class="w-full md:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                  :class="{'cursor-pointer': !newPostStore.isLoading, 'cursor-not-allowed': newPostStore.isLoading}"
+                  class="w-full md:w-auto inline-flex justify-center items-center px-6 py-3 border border-transparent text-sm font-semibold rounded-full shadow-sm text-white bg-zinc-900 hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-300"
+                  :class="{'cursor-pointer hover:shadow-lg hover:-translate-y-0.5': !newPostStore.isLoading}"
                   :disabled="newPostStore.isLoading"
                 >
                   <Send v-if="!newPostStore.isLoading" class="-ml-1 mr-2 h-4 w-4" />
                   <span v-else class="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></span>
-                  {{ newPostStore.isLoading ? 'Posting...' : 'Post' }}
+                  {{ newPostStore.isLoading ? 'Posting...' : 'Post Story' }}
                 </button>
               </div>
             </div>

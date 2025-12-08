@@ -1,60 +1,67 @@
 <template>
-  <div v-if="show" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" @click.self="close">
-    <div class="bg-white rounded-lg w-full max-w-md overflow-hidden">
-      <div class="p-4 border-b border-gray-200 flex justify-between items-center">
-        <h3 class="text-lg font-medium text-gray-900">Donation Methods</h3>
-        <button @click="close" class="text-gray-400 hover:text-gray-500 cursor-pointer">
-          <X class="h-6 w-6" />
+  <div v-if="show" class="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity" @click.self="close">
+    <div class="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl transform transition-all">
+      <div class="px-6 py-5 border-b border-zinc-100 flex justify-between items-center bg-zinc-50/30">
+        <div>
+          <h3 class="text-lg font-bold text-zinc-900">Support this Creator</h3>
+          <p class="text-xs text-zinc-500 mt-0.5">Choose a method to send your donation</p>
+        </div>
+        <button @click="close" class="p-2 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 transition-all cursor-pointer">
+          <X class="h-5 w-5" />
         </button>
       </div>
       
-      <div class="divide-y divide-gray-200 max-h-[60vh] overflow-y-auto">
-        <div v-for="(method, index) in paymentMethods" :key="index" class="p-4">
+      <div class="max-h-[60vh] overflow-y-auto p-4 space-y-3">
+        <div v-for="(method, index) in paymentMethods" :key="index" class="rounded-xl border border-zinc-200 overflow-hidden transition-all duration-300" :class="activeIndex === index ? 'shadow-md border-violet-200 bg-white' : 'bg-white hover:border-violet-200 hover:bg-zinc-50'">
           <button 
             @click="toggleAccordion(index)"
-            class="w-full flex justify-between items-center text-left cursor-pointer"
+            class="w-full flex justify-between items-center text-left p-4 cursor-pointer focus:outline-none"
           >
-            <span class="font-medium">{{ method.method }}</span>
-            <ChevronDown v-if="activeIndex != index "
-              class="h-5 w-5 text-gray-400 transform transition-transform duration-200"
-            />
-            <ChevronUp v-else
-              class="h-5 w-5 text-gray-400 transform transition-transform duration-200"
-            />
+            <span class="font-semibold text-zinc-800" :class="activeIndex === index ? 'text-violet-700' : ''">{{ method.method }}</span>
+            <div class="rounded-full p-1 transition-colors" :class="activeIndex === index ? 'bg-violet-100 text-violet-600' : 'text-zinc-400'">
+               <ChevronDown v-if="activeIndex != index" class="h-5 w-5" />
+               <ChevronUp v-else class="h-5 w-5" />
+            </div>
           </button>
           
-          <div v-if="activeIndex === index" class="mt-3 space-y-3">
-            <div @click="copyToClipboard(method.account)" class="bg-gray-50 p-3 rounded-md flex justify-between items-center cursor-pointer">
+          <div v-if="activeIndex === index" class="px-4 pb-4 pt-0 space-y-3">
+            <div class="h-px w-full bg-zinc-100 mb-3"></div>
+            
+            <div @click="copyToClipboard(method.account)" class="group bg-zinc-50 border border-zinc-100 p-3 rounded-lg flex justify-between items-center cursor-pointer hover:border-violet-200 transition-all">
               <div>
-                <p class="text-xs text-gray-500">Account Number</p>
-                <p class="font-mono">{{ method.account }}</p>
+                <p class="text-[10px] uppercase tracking-wide font-semibold text-zinc-400">Account Number</p>
+                <p class="font-mono text-sm font-medium text-zinc-800 mt-0.5">{{ method.account }}</p>
               </div>
               <button 
-                class="text-indigo-600 hover:text-indigo-800 p-1 cursor-pointer"
+                class="text-zinc-400 group-hover:text-violet-600 bg-white p-2 rounded-md shadow-sm border border-zinc-100 group-hover:border-violet-100 transition-all"
                 title="Copy to clipboard"
               >
-                <ClipboardCopy class="h-5 w-5" />
+                <ClipboardCopy class="h-4 w-4" />
               </button>
             </div>
             
-            <div @click="copyToClipboard(method.nameOnAccount)" v-if="method.nameOnAccount" class="bg-gray-50 p-3 rounded-md flex justify-between items-center cursor-pointer">
+            <div @click="copyToClipboard(method.nameOnAccount)" v-if="method.nameOnAccount" class="group bg-zinc-50 border border-zinc-100 p-3 rounded-lg flex justify-between items-center cursor-pointer hover:border-violet-200 transition-all">
               <div>
-                <p class="text-xs text-gray-500">Account Name</p>
-                <p>{{ method.nameOnAccount }}</p>
+                <p class="text-[10px] uppercase tracking-wide font-semibold text-zinc-400">Account Name</p>
+                <p class="text-sm font-medium text-zinc-800 mt-0.5">{{ method.nameOnAccount }}</p>
               </div>
               <button 
-                class="text-indigo-600 hover:text-indigo-800 p-1 cursor-pointer"
+                class="text-zinc-400 group-hover:text-violet-600 bg-white p-2 rounded-md shadow-sm border border-zinc-100 group-hover:border-violet-100 transition-all"
                 title="Copy to clipboard"
               >
-                <ClipboardCopy class="h-5 w-5" />
+                <ClipboardCopy class="h-4 w-4" />
               </button>
             </div>
           </div>
         </div>
+        
+        <div v-if="paymentMethods.length === 0" class="text-center py-8">
+            <p class="text-zinc-500 text-sm">No payment methods listed.</p>
+        </div>
       </div>
       
-      <div class="p-4 bg-gray-50 border-t border-gray-200">
-        <p class="text-sm text-gray-500 text-center">Thank you for your support!</p>
+      <div class="p-4 bg-zinc-50 border-t border-zinc-100">
+        <p class="text-xs text-zinc-400 text-center font-medium">Your support means a lot to the community.</p>
       </div>
     </div>
   </div>

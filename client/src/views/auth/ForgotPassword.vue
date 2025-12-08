@@ -1,20 +1,31 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-      <div>
-        <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Reset your password
-        </h2>
-        <p class="mt-2 text-center text-sm text-gray-600">
-          Enter your email and we'll send you a verification code
-        </p>
-      </div>
+  <div class="min-h-screen flex items-center justify-center bg-zinc-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+    <!-- Background Decor -->
+    <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-violet-200/20 rounded-full blur-3xl pointer-events-none translate-x-1/2 -translate-y-1/2"></div>
+    
+    <div class="max-w-md w-full space-y-8 relative z-10">
+      <div class="bg-white py-8 px-4 shadow-xl shadow-zinc-200/50 sm:rounded-2xl sm:px-10 border border-zinc-100">
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-violet-100 mb-4 text-violet-600">
+             <KeyRound v-if="currentStep === 'newPassword'" class="h-6 w-6" />
+             <Mail v-else class="h-6 w-6" />
+          </div>
+          <h2 class="text-2xl font-bold text-zinc-900 tracking-tight">
+            {{ currentStep === 'newPassword' ? 'Set New Password' : currentStep === 'verify' ? 'Verify Code' : 'Reset Password' }}
+          </h2>
+          <p class="mt-2 text-sm text-zinc-500">
+            {{ 
+              currentStep === 'newPassword' ? 'Create a strong password for your account' : 
+              currentStep === 'verify' ? 'Enter the code sent to your email' : 
+              "Enter your email and we'll send you instructions" 
+            }}
+          </p>
+        </div>
 
-      <!-- Email Input Step -->
-      <div v-if="currentStep === 'email'" class="mt-8 space-y-6">
-        <div class="rounded-md shadow-sm -space-y-px">
+        <!-- Email Input Step -->
+        <div v-if="currentStep === 'email'" class="space-y-6">
           <div>
-            <label for="email-address" class="sr-only">Email address</label>
+            <label for="email-address" class="block text-sm font-bold text-zinc-700 mb-1">Email address</label>
             <input
               id="email-address"
               v-model="email"
@@ -22,30 +33,35 @@
               type="email"
               autocomplete="email"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Email address"
+              class="block w-full rounded-xl border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all sm:text-sm"
+              placeholder="you@example.com"
             />
+          </div>
+
+          <div>
+            <button
+              type="button"
+              @click="sendOtp"
+              :disabled="loading"
+              class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-lg shadow-zinc-900/10 text-sm font-bold text-white bg-zinc-900 hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 cursor-pointer"
+            >
+              <span v-if="loading" class="flex items-center">
+                <Loader2 class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                Sending...
+              </span>
+              <span v-else>Send Verification Code</span>
+            </button>
+          </div>
+          
+          <div class="text-center">
+            <router-link to="/login" class="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors">
+              Back to Sign in
+            </router-link>
           </div>
         </div>
 
-        <div>
-          <button
-            type="button"
-            @click="sendOtp"
-            :disabled="loading"
-            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <span v-if="loading">
-              <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-            </span>
-            <span v-else>Send Verification Code</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- OTP Verification Step -->
-      <div v-else-if="currentStep === 'verify'" class="mt-8 space-y-6">
-        <div class="rounded-md shadow-sm -space-y-px">
+        <!-- OTP Verification Step -->
+        <div v-else-if="currentStep === 'verify'" class="space-y-6">
           <div>
             <label for="otp" class="sr-only">Verification Code</label>
             <input
@@ -57,116 +73,120 @@
               pattern="[0-9]*"
               maxlength="6"
               required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Enter 6-digit code"
+              class="block w-full text-center text-2xl font-bold tracking-[0.5em] rounded-xl border-zinc-200 bg-zinc-50 py-3 text-zinc-900 placeholder-zinc-300 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all"
+              placeholder="000000"
             />
           </div>
-        </div>
 
-        <div class="flex items-center justify-between">
-          <div class="text-sm">
-            <button 
-              @click="resendOtp" 
-              :disabled="resendCooldown > 0"
-              class="font-medium text-indigo-600 hover:text-indigo-500 disabled:text-gray-400 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <span v-if="resendCooldown > 0">Resend in {{ resendCooldown }}s</span>
-              <span v-else>Resend Code</span>
-            </button>
+          <div class="text-center text-sm">
+            <p class="text-zinc-500">
+              Didn't receive it?
+              <button 
+                @click="resendOtp" 
+                :disabled="resendCooldown > 0"
+                class="font-semibold text-violet-600 hover:text-violet-500 disabled:text-zinc-400 disabled:cursor-not-allowed cursor-pointer ml-1"
+              >
+                <span v-if="resendCooldown > 0">Resend in {{ resendCooldown }}s</span>
+                <span v-else>Resend Code</span>
+              </button>
+            </p>
           </div>
-        </div>
 
-        <div class="flex space-x-2">
-          <button
-            type="button"
-            @click="currentStep = 'email'"
-            class="w-1/2 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            @click="verifyOtp"
-            :disabled="otp.length !== 6 || loading"
-            class="w-1/2 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <span v-if="loading">
-              <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-            </span>
-            <span v-else>Verify Code</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- New Password Step -->
-      <div v-else-if="currentStep === 'newPassword'" class="mt-8 space-y-6">
-        <div class="rounded-md shadow-sm -space-y-px">
-          <div class="relative">
-            <label for="password1" class="sr-only">New Password</label>
-            <input
-              :type="showPassword1 ? 'text' : 'password'"
-              id="password1"
-              v-model="password1"
-              name="password1"
-              autocomplete="new-password"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm pr-10"
-              placeholder="New Password"
-            />
+          <div class="flex space-x-3">
             <button
               type="button"
-              @click="showPassword1 = !showPassword1"
-              class="absolute inset-y-0 z-100 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-500 cursor-pointer"
-              :aria-label="showPassword1 ? 'Hide password' : 'Show password'"
+              @click="currentStep = 'email'"
+              class="w-1/3 flex justify-center py-3 px-4 border border-zinc-200 rounded-full text-sm font-semibold text-zinc-700 bg-white hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 transition-all cursor-pointer"
             >
-              <EyeOff v-if="showPassword1" class="h-5 w-5" />
-              <Eye v-else class="h-5 w-5" />
+              Back
             </button>
-          </div>
-          <div class="relative">
-            <label for="password2" class="sr-only">Confirm New Password</label>
-            <input
-              :type="showPassword2 ? 'text' : 'password'"
-              id="password2"
-              v-model="password2"
-              name="password2"
-              autocomplete="new-password"
-              required
-              class="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm pr-10"
-              placeholder="Confirm New Password"
-              @keyup.enter="updatePassword"
-            />
             <button
               type="button"
-              @click="showPassword2 = !showPassword2"
-              class="absolute inset-y-0 right-0 z-100 pr-3 flex items-center text-gray-400 hover:text-gray-500 cursor-pointer"
-              :aria-label="showPassword2 ? 'Hide password' : 'Show password'"
+              @click="verifyOtp"
+              :disabled="otp.length !== 6 || loading"
+              class="w-2/3 flex justify-center py-3 px-4 border border-transparent rounded-full shadow-lg shadow-zinc-900/10 text-sm font-bold text-white bg-zinc-900 hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 cursor-pointer"
             >
-              <EyeOff v-if="showPassword2" class="h-5 w-5" />
-              <Eye v-else class="h-5 w-5" />
+              <span v-if="loading" class="flex items-center">
+                <Loader2 class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                Verifying...
+              </span>
+              <span v-else>Verify Code</span>
             </button>
           </div>
         </div>
 
-        <div class="flex space-x-2">
-          <button
-            type="button"
-            @click="currentStep = 'verify'"
-            class="w-1/2 flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            @click="updatePassword"
-            :disabled="!password1 || password1 !== password2 || loading"
-            class="w-1/2 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-          >
-            <span v-if="loading">
-              <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-            </span>
-            <span v-else>Update Password</span>
-          </button>
+        <!-- New Password Step -->
+        <div v-else-if="currentStep === 'newPassword'" class="space-y-6">
+          <div class="space-y-4">
+            <div>
+              <label for="password1" class="block text-sm font-bold text-zinc-700 mb-1">New Password</label>
+              <div class="relative">
+                <input
+                  :type="showPassword1 ? 'text' : 'password'"
+                  id="password1"
+                  v-model="password1"
+                  name="password1"
+                  autocomplete="new-password"
+                  required
+                  class="block w-full rounded-xl border-zinc-200 bg-zinc-50 px-4 py-3 pr-10 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all sm:text-sm"
+                  placeholder="At least 8 characters"
+                />
+                <button
+                  type="button"
+                  @click="showPassword1 = !showPassword1"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                >
+                  <component :is="showPassword1 ? EyeOff : Eye" class="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            
+            <div>
+              <label for="password2" class="block text-sm font-bold text-zinc-700 mb-1">Confirm Password</label>
+              <div class="relative">
+                <input
+                  :type="showPassword2 ? 'text' : 'password'"
+                  id="password2"
+                  v-model="password2"
+                  name="password2"
+                  autocomplete="new-password"
+                  required
+                  class="block w-full rounded-xl border-zinc-200 bg-zinc-50 px-4 py-3 pr-10 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all sm:text-sm"
+                  placeholder="Repeat new password"
+                  @keyup.enter="updatePassword"
+                />
+                <button
+                  type="button"
+                  @click="showPassword2 = !showPassword2"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-400 hover:text-zinc-600 cursor-pointer"
+                >
+                  <component :is="showPassword2 ? EyeOff : Eye" class="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex space-x-3">
+            <button
+              type="button"
+              @click="currentStep = 'verify'"
+              class="w-1/3 flex justify-center py-3 px-4 border border-zinc-200 rounded-full text-sm font-semibold text-zinc-700 bg-white hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 transition-all cursor-pointer"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              @click="updatePassword"
+              :disabled="!password1 || password1 !== password2 || loading"
+              class="w-2/3 flex justify-center py-3 px-4 border border-transparent rounded-full shadow-lg shadow-zinc-900/10 text-sm font-bold text-white bg-zinc-900 hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 cursor-pointer"
+            >
+              <span v-if="loading" class="flex items-center">
+                <Loader2 class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+                Updating...
+              </span>
+              <span v-else>Update Password</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -176,7 +196,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Eye, EyeOff, Loader2 } from 'lucide-vue-next';
+import { Eye, EyeOff, Loader2, Mail, KeyRound } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
 import { useUserStore } from '@/stores/user';
 const router = useRouter();

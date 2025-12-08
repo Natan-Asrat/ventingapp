@@ -1,8 +1,32 @@
 <template>
   <form @submit.prevent="handleSubmit" class="space-y-6">
-    <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+    
+    <!-- Profile Picture Upload -->
+    <div class="flex justify-center mb-6">
+        <div class="relative group cursor-pointer" @click="$refs.fileInput.click()">
+            <div class="h-24 w-24 rounded-full overflow-hidden border-4 border-zinc-50 shadow-md transition-all group-hover:shadow-lg bg-zinc-100">
+                <img v-if="previewUrl" :src="previewUrl" alt="Profile preview" class="h-full w-full object-cover" />
+                <div v-else class="h-full w-full flex items-center justify-center text-zinc-300">
+                    <User class="h-10 w-10" />
+                </div>
+            </div>
+            <div class="absolute bottom-0 right-0 bg-zinc-900 rounded-full p-2 text-white border-2 border-white shadow-sm transition-transform group-hover:scale-110">
+                <Camera class="h-4 w-4" />
+            </div>
+            <input
+                type="file"
+                id="profile_picture"
+                ref="fileInput"
+                @change="handleFileChange"
+                class="hidden"
+                accept="image/*"
+            />
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 gap-y-5 gap-x-4 sm:grid-cols-6">
       <div class="sm:col-span-3">
-        <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+        <label for="name" class="block text-sm font-bold text-zinc-700 mb-1">Full Name</label>
         <div class="mt-1">
           <input
             type="text"
@@ -10,32 +34,30 @@
             id="name"
             autocomplete="name"
             required
-            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            class="block w-full rounded-xl border-zinc-200 bg-zinc-50 px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all sm:text-sm"
+            placeholder="John Doe"
           />
         </div>
       </div>
 
       <div class="sm:col-span-3">
-        <label for="username" class="block text-sm font-medium text-gray-700">Username</label>
-        <div class="mt-1">
-          <div class="flex rounded-md shadow-sm">
-            <span class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">
-              @
-            </span>
+        <label for="username" class="block text-sm font-bold text-zinc-700 mb-1">Username</label>
+        <div class="mt-1 relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-zinc-400 text-sm font-bold">@</span>
             <input
               type="text"
               v-model="formData.username"
               id="username"
               autocomplete="username"
               required
-              class="block w-full min-w-0 flex-1 rounded-none rounded-r-md border border-gray-300 px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              class="block w-full rounded-xl border-zinc-200 bg-zinc-50 pl-9 pr-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all sm:text-sm"
+              placeholder="username"
             />
-          </div>
         </div>
       </div>
 
       <div class="sm:col-span-6">
-        <label for="email" class="block text-sm font-medium text-gray-700">Email address</label>
+        <label for="email" class="block text-sm font-bold text-zinc-700 mb-1">Email address</label>
         <div class="mt-1">
           <input
             id="email"
@@ -44,13 +66,14 @@
             type="email"
             autocomplete="email"
             required
-            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            class="block w-full rounded-xl border-zinc-200 bg-zinc-50 px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all sm:text-sm"
+            placeholder="you@example.com"
           />
         </div>
       </div>
 
       <div class="sm:col-span-3">
-        <label for="password1" class="block text-sm font-medium text-gray-700">Password</label>
+        <label for="password1" class="block text-sm font-bold text-zinc-700 mb-1">Password</label>
         <div class="mt-1">
           <input
             id="password1"
@@ -59,13 +82,14 @@
             type="password"
             autocomplete="new-password"
             required
-            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            class="block w-full rounded-xl border-zinc-200 bg-zinc-50 px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all sm:text-sm"
+            placeholder="••••••••"
           />
         </div>
       </div>
 
       <div class="sm:col-span-3">
-        <label for="password2" class="block text-sm font-medium text-gray-700">Confirm Password</label>
+        <label for="password2" class="block text-sm font-bold text-zinc-700 mb-1">Confirm</label>
         <div class="mt-1">
           <input
             id="password2"
@@ -74,45 +98,22 @@
             type="password"
             autocomplete="new-password"
             required
-            class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
-      </div>
-
-      <div class="sm:col-span-6">
-        <label for="profile_picture" class="block text-sm font-medium text-gray-700">
-          Profile Picture (Optional)
-        </label>
-        <div class="mt-1 flex items-center">
-          <template v-if="previewUrl">
-            <img :src="previewUrl" alt="Profile preview" class="h-12 w-12 rounded-full object-cover" />
-          </template>
-          <template v-else>
-            <span class="h-12 w-12 overflow-hidden rounded-full bg-gray-100 flex items-center justify-center">
-                <User class="h-8 w-8 text-gray-400" />
-            </span>
-          </template>
-          <input
-            type="file"
-            id="profile_picture"
-            ref="fileInput"
-            @change="handleFileChange"
-            class="ml-5 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+            class="block w-full rounded-xl border-zinc-200 bg-zinc-50 px-4 py-2.5 text-zinc-900 placeholder-zinc-400 focus:border-violet-500 focus:bg-white focus:ring-violet-500/20 focus:outline-none focus:ring-4 transition-all sm:text-sm"
+            placeholder="••••••••"
           />
         </div>
       </div>
     </div>
 
-    <div class="flex items-center justify-between">
-
-
+    <div class="pt-4">
       <button
         type="submit"
         :disabled="loading"
-        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        class="w-full flex justify-center py-3 px-4 border border-transparent rounded-full shadow-lg shadow-zinc-900/10 text-sm font-bold text-white bg-zinc-900 hover:bg-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5 cursor-pointer"
       >
-        <span v-if="loading">
-          <Loader2 class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
+        <span v-if="loading" class="flex items-center">
+          <Loader2 class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" />
+          Creating Account...
         </span>
         <span v-else>Create Account</span>
       </button>
@@ -124,7 +125,7 @@
 import { ref, onUnmounted } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { message } from 'ant-design-vue';
-import { User, Loader2 } from 'lucide-vue-next';
+import { User, Loader2, Camera } from 'lucide-vue-next';
 
 const userStore = useUserStore();
 const loading = ref(false);
@@ -190,17 +191,11 @@ const handleSubmit = async () => {
       }
     });
 
-    // Log the FormData entries for debugging
-    for (let pair of formDataObj.entries()) {
-      console.log(pair[0] + ': ', pair[1]);
-    }
-
     const response = await userStore.register(formDataObj);
 
     if (response.success) {
       // Save email to localStorage for email verification
       localStorage.setItem('pendingVerificationEmail', formData.value.email);
-      console.log("saved email", localStorage.getItem('pendingVerificationEmail'))
       emit('signupSuccess', formData.value.email);
     } else {
       // Handle specific errors from the API

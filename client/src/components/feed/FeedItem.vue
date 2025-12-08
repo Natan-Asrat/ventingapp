@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white shadow overflow-hidden rounded-lg">
+  <div class="bg-white rounded-[1.25rem] shadow-sm border border-zinc-100/80 transition-all duration-300 hover:shadow-md overflow-hidden group">
     <!-- Comment Modal -->
     <CommentModal 
       v-if="showCommentModal"
@@ -17,99 +17,107 @@
       :show="showShareModal"
       @close="closeShareModal"
     />
+    
     <!-- Post Header -->
-    <div class="px-4 py-3 flex items-center justify-between border-b border-gray-200">
+    <div class="px-5 pt-5 pb-3 flex items-start justify-between">
       <router-link 
         :to="{ name: 'UsernameProfile', params: { username: post.posted_by.username } }"
-        class="flex flex-1 items-center space-x-3"
+        class="flex flex-1 items-center space-x-3 group/user"
       >
-        <div v-if="post.posted_by?.profile_picture" class="h-10 w-10 rounded-full overflow-hidden">
+        <div v-if="post.posted_by?.profile_picture" class="h-10 w-10 rounded-full overflow-hidden ring-2 ring-zinc-50 group-hover/user:ring-violet-100 transition-all">
           <img 
             :src="post.posted_by.profile_picture" 
             :alt="post.posted_by.name"
             class="h-full w-full object-cover"
           />
         </div>
-        <div v-else class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium">
+        <div v-else class="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 font-semibold ring-2 ring-zinc-50">
           {{ post.posted_by?.name ? post.posted_by.name.charAt(0).toUpperCase() : 'U' }}
         </div>
         <div>
-          <p class="font-medium text-sm">{{ post.posted_by?.name || 'Anonymous' }}</p>
-          <p class="text-xs text-gray-500">@{{ post.posted_by?.username || 'user' }}</p>
+          <p class="font-semibold text-zinc-800 text-[15px] leading-tight group-hover/user:text-violet-700 transition-colors">{{ post.posted_by?.name || 'Anonymous' }}</p>
+          <div class="flex items-center gap-2 mt-0.5">
+            <p class="text-xs text-zinc-400 font-medium">@{{ post.posted_by?.username || 'user' }}</p>
+            <span class="text-[10px] text-zinc-300">•</span>
+            <span class="text-xs text-zinc-400">{{ post.formatted_created_at }}</span>
+          </div>
         </div>
       </router-link>
       
       <div v-if="!isCurrentUserPost" class="flex items-center space-x-2">
+        <!-- Follow/Connect Button -->
         <button 
-          @click="handleChat(post)"
-          class="px-1 py-1 text-black text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="processingChat"
-        >
-          <Loader2 v-if="processingChat" class="w-3 h-3 mr-1.5 animate-spin" />
-          <Send v-else class="h-4 w-4"/>
-        </button>
-        <button 
-          v-if="post.payment_info_list && post.payment_info_list.length > 0"
-          @click="handleDonate(post)"
-          class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-200 transition-colors flex items-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          :disabled="processingDonation"
-        >
-          <Loader2 v-if="processingDonation" class="w-3 h-3 mr-1.5 animate-spin" />
-          Donate
-        </button>
-        <div class="relative">
-          <button 
             @click="handleFollowClick"
-            class="p-1.5 rounded-full transition-colors flex items-center justify-center"
+            class="h-8 w-8 rounded-full flex items-center justify-center transition-all duration-200 border"
             :class="{
-              'bg-green-100 text-green-700 hover:bg-green-200': post.connected,
-              'bg-yellow-100 text-yellow-700': post.pending_connection && !post.rejected_connection,
-              'bg-red-100 text-red-700': post.rejected_connection,
-              'bg-gray-100 text-gray-700 hover:bg-gray-200': (!post.connected && !post.pending_connection && !post.rejected_connection) || post.removed_connection,
-              'cursor-not-allowed': post.rejected_connection || post.banned_connection,
+              'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100': post.connected,
+              'bg-amber-50 text-amber-600 border-amber-100': post.pending_connection && !post.rejected_connection,
+              'bg-rose-50 text-rose-600 border-rose-100': post.rejected_connection,
+              'bg-white text-zinc-400 border-zinc-200 hover:bg-zinc-50 hover:text-zinc-600 hover:border-zinc-300': (!post.connected && !post.pending_connection && !post.rejected_connection) || post.removed_connection,
+              'cursor-not-allowed opacity-75': post.rejected_connection || post.banned_connection,
               'cursor-pointer': !post.rejected_connection && !post.banned_connection
             }"
             :disabled="post.rejected_connection || post.banned_connection"
             :title="getFollowButtonTooltip(post)"
-          >
+        >
             <template v-if="post.connected">
-              <UserCheck :size="18" class="text-green-600" />
-              <span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-green-500 border-2 border-white"></span>
+                <UserCheck :size="16" class="stroke-[2.5]" />
             </template>
             <template v-else-if="post.pending_connection">
-              <Clock :size="18" class="text-yellow-600" />
-              <span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-yellow-500 border-2 border-white"></span>
+                <Clock :size="16" class="stroke-[2.5]" />
             </template>
             <template v-else-if="post.banned_connection">
-              <UserX :size="18" class="text-yellow-600" />
+                <UserX :size="16" class="stroke-[2.5]" />
             </template>
             <template v-else-if="post.rejected_connection">
-              <UserX :size="18" class="text-red-600" />
-              <span class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500 border-2 border-white"></span>
+                <UserX :size="16" class="stroke-[2.5]" />
             </template>
-            <UserPlus v-else :size="18" class="text-gray-600" />
-          </button>
-        </div>
+            <UserPlus v-else :size="16" class="stroke-[2.5]" />
+        </button>
+
+        <!-- Chat Button -->
+        <button 
+          @click="handleChat(post)"
+          class="h-8 w-8 flex items-center justify-center text-zinc-400 hover:text-violet-600 hover:bg-violet-50 rounded-full transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed border border-transparent hover:border-violet-100"
+          :disabled="processingChat"
+          title="Chat"
+        >
+          <Loader2 v-if="processingChat" class="w-4 h-4 animate-spin" />
+          <Send v-else class="w-4 h-4 stroke-[2.5] ml-0.5" />
+        </button>
+
+        <!-- Donate Button -->
+        <button 
+          v-if="post.payment_info_list && post.payment_info_list.length > 0"
+          @click="handleDonate(post)"
+          class="h-8 px-3.5 bg-zinc-900 hover:bg-violet-600 text-white text-xs font-semibold rounded-full shadow-sm hover:shadow hover:-translate-y-0.5 transition-all duration-300 flex items-center cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none ml-1"
+          :disabled="processingDonation"
+        >
+          <Loader2 v-if="processingDonation" class="w-3 h-3 mr-1.5 animate-spin" />
+          <span v-else>Support</span>
+        </button>
       </div>
     </div>
     
     <!-- Post Content -->
-    <div class="px-4 py-3">
-      
-      <ShowMore :text="post.description"/>
+    <div class="px-5 pb-2">
+      <div class="text-zinc-700 text-[15px] leading-[1.7] font-normal tracking-wide">
+        <ShowMore :text="post.description"/>
+      </div>
       
       <!-- Post Image -->
-      <div v-if="post.image_url" class="mt-3 rounded-lg overflow-hidden">
+      <div v-if="post.image_url" class="mt-4 rounded-xl overflow-hidden border border-zinc-100 bg-zinc-50 relative group/image">
+        <div class="absolute inset-0 bg-black/0 group-hover/image:bg-black/5 transition-colors duration-300 pointer-events-none z-10"></div>
         <img 
           :src="post.image_url" 
           :alt="'Post by ' + (post.posted_by?.username || 'user')" 
-          class="w-full h-auto object-cover cursor-zoom-in"
+          class="w-full h-auto object-cover cursor-zoom-in transition-transform duration-500 group-hover/image:scale-[1.02]"
           @load="$emit('image-loaded')"
           @click="openImageViewer"
         />
       </div>
-      
-      <!-- Image Viewer -->
+
+       <!-- Image Viewer -->
       <ImageViewer
         v-if="showImageViewer"
         v-model="showImageViewer"
@@ -117,82 +125,73 @@
         :alt="'Post by ' + (post.posted_by?.username || 'user')"
         @close="showImageViewer = false"
       />
-      
-      <!-- Post Stats -->
-      <div class="mt-3 flex items-center text-sm text-gray-500 space-x-4">
-        <span>{{ post.likes }} {{ post.likes === 1 ? 'like' : 'likes' }}</span>
-        <span>{{ post.comments }} {{ post.comments === 1 ? 'comment' : 'comments' }}</span>
-        <span>{{ post.views }} {{ post.views === 1 ? 'view' : 'views' }}</span>
-        <span>{{ post.forwards }} {{ post.forwards === 1 ? 'share' : 'shares' }}</span>
-        <span class="text-xs text-gray-400">{{ post.formatted_created_at }}</span>
-      </div>
+    </div>
+    
+    <!-- Post Stats -->
+    <div class="px-5 pt-3 pb-1 flex items-center justify-between text-xs font-medium text-zinc-400">
+        <div class="flex items-center gap-3">
+            <span>{{ post.likes }} {{ post.likes === 1 ? 'Like' : 'Likes' }}</span>
+            <span>{{ post.comments }} {{ post.comments === 1 ? 'Comment' : 'Comments' }}</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <span>{{ post.views }} {{ post.views === 1 ? 'View' : 'Views' }}</span>
+            <span v-if="post.forwards > 0">{{ post.forwards }} {{ post.forwards === 1 ? 'Share' : 'Shares' }}</span>
+        </div>
     </div>
 
     <!-- Action Buttons -->
-    <div class="px-4 py-2 border-t border-gray-100">
+    <div class="px-3 py-2 border-t border-zinc-50 mt-1">
       <div class="flex items-center justify-between">
+        <!-- Like Button -->
         <button 
           @click="likePost" 
-          class="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
+          class="cursor-pointer flex-1 flex items-center justify-center py-2.5 rounded-lg transition-all duration-200 group/btn hover:bg-zinc-50"
           :class="[{
-            'text-red-500 hover:text-red-600 cursor-pointer': post.liked && !liking,
-            'text-gray-500 hover:text-gray-700 cursor-pointer': !post.liked && !liking,
+            'text-rose-500': post.liked && !liking,
+            'text-zinc-400 hover:text-rose-500': !post.liked && !liking,
             'opacity-50 cursor-not-allowed': liking
           }]"
           :disabled="liking"
           title="Like"
         >
-          <template v-if="liking">
-            <Loader2 class="w-5 h-5 animate-spin" />
-          </template>
-          <template v-else>
-            <Heart 
-              :size="20" 
-              :fill="post.liked ? 'currentColor' : 'none'" 
-              :stroke-width="post.liked ? 0 : 2"
-              class="w-5 h-5"
-            />
-          </template>
+          <div class="relative">
+             <Loader2 v-if="liking" class="w-5 h-5 animate-spin text-rose-400" />
+             <Heart v-else :size="20" :fill="post.liked ? 'currentColor' : 'none'" class="transition-transform duration-200 group-active/btn:scale-90" />
+          </div>
         </button>
         
+        <!-- Comment Button -->
         <button 
           @click="handleCommentClick(post)" 
-          class="p-2 rounded-full hover:bg-gray-100 text-gray-700 hover:text-blue-500 transition-colors cursor-pointer"
+          class="cursor-pointer flex-1 flex items-center justify-center py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-50 hover:text-violet-600 transition-all duration-200 group/btn"
           title="Comment"
         >
-          <MessageCircle :size="20" class="w-5 h-5" />
+          <MessageCircle :size="20" class="transition-transform duration-200 group-active/btn:scale-90" />
         </button>
         
+        <!-- Save Button -->
         <button 
           @click="savePost" 
-          class="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
+          class="cursor-pointer flex-1 flex items-center justify-center py-2.5 rounded-lg transition-all duration-200 group/btn hover:bg-zinc-50"
           :class="[{
-            'text-yellow-500 hover:text-yellow-600 cursor-pointer': post.saved && !saving,
-            'text-gray-500 hover:text-gray-700 cursor-pointer': !post.saved && !saving,
+            'text-violet-600': post.saved && !saving,
+            'text-zinc-400 hover:text-violet-600': !post.saved && !saving,
             'opacity-50 cursor-not-allowed': saving
           }]"
           :disabled="saving"
           title="Save"
         >
-          <template v-if="saving">
-            <Loader2 class="w-5 h-5 animate-spin" />
-          </template>
-          <template v-else>
-            <Bookmark 
-              :size="20" 
-              :fill="post.saved ? 'currentColor' : 'none'" 
-              :stroke-width="post.saved ? 0 : 2"
-              class="w-5 h-5"
-            />
-          </template>
+           <Loader2 v-if="saving" class="w-5 h-5 animate-spin text-violet-400" />
+           <Bookmark v-else :size="20" :fill="post.saved ? 'currentColor' : 'none'" class="transition-transform duration-200 group-active/btn:scale-90" />
         </button>
         
+        <!-- Share Button -->
         <button 
           @click="handleShareClick(post)" 
-          class="p-2 rounded-full hover:bg-gray-100 text-gray-700 hover:text-green-500 transition-colors cursor-pointer"
+          class="cursor-pointer flex-1 flex items-center justify-center py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-50 hover:text-emerald-600 transition-all duration-200 group/btn"
           title="Share"
         >
-          <Share2 :size="20" class="w-5 h-5" />
+          <Share2 :size="20" class="transition-transform duration-200 group-active/btn:scale-90" />
         </button>
       </div>
     </div>

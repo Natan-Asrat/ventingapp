@@ -3,16 +3,24 @@
         <div ref="descriptionContainer" class="relative">
           <p 
             ref="descriptionRef"
-            class="text-gray-800 whitespace-pre-line transition-all duration-200"
-            :class="!isExpanded && 'line-clamp-2'"
+            class="whitespace-pre-line transition-all duration-200"
+            :class="[
+                !isExpanded && 'line-clamp-2',
+                theme === 'dark' ? 'text-zinc-200' : 'text-zinc-800'
+            ]"
           >
             {{ text }}
           </p>
           <span 
             v-if="showReadMore"
             @click="toggleDescription"
-            class="text-sm text-indigo-600 hover:text-indigo-800 cursor-pointer ml-1 absolute bottom-0 right-0 bg-white pl-1"
-            :class="{ 'relative': isExpanded }"
+            class="text-xs font-bold cursor-pointer ml-1 absolute bottom-0 right-0 pl-4 pr-1 rounded-l-lg transition-colors"
+            :class="[
+                isExpanded ? 'relative pl-1' : '',
+                theme === 'dark' 
+                    ? 'text-violet-300 hover:text-white bg-zinc-800 ' 
+                    : 'text-violet-600 hover:text-violet-800 bg-white'
+            ]"
           >
             {{ isExpanded ? 'Show less' : 'Read more' }}
           </span>
@@ -22,7 +30,12 @@
 <script setup>
 import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue';
 const props = defineProps({
-    text: String
+    text: String,
+    theme: {
+        type: String,
+        default: 'light', // 'light' or 'dark' (referring to the background brightness)
+        validator: (value) => ['light', 'dark'].includes(value)
+    }
 })
 
 

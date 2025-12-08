@@ -1,17 +1,17 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-zinc-50/50 font-sans">
     <DesktopTopNav />    
     <MobileTopNav />
     
     <!-- Main Content -->
-    <div class="pt-16 pb-16 md:pt-0 md:pb-0">
+    <div class="pt-20 pb-20 md:pt-6 md:pb-0 relative z-0">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="bg-white shadow sm:rounded-lg overflow-hidden">
+        <div class="bg-white shadow-sm border border-zinc-100 rounded-2xl overflow-hidden min-h-[600px]">
           <!-- Tabs -->
           <HistoryTabs />
 
           <!-- Tab Content -->
-          <div class="p-4">
+          <div class="p-6 bg-zinc-50/30">
             <TransactionsHistory v-if="historyStore.activeTab === historyStore.TRANSACTIONS_TAB" />
             <ConnectionsHistory v-else-if="historyStore.activeTab === historyStore.CONNECTIONS_TAB"/>
             <UsageHistory v-else-if="historyStore.activeTab === historyStore.USAGE_TAB"/>

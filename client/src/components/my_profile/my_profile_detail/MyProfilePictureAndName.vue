@@ -1,17 +1,18 @@
 <template>
-    <div class="flex items-start space-x-4">
-        <div class="flex-shrink-0 relative group">
-            <div v-if="user?.profile_picture" class="h-24 w-24 rounded-full overflow-hidden bg-gray-200">
+    <div class="flex flex-col items-center text-center space-y-4">
+        <div class="relative group">
+            <div v-if="user?.profile_picture" class="h-28 w-28 rounded-full overflow-hidden ring-4 ring-white shadow-lg bg-zinc-100">
                 <img :src="user.profile_picture" :alt="user.name" class="h-full w-full object-cover">
             </div>
-            <div v-else class="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center">
-                <span class="text-3xl font-medium text-indigo-600">{{ userInitials }}</span>
+            <div v-else class="h-28 w-28 rounded-full bg-violet-100 flex items-center justify-center ring-4 ring-white shadow-lg">
+                <span class="text-3xl font-bold text-violet-600">{{ userInitials }}</span>
             </div>
             <button
                 @click="triggerFileInput"
-                class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white px-3 py-1 rounded-full text-xs font-medium text-indigo-600 shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                class="absolute bottom-1 right-1 bg-zinc-900 text-white p-2 rounded-full shadow-md hover:bg-violet-600 transition-all cursor-pointer transform hover:scale-105 border-2 border-white"
+                title="Change Profile Picture"
             >
-                Change
+                <Camera class="h-4 w-4" />
             </button>
             <input
                 ref="fileInput"
@@ -21,44 +22,41 @@
                 @change="handleProfilePictureChange"
             />
         </div>
-        <div class="flex-1">
-            <div v-if="!isEditingName" class="flex items-center">
-                <h2 class="text-2xl font-semibold text-gray-900">{{ user?.name || 'User' }}</h2>
+        
+        <div class="w-full">
+            <div v-if="!isEditingName" class="flex items-center justify-center gap-2 group/name min-h-[40px]">
+                <h2 class="text-2xl font-bold text-zinc-900 tracking-tight">{{ user?.name || 'User' }}</h2>
                 <button
                     @click="startEditingName"
-                    class="ml-2 p-1 cursor-pointer rounded-full text-gray-400 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    class="p-1.5 rounded-full text-zinc-400 opacity-0 group-hover/name:opacity-100 hover:text-violet-600 hover:bg-violet-50 transition-all cursor-pointer"
                 >
                     <PencilIcon class="h-4 w-4" />
                 </button>
             </div>
-            <div v-else class="flex items-center space-x-2">
+            <div v-else class="flex items-center justify-center space-x-2 w-full max-w-[240px] mx-auto min-h-[40px]">
                 <input
                     v-model="editingName"
                     type="text"
-                    class="py-2 px-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                    class="py-1.5 px-3 block w-full rounded-lg border-zinc-300 bg-zinc-50 text-center font-semibold text-zinc-900 shadow-sm focus:border-violet-500 focus:ring-violet-500 sm:text-sm"
                     @keyup.enter="saveName"
                 >
                 <button
                     @click="saveName"
                     :disabled="isSaving"
-                    :class="{'cursor-pointer': !isSaving}"
-                    class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                    class="p-2 rounded-full bg-violet-100 text-violet-700 hover:bg-violet-200 cursor-pointer disabled:opacity-50 transition-colors flex-shrink-0"
                 >
-                    <span v-if="isSaving" class="flex items-center">
-                        <Loader2 class="animate-spin -ml-1 mr-2 h-3 w-3 text-white" />
-                        Saving...
-                    </span>
-                    <span v-else>Save</span>
+                    <Check class="h-4 w-4" v-if="!isSaving"/>
+                    <Loader2 v-else class="h-4 w-4 animate-spin"/>
                 </button>
                 <button
                     @click="cancelEditingName"
-                    class="p-1 text-gray-400 hover:text-gray-500 focus:outline-none"
+                    class="p-2 rounded-full text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 cursor-pointer flex-shrink-0 transition-colors"
                     :disabled="isSaving"
                 >
-                    <X class="h-4 w-4 cursor-pointer" />
+                    <X class="h-4 w-4" />
                 </button>
             </div>
-            <p class="mt-1 text-sm text-gray-500">Member since {{ user?.formatted_date_joined }}</p>
+            <p class="mt-1 text-sm font-medium text-zinc-500">Member since {{ user?.formatted_date_joined }}</p>
         </div>
     </div>         
 </template>
@@ -66,7 +64,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useUserStore } from '@/stores/user';
-import { Loader2, PencilIcon, X } from 'lucide-vue-next';
+import { Loader2, PencilIcon, X, Camera, Check } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
 import { useMyProfileStore } from '@/stores/my_profile';
 const userStore = useUserStore();

@@ -10,7 +10,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black/25" />
+        <div class="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity" />
       </TransitionChild>
 
       <div class="fixed inset-0 overflow-y-auto">
@@ -24,14 +24,14 @@
             leave-from="opacity-100 scale-100"
             leave-to="opacity-0 scale-95"
           >
-            <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-4 text-left align-middle shadow-xl transition-all">
+            <DialogPanel class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-2xl transition-all border border-zinc-100">
               <!-- Header -->
-              <div class="bg-white px-4 py-3 sm:p-6 sm:py-3 border-b border-gray-200">
+              <div class="bg-white/50 backdrop-blur-xl px-4 py-4 border-b border-zinc-100 sticky top-0 z-10">
                 <div class="flex justify-between items-center">
-                  <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
+                  <DialogTitle as="h3" class="text-lg font-bold leading-6 text-zinc-900">
                     Comments
                   </DialogTitle>
-                  <button @click="closeModal" class="text-gray-400 hover:text-gray-500 focus:outline-none cursor-pointer">
+                  <button @click="closeModal" class="rounded-full p-1 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 focus:outline-none transition-all cursor-pointer">
                     <span class="sr-only">Close</span>
                     <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -40,44 +40,46 @@
                 </div>
               </div>
 
-              <!-- Post Content -->
-              <div class="px-4 py-3 border-b border-gray-200">
+              <!-- Post Content Summary -->
+              <div class="px-5 py-4 border-b border-zinc-50 bg-zinc-50/30">
                 <div class="flex justify-between items-start">
                   <div class="flex space-x-3 flex-1">
-                    <div v-if="post.posted_by?.profile_picture" class="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
+                    <div v-if="post.posted_by?.profile_picture" class="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden ring-2 ring-white shadow-sm">
                       <img 
                         :src="post.posted_by.profile_picture" 
                         :alt="post.posted_by.name"
                         class="h-full w-full object-cover"
                       />
                     </div>
-                    <div v-else class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm text-gray-600">
+                    <div v-else class="h-10 w-10 rounded-full bg-zinc-100 flex items-center justify-center text-sm font-bold text-zinc-400 ring-2 ring-white">
                       {{ post.posted_by?.name ? post.posted_by.name.charAt(0).toUpperCase() : 'U' }}
                     </div>
-                    <div class="flex-1">
-                      <p class="font-medium text-sm">{{ post.posted_by?.name || 'Anonymous' }}</p>
-                      <ShowMore :text="post.description"/>
-                      <p class="text-xs text-gray-400 mt-1">{{ post.formatted_created_at }}</p>
+                    <div class="flex-1 min-w-0">
+                      <p class="font-semibold text-sm text-zinc-900">{{ post.posted_by?.name || 'Anonymous' }}</p>
+                      <div class="text-sm text-zinc-600 mt-0.5 line-clamp-3">
+                        <ShowMore :text="post.description"/>
+                      </div>
+                      <p class="text-xs text-zinc-400 mt-1 font-medium">{{ post.formatted_created_at }}</p>
                     </div>
                   </div>
                   <!-- Three dots menu -->
-                  <div class="relative">
+                  <div class="relative ml-2">
                     <button 
                       @click.stop="showReportMenu = !showReportMenu" 
-                      class="p-1 rounded-full hover:bg-gray-100 focus:outline-none"
+                      class="p-1 rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 transition-colors focus:outline-none"
                     >
-                      <EllipsisVertical class="h-5 w-5 text-gray-500" />
+                      <EllipsisVertical class="h-5 w-5" />
                     </button>
                     
                     <!-- Dropdown menu -->
                     <div 
                       v-if="showReportMenu" 
-                      class="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg py-1 z-50"
+                      class="absolute right-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-zinc-100 py-1 z-50 overflow-hidden"
                       v-click-outside="() => showReportMenu = false"
                     >
                       <button 
                         @click="handleReportPost"
-                        class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                        class="block w-full text-left px-4 py-2.5 text-sm text-rose-500 hover:bg-rose-50 font-medium transition-colors cursor-pointer"
                       >
                         Report Post
                       </button>
@@ -86,11 +88,11 @@
                 </div>
 
                 <!-- Post Actions -->
-                <div class="flex justify-between items-center mt-3 pt-2 border-t border-gray-100">
+                <div class="flex justify-between items-center mt-3 pt-2">
                   <button 
                     @click.stop="handleLike"
-                    class="flex items-center space-x-1 text-sm text-gray-500 hover:text-red-500 transition-colors"
-                    :class="{ 'text-red-500': post.liked }"
+                    class="flex items-center space-x-1.5 text-sm font-medium transition-colors py-1 px-2 -ml-2 rounded-lg hover:bg-rose-50"
+                    :class="post.liked ? 'text-rose-500' : 'text-zinc-500 hover:text-rose-500'"
                   >
                     <svg 
                       xmlns="http://www.w3.org/2000/svg" 
@@ -98,11 +100,11 @@
                       :fill="post.liked ? 'currentColor' : 'none'" 
                       viewBox="0 0 24 24" 
                       stroke="currentColor"
+                      :stroke-width="post.liked ? 0 : 2"
                     >
                       <path 
                         stroke-linecap="round" 
                         stroke-linejoin="round" 
-                        stroke-width="2" 
                         d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
                       />
                     </svg>
@@ -111,8 +113,8 @@
                   
                   <button 
                     @click.stop="handleSave"
-                    class="flex items-center space-x-1 text-sm text-gray-500 hover:text-yellow-500 transition-colors"
-                    :class="{ 'text-yellow-500': post.saved }"
+                    class="flex items-center space-x-1.5 text-sm font-medium transition-colors py-1 px-2 rounded-lg hover:bg-violet-50"
+                    :class="post.saved ? 'text-violet-600' : 'text-zinc-500 hover:text-violet-600'"
                   >
                     <svg 
                       xmlns="http://www.w3.org/2000/svg" 
@@ -120,11 +122,11 @@
                       :fill="post.saved ? 'currentColor' : 'none'" 
                       viewBox="0 0 24 24" 
                       stroke="currentColor"
+                      :stroke-width="post.saved ? 0 : 2"
                     >
                       <path 
                         stroke-linecap="round" 
                         stroke-linejoin="round" 
-                        stroke-width="2" 
                         d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" 
                       />
                     </svg>
@@ -133,7 +135,7 @@
                   
                   <button 
                     @click.stop="handleShare"
-                    class="flex items-center space-x-1 text-sm text-gray-500 hover:text-blue-500 transition-colors"
+                    class="flex items-center space-x-1.5 text-sm font-medium text-zinc-500 hover:text-emerald-600 transition-colors py-1 px-2 -mr-2 rounded-lg hover:bg-emerald-50"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -144,16 +146,23 @@
               </div>
 
               <!-- Comments Section -->
-              <div class="h-[50vh] overflow-y-auto px-4 py-3">
-                <div v-if="loading" class="flex justify-center py-8">
-                  <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
+              <div class="h-[50vh] overflow-y-auto px-5 py-4 bg-white">
+                <div v-if="loading" class="flex flex-col items-center justify-center py-12 space-y-3">
+                  <div class="animate-spin rounded-full h-8 w-8 border-[3px] border-violet-100 border-t-violet-500"></div>
+                  <span class="text-xs font-medium text-zinc-400">Loading conversation...</span>
                 </div>
                 
-                <div v-else-if="comments.length === 0" class="text-center py-12 text-gray-500">
-                  No comments yet. Be the first to comment!
+                <div v-else-if="comments.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
+                  <div class="w-12 h-12 bg-zinc-50 rounded-full flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                  </div>
+                  <p class="text-zinc-500 text-sm font-medium">No comments yet.</p>
+                  <p class="text-zinc-400 text-xs mt-1">Start the conversation gently.</p>
                 </div>
                 
-                <div v-else class="space-y-4">
+                <div v-else class="space-y-5">
                   <CommentItem 
                     v-for="comment in comments" 
                     :key="comment.id" 
@@ -170,26 +179,26 @@
               </div>
 
               <!-- Comment Input -->
-              <div v-if="!post.archived" class="bg-gray-50 px-4 py-3 border-t border-gray-200">
-                <div class="flex items-center space-x-2">
-                  <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
+              <div v-if="!post.archived" class="bg-white px-5 py-4 border-t border-zinc-100 sticky bottom-0 z-10">
+                <div class="flex items-center space-x-3">
+                  <div v-if="profilePicture" class="h-9 w-9 rounded-full overflow-hidden bg-violet-100 ring-2 ring-white shadow-sm flex-shrink-0">
                     <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
                   </div>
-                  <div v-else class="flex-shrink-0 h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-xs text-gray-600">
+                  <div v-else class="flex-shrink-0 h-9 w-9 rounded-full bg-zinc-100 flex items-center justify-center text-xs font-bold text-zinc-400 ring-2 ring-white">
                     {{ userInitials }}
                   </div>
                   <div class="flex-1 relative">
                     <input
                       v-model="newComment"
                       type="text"
-                      placeholder="Write a comment..."
-                      class="block w-full rounded-full border-gray-300 pl-4 pr-10 py-2 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      placeholder="Share your thoughts..."
+                      class="block w-full rounded-full border border-zinc-200 bg-zinc-50 pl-5 pr-12 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 focus:bg-white transition-all"
                       @keyup.enter="addComment"
                     />
                     <button 
                       @click="addComment"
                       :disabled="!newComment.trim()"
-                      class="absolute right-2 top-1/2 transform -translate-y-1/2 text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                      class="absolute right-2 top-1/2 transform -translate-y-1/2 p-1.5 rounded-full text-violet-600 hover:bg-violet-50 disabled:opacity-40 disabled:hover:bg-transparent transition-all cursor-pointer"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />

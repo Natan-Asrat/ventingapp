@@ -1,6 +1,6 @@
 <template>
   <TransitionRoot as="template" :show="isOpen">
-    <Dialog as="div" class="relative z-50">
+    <Dialog as="div" class="relative z-50" @close="closeModal">
       <TransitionChild
         as="template"
         enter="ease-out duration-300"
@@ -10,7 +10,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-gray-500/75 transition-opacity" />
+        <div class="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity" />
       </TransitionChild>
 
       <div class="fixed inset-0 z-50 overflow-y-auto">
@@ -24,52 +24,60 @@
             leave-from="opacity-100 translate-y-0 sm:scale-100"
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
-            <DialogPanel class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl sm:p-6">
-              <!-- Close button -->
-              <div class="absolute top-0 right-0 pt-4 pr-4">
+            <DialogPanel class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-zinc-100">
+              <!-- Header -->
+              <div class="px-6 py-4 border-b border-zinc-100 bg-zinc-50/50 flex justify-between items-center sticky top-0 z-10">
+                <DialogTitle as="h3" class="text-lg font-bold leading-6 text-zinc-900">
+                  Report Decision Details
+                </DialogTitle>
                 <button
                   type="button"
-                  class="bg-white rounded-md text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  class="rounded-full p-1 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 focus:outline-none transition-all cursor-pointer"
                   @click="closeModal"
                 >
                   <span class="sr-only">Close</span>
-                  <X class="h-6 w-6 cursor-pointer" />
+                  <X class="h-5 w-5" />
                 </button>
               </div>
 
               <!-- Modal content -->
-              <div class="sm:flex sm:items-start">
-                <div class="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                  <DialogTitle as="h3" class="text-lg font-medium leading-6 text-gray-900">
-                    Report Decision Details
-                  </DialogTitle>
-                  
-                  <div class="mt-4 space-y-4">
+              <div class="px-6 py-6 max-h-[80vh] overflow-y-auto bg-white">
+                  <div class="space-y-6">
                     <!-- Report Reason -->
-                    <div v-if="reportDecision?.report?.reason" class="bg-white border border-gray-200 p-4 rounded-md">
-                      <h4 class="text-sm font-medium text-gray-500 mb-2">Report Reason</h4>
-                      <p class="text-sm text-gray-800">{{ reportDecision.report.reason }}</p>
+                    <div v-if="reportDecision?.report?.reason" class="bg-amber-50 border border-amber-100 p-4 rounded-xl">
+                      <div class="flex items-start">
+                         <div class="flex-shrink-0 mr-3 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                         </div>
+                         <div>
+                            <h4 class="text-sm font-bold text-amber-800 mb-1">Original Report Reason</h4>
+                            <p class="text-sm text-amber-700 leading-relaxed">{{ reportDecision.report.reason }}</p>
+                         </div>
+                      </div>
                     </div>
 
                     <ReportDecisionDetail :report-decision="reportDecision" />
-                    <ReportDecisionPost :report-decision="reportDecision" />
-                    <ReportDecisionTransaction :report-decision="reportDecision" />
-                    <ReportDecisionConnection :report-decision="reportDecision" />
-                    <ReportDecisionMessage :report-decision="reportDecision" />
-
-                    <!-- Close Button -->
-                    <div class="mt-5 sm:mt-6">
-                      <button
-                        type="button"
-                        class="inline-flex justify-center w-full rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm cursor-pointer"
-                        @click="closeModal"
-                      >
-                        Close
-                      </button>
+                    
+                    <div class="border-t border-zinc-100 pt-6">
+                        <ReportDecisionPost :report-decision="reportDecision" />
+                        <ReportDecisionTransaction :report-decision="reportDecision" />
+                        <ReportDecisionConnection :report-decision="reportDecision" />
+                        <ReportDecisionMessage :report-decision="reportDecision" />
                     </div>
-
                   </div>
-                </div>
+              </div>
+              
+              <!-- Footer -->
+              <div class="px-6 py-4 bg-zinc-50 border-t border-zinc-100 flex justify-end">
+                  <button
+                    type="button"
+                    class="inline-flex justify-center rounded-full border border-zinc-300 bg-white px-5 py-2 text-sm font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-500 transition-colors cursor-pointer"
+                    @click="closeModal"
+                  >
+                    Close
+                  </button>
               </div>
             </DialogPanel>
           </TransitionChild>

@@ -1,24 +1,26 @@
 <template>
     <!-- Description Field -->
     <div>
-        <div class="flex items-center justify-between">
-            <label for="description" class="block text-sm font-medium text-gray-700 mb-1">
-                What happened? <span class="text-red-500">*</span>
+        <div class="flex items-center justify-between mb-2">
+            <label for="description" class="block text-sm font-bold text-zinc-700">
+                Description <span class="text-rose-500">*</span>
             </label>
-            <span class="text-xs text-gray-500">Required</span>
         </div>
-        <div class="mt-1">
+        <div class="relative">
             <textarea
                 id="description"
                 name="description"
-                rows="4"
+                rows="6"
                 :value="newPostStore.post.description"
                 required
                 @invalid="e => e.target.setCustomValidity('This field is required')"
                 @input="e => {e.target.setCustomValidity(''); newPostStore.setPostDescription(e.target.value)}"
-                class="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-3 border placeholder-gray-400"
+                class="block w-full rounded-xl border-zinc-200 bg-zinc-50 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 sm:text-sm p-4 placeholder-zinc-400 transition-all resize-y"
                 placeholder="Tell us everything..."
             ></textarea>
+            <div class="absolute bottom-3 right-3 text-xs text-zinc-400 font-medium">
+               Markdown supported
+            </div>
         </div>
     </div>
 </template>

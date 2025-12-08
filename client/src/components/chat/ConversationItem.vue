@@ -1,26 +1,26 @@
 <template>
     <li 
-        class="py-4 hover:bg-gray-50 px-2 rounded-lg cursor-pointer"
+        class="py-3 px-3 rounded-xl hover:bg-zinc-50 cursor-pointer transition-all duration-200 group border border-transparent hover:border-zinc-100"
         @click="$emit('select-conversation', conversation)"
     >
         <div class="flex items-center">
-            <div class="flex-shrink-0 mr-4">
-            <!-- Show conversation logo for groups or when explicitly showing conversation details -->
-                <div v-if="conversation.is_group || conversation.name" class="h-10 w-10 rounded-full overflow-hidden bg-indigo-100 flex items-center justify-center">
+            <div class="flex-shrink-0 mr-4 relative">
+                <!-- Avatar Logic -->
+                <div v-if="conversation.is_group || conversation.name" class="h-12 w-12 rounded-full overflow-hidden bg-violet-100 flex items-center justify-center ring-2 ring-white shadow-sm">
                     <img 
                         v-if="conversation.logo" 
                         :src="conversation.logo" 
                         :alt="conversation.name || 'Group'"
                         class="h-full w-full object-cover"
                     >
-                    <span v-else class="text-indigo-600 font-medium">
+                    <span v-else class="text-violet-600 font-bold text-lg">
                         {{ conversation.name ? conversation.name.charAt(0).toUpperCase() : 'G' }}
                     </span>
                 </div>
-                <!-- Show user profile picture for direct messages -->
+                
                 <div 
                     v-else-if="conversation.other_user_list?.length > 0 && conversation.other_user_list[0]?.user?.profile_picture" 
-                    class="h-10 w-10 rounded-full overflow-hidden"
+                    class="h-12 w-12 rounded-full overflow-hidden ring-2 ring-white shadow-sm"
                 >
                     <img 
                         :src="conversation.other_user_list[0].user.profile_picture" 
@@ -28,17 +28,22 @@
                         class="h-full w-full object-cover"
                     >
                 </div>
-                <!-- Fallback to user initial -->
-                <div v-else class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium">
+                
+                <div v-else class="h-12 w-12 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 font-bold text-lg ring-2 ring-white shadow-sm">
                     {{ 
                     conversation.other_user_list?.length > 0 ? 
                     conversation.other_user_list[0].user.name.charAt(0).toUpperCase() : 'U'
                     }}
                 </div>
+                
+                <!-- Online Status (Optional - if available) -->
+                <!-- <span class="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-emerald-400 ring-2 ring-white"></span> -->
             </div>
+            
             <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between">
-                    <p :class="['text-sm truncate', conversation.new_messages_count > 0 ? 'font-bold text-gray-900' : 'font-light text-gray-900']">
+                <div class="flex items-center justify-between mb-0.5">
+                    <p class="text-sm font-semibold truncate transition-colors group-hover:text-violet-700" 
+                       :class="conversation.new_messages_count > 0 ? 'text-zinc-900' : 'text-zinc-800'">
                         {{ 
                             conversation.name || 
                             (conversation.other_user_list?.length > 0 ? 
@@ -46,49 +51,60 @@
                             'New Chat')
                         }}
                     </p>
+                    <p v-if="conversation.last_message_list.length > 0" class="text-xs text-zinc-400 font-medium whitespace-nowrap ml-2">
+                        {{ conversation.last_message_list[0].created_since }}
+                    </p>
                 </div>
-                <p :class="['text-sm truncate', conversation.new_messages_count > 0 ? 'font-medium text-gray-900' : 'text-gray-500']">
-                    {{ conversation.last_message || 'No messages yet' }}
-                </p>
+                <div class="flex justify-between items-center">
+                    <p :class="['text-xs truncate pr-2', conversation.new_messages_count > 0 ? 'font-semibold text-zinc-800' : 'text-zinc-500 group-hover:text-zinc-600']">
+                        <span v-if="conversation.last_message_list?.[0]?.user?.id === userStore.user?.id" class="text-zinc-400">You: </span>
+                        {{ conversation.last_message || 'Start a conversation' }}
+                    </p>
+                    <span v-if="conversation.new_messages_count > 0" class="bg-violet-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex-shrink-0 min-w-[1.25rem] text-center">
+                        {{ conversation.new_messages_count > 99 ? '99+' : conversation.new_messages_count }}
+                    </span>
+                </div>
             </div>
-            <div class="flex flex-col items-end">
-                <p v-if="conversation.last_message_list.length > 0" class="text-xs text-gray-500">
-                    {{ conversation.last_message_list[0].created_since }}
-                </p>
-                <span v-if="conversation.new_messages_count > 0" class="bg-indigo-600 text-white text-xs font-medium px-2 py-0.5 rounded-full ml-2">
-                    {{ conversation.new_messages_count > 99 ? '99+' : conversation.new_messages_count }}
-                </span>
+            
+            <!-- Context Menu Trigger -->
+            <div class="ml-2 relative">
+                <DropdownMenu>
+                    <template #trigger>
+                        <div class="p-1.5 rounded-full text-zinc-300 hover:text-violet-600 hover:bg-violet-50 transition-colors">
+                            <EllipsisVertical class="h-5 w-5"/>
+                        </div>
+                    </template>
+                    
+                    <div class="py-1">
+                        <button 
+                            v-if="conversation.my_membership_list[0]?.category !== 'primary'"
+                            @click.stop="chatStore.moveConversation(conversation, 'primary')"
+                            class="flex cursor-pointer w-full items-center px-4 py-2 text-xs font-medium text-zinc-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                        >
+                            <ArrowRight class="mr-2 h-3.5 w-3.5" />
+                            <span>Move to Primary</span>
+                            <Check v-if="conversation.my_membership_list[0]?.category === 'primary'" class="ml-auto h-3.5 w-3.5 text-violet-600" />
+                        </button>
+                        <button 
+                            v-if="conversation.my_membership_list[0]?.category !== 'secondary'"
+                            @click.stop="chatStore.moveConversation(conversation, 'secondary')"
+                            class="flex cursor-pointer w-full items-center px-4 py-2 text-xs font-medium text-zinc-700 hover:bg-violet-50 hover:text-violet-700 transition-colors"
+                        >
+                            <ArrowRight class="mr-2 h-3.5 w-3.5" />
+                            <span>Move to Secondary</span>
+                            <Check v-if="conversation.my_membership_list[0]?.category === 'secondary'" class="ml-auto h-3.5 w-3.5 text-violet-600" />
+                        </button>
+                        <div class="h-px bg-zinc-100 my-1"></div>
+                        <button 
+                            @click.stop="chatStore.archiveConversation(conversation)"
+                            class="flex cursor-pointer w-full items-center px-4 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                        >
+                            <Archive class="mr-2 h-3.5 w-3.5" />
+                            <span>Archive</span>
+                        </button>
+                    </div>
+                </DropdownMenu>
             </div>
-            <DropdownMenu>
-                <template #trigger>
-                    <EllipsisVertical class="h-8 py-2 w-8 text-gray-500 cursor-pointer"/>
-                </template>
-                <button 
-                    v-if="conversation.my_membership_list[0]?.category !== 'primary'"
-                    @click.stop="chatStore.moveConversation(conversation, 'primary')"
-                    class="flex cursor-pointer w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                    <ArrowRight class="mr-2 h-4 w-4" />
-                    <span>Move to Primary</span>
-                    <Check v-if="conversation.my_membership_list[0]?.category === 'primary'" class="ml-auto h-4 w-4 text-indigo-600" />
-                </button>
-                <button 
-                    v-if="conversation.my_membership_list[0]?.category !== 'secondary'"
-                    @click.stop="chatStore.moveConversation(conversation, 'secondary')"
-                    class="flex cursor-pointer w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                    <ArrowRight class="mr-2 h-4 w-4" />
-                    <span>Move to Secondary</span>
-                    <Check v-if="conversation.my_membership_list[0]?.category === 'secondary'" class="ml-auto h-4 w-4 text-indigo-600" />
-                </button>
-                <button 
-                    @click.stop="chatStore.archiveConversation(conversation)"
-                    class="flex cursor-pointer w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                    <Archive class="mr-2 h-4 w-4" />
-                    <span>Archive</span>
-                </button>
-            </DropdownMenu>
         </div>
     </li>
 </template>
@@ -97,8 +113,11 @@
 import { EllipsisVertical, Archive, ArrowRight, Check } from 'lucide-vue-next';
 import DropdownMenu from '@/components/common/DropdownMenu.vue';
 import { useChatStore } from '@/stores/chat';
+import { useUserStore } from '@/stores/user';
 
 const chatStore = useChatStore();
+const userStore = useUserStore();
+
 defineProps({
     conversation: {
         type: Object,

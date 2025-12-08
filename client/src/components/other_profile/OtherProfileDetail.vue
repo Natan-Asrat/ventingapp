@@ -1,100 +1,65 @@
 <template>
     <div class="w-full md:w-1/3">
-        <div class="bg-white shadow sm:rounded-lg overflow-hidden sticky top-6">
-            <div class="px-4 py-5 sm:px-6 border-b border-gray-200">
-                <h3 class="text-lg leading-6 font-medium text-gray-900">Profile Information</h3>
-            </div>
+        <div class="bg-white shadow-sm border border-zinc-100 rounded-2xl sticky top-24 transition-shadow hover:shadow-md max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar">
+            <!-- Decorative Header Background -->
+            <div class="h-24 bg-gradient-to-r from-violet-50 via-purple-50 to-fuchsia-50 border-b border-zinc-100/50"></div>
             
-            <div class="px-4 py-5 sm:p-6">
-                <div class="space-y-6">
-                    <!-- Profile Picture and Name -->
-                    <div class="flex items-start space-x-4">
-                        <div class="flex-shrink-0">
-                            <div v-if="profile?.profile_picture" class="h-24 w-24 rounded-full overflow-hidden bg-gray-200">
-                                <img :src="profile?.profile_picture" :alt="profile?.name" class="h-full w-full object-cover">
-                            </div>
-                            <div v-else class="h-24 w-24 rounded-full bg-indigo-100 flex items-center justify-center">
-                                <span class="text-3xl font-medium text-indigo-600">{{ userInitials }}</span>
-                            </div>
-                        </div>
-                        <div class="flex-1">
-                            <h2 class="text-2xl font-semibold text-gray-900">{{ profile?.name || 'User' }}</h2>
-                            <p class="text-sm text-gray-500">@{{ profile?.username }}</p>
-                            <p class="mt-1 text-sm text-gray-500">Joined {{ profile?.date_joined_since }}</p>
+            <div class="px-6 pb-6 relative">
+                <!-- Profile Header -->
+                <div class="flex items-end -mt-10 mb-5">
+                    <div class="h-20 w-20 rounded-full overflow-hidden ring-4 ring-white shadow-lg bg-white flex-shrink-0 z-10">
+                        <img v-if="profile?.profile_picture" :src="profile?.profile_picture" :alt="profile?.name" class="h-full w-full object-cover">
+                        <div v-else class="h-full w-full bg-zinc-100 flex items-center justify-center">
+                            <span class="text-2xl font-bold text-zinc-400">{{ userInitials }}</span>
                         </div>
                     </div>
                     
-                    <!-- User Stats -->
-                    <div class="grid grid-cols-3 gap-4 text-center border-t border-gray-200 pt-4">
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Posts</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ postCount }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Followers</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ profile?.followers || 0 }}</p>
-                        </div>
-                        <div>
-                            <p class="text-sm font-medium text-gray-500">Likes</p>
-                            <p class="text-lg font-semibold text-gray-900">{{ profile?.post_likes || 0 }}</p>
-                        </div>
+                    <div class="ml-4 mb-1 flex-1 min-w-0">
+                        <h2 class="text-xl font-bold text-zinc-900 tracking-tight leading-tight truncate">{{ profile?.name || 'User' }}</h2>
+                        <p class="text-sm font-medium text-zinc-500 truncate">@{{ profile?.username }}</p>
                     </div>
-                    <div class="space-y-2">
-                        <button
-                            v-if="!isCurrentUser"
-                            @click="$emit('follow')"
-                            class="w-full py-2 px-4 rounded-md shadow-sm text-sm font-medium transition-colors"
-                            :class="{
-                                // Connected
-                                'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer': profile.connected,
+                </div>
 
-                                // Pending
-                                'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 cursor-pointer': profile.pending_connection && !profile.rejected_connection,
+                <div class="flex items-center mb-6 text-xs text-zinc-400 font-medium">
+                    <Calendar class="w-3.5 h-3.5 mr-1.5" />
+                    Joined {{ profile?.date_joined_since }}
+                </div>
 
-                                // Rejected
-                                'bg-red-100 text-red-700 cursor-not-allowed': profile.rejected_connection,
-
-                                // Default (not connected)
-                                'bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer':
-                                (!profile.connected &&
-                                !profile.pending_connection &&
-                                !profile.rejected_connection) ||
-                                profile.removed_connection,
-
-                                // Disabled state
-                                'disabled:opacity-50 disabled:cursor-not-allowed': 
-                                profile.rejected_connection || profile.banned_connection
-                            }"
-                            :disabled="profile.rejected_connection || profile.banned_connection"
-                        >
-                            <template v-if="profile.connected">
-                                Following
-                            </template>
-
-                            <template v-else-if="profile.pending_connection">
-                                Pending
-                            </template>
-
-                            <template v-else-if="profile.banned_connection">
-                                Banned
-                            </template>
-
-                            <template v-else-if="profile.rejected_connection">
-                                Rejected
-                            </template>
-
-                            <template v-else>
-                                Follow
-                            </template>
-                        </button>
-                        <!-- Back to Home Button -->
-                        <router-link 
-                            to="/home"
-                            class="block mt-4 text-center text-sm font-medium text-indigo-600 hover:text-indigo-500"
-                        >
-                            Back to Feed
-                        </router-link>
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-3 gap-2 mb-6">
+                    <div class="bg-zinc-50 rounded-xl p-3 text-center border border-zinc-100/50 hover:border-violet-100 transition-colors">
+                        <p class="text-lg font-bold text-zinc-900">{{ postCount }}</p>
+                        <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wide">Posts</p>
                     </div>
+                    <div class="bg-zinc-50 rounded-xl p-3 text-center border border-zinc-100/50 hover:border-violet-100 transition-colors">
+                        <p class="text-lg font-bold text-zinc-900">{{ profile?.followers || 0 }}</p>
+                        <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wide">Followers</p>
+                    </div>
+                    <div class="bg-zinc-50 rounded-xl p-3 text-center border border-zinc-100/50 hover:border-violet-100 transition-colors">
+                        <p class="text-lg font-bold text-zinc-900">{{ profile?.post_likes || 0 }}</p>
+                        <p class="text-[10px] uppercase font-bold text-zinc-400 tracking-wide">Likes</p>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="space-y-3 pt-2 border-t border-zinc-50">
+                    <button
+                        v-if="!isCurrentUser"
+                        @click="$emit('follow')"
+                        class="w-full py-2.5 px-4 rounded-full shadow-sm text-sm font-semibold transition-all transform active:scale-[0.98] flex items-center justify-center gap-2"
+                        :class="buttonClasses"
+                        :disabled="profile.rejected_connection || profile.banned_connection"
+                    >
+                        <component :is="buttonIcon" class="w-4 h-4 stroke-[2.5]" />
+                        {{ buttonText }}
+                    </button>
+                    
+                    <router-link 
+                        to="/feed"
+                        class="flex w-full items-center justify-center px-4 py-2.5 border border-zinc-200 shadow-sm text-sm font-semibold rounded-full text-zinc-700 bg-white hover:bg-zinc-50 hover:border-zinc-300 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+                    >
+                        Back to Feed
+                    </router-link>
                 </div>
             </div>
         </div>
@@ -104,6 +69,8 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useUserStore } from '@/stores/user';
+import { Calendar, UserPlus, UserCheck, Clock, UserX, Check } from 'lucide-vue-next';
+
 const userStore = useUserStore();
 // Computed
 const currentUser = computed(() => userStore.user);
@@ -132,4 +99,47 @@ const userInitials = computed(() => {
 const isCurrentUser = computed(() => {
   return currentUser.value && props.profile && currentUser.value.id === props.profile.id;
 });
+
+const buttonClasses = computed(() => {
+    const p = props.profile;
+    if (p.connected) return 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200/50';
+    if (p.pending_connection) return 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200/50';
+    if (p.rejected_connection || p.banned_connection) return 'bg-rose-50 text-rose-400 cursor-not-allowed border border-rose-100';
+    
+    // Default (Not Connected)
+    return 'bg-zinc-900 text-white hover:bg-violet-600 hover:shadow-violet-500/20 border border-transparent';
+});
+
+const buttonText = computed(() => {
+    const p = props.profile;
+    if (p.connected) return 'Following';
+    if (p.pending_connection) return 'Pending';
+    if (p.banned_connection) return 'Banned';
+    if (p.rejected_connection) return 'Rejected';
+    return 'Follow';
+});
+
+const buttonIcon = computed(() => {
+    const p = props.profile;
+    if (p.connected) return UserCheck;
+    if (p.pending_connection) return Clock;
+    if (p.banned_connection || p.rejected_connection) return UserX;
+    return UserPlus;
+});
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #e4e4e7;
+  border-radius: 20px;
+}
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background-color: #d4d4d8;
+}
+</style>

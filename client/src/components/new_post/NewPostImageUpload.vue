@@ -1,52 +1,61 @@
 <template>
     <!-- Image Upload -->
     <div>
-        <div class="flex items-center justify-between">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                Did you capture it?
+        <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-bold text-zinc-700">
+                Image
             </label>
-            <span class="text-xs text-gray-500">Optional</span>
+            <span class="text-xs font-medium text-zinc-400 bg-zinc-100 px-2 py-0.5 rounded-full">Optional</span>
         </div>
         <div 
             @click="boxClicked" 
-            :class="{'cursor-pointer': !newPostStore.imagePreview}"
-            class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
+            :class="[
+              'mt-1 flex justify-center px-6 pt-10 pb-10 border-2 border-dashed rounded-xl transition-all duration-300',
+              !newPostStore.imagePreview 
+                ? 'border-zinc-300 hover:border-violet-400 hover:bg-violet-50/30 cursor-pointer group' 
+                : 'border-zinc-200 bg-zinc-50'
+            ]"
         >
-            <div class="space-y-1 text-center">
+            <div class="space-y-2 text-center">
                 <template v-if="!newPostStore.imagePreview">
-                    <div>
-                    <Image class="mx-auto h-12 w-12 text-gray-400" />
-                    <div class="flex text-sm text-gray-600">
-                        <label
-                        for="file-upload"
-                        class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500"
-                        >
-                        <span>Upload Image</span>
-                        <input
-                            ref="fileInput"
-                            id="file-upload"
-                            name="file-upload"
-                            type="file"
-                            class="sr-only"
-                            accept="image/*"
-                            @change="newPostStore.handleImageUpload"
-                        />
-                        </label>
-                        <p class="pl-1">or drag and drop</p>
-                    </div>
-                    <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                    <div class="flex flex-col items-center">
+                        <div class="h-12 w-12 bg-zinc-100 rounded-full flex items-center justify-center mb-3 group-hover:bg-violet-100 transition-colors">
+                            <Image class="h-6 w-6 text-zinc-400 group-hover:text-violet-600 transition-colors" />
+                        </div>
+                        <div class="flex text-sm text-zinc-600">
+                            <label
+                            for="file-upload"
+                            class="relative cursor-pointer rounded-md font-semibold text-violet-600 hover:text-violet-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-violet-500"
+                            >
+                            <span>Upload a file</span>
+                            <input
+                                ref="fileInput"
+                                id="file-upload"
+                                name="file-upload"
+                                type="file"
+                                class="sr-only"
+                                accept="image/*"
+                                @change="newPostStore.handleImageUpload"
+                            />
+                            </label>
+                            <p class="pl-1">or drag and drop</p>
+                        </div>
+                        <p class="text-xs text-zinc-500">PNG, JPG, GIF up to 10MB</p>
                     </div>
                 </template>
                 <template v-else>
-                    <div class="relative">
-                    <img :src="newPostStore.imagePreview" class="max-h-64 mx-auto rounded-md" alt="Preview" />
-                    <button
-                        type="button"
-                        @click.stop="removeImage"
-                        class="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 cursor-pointer"
-                    >
-                        <X class="h-4 w-4" />
-                    </button>
+                    <div class="relative group/preview inline-block">
+                        <img :src="newPostStore.imagePreview" class="max-h-80 mx-auto rounded-lg shadow-sm" alt="Preview" />
+                        <div class="absolute inset-0 bg-black/0 group-hover/preview:bg-black/10 transition-colors rounded-lg flex items-center justify-center">
+                             <button
+                                type="button"
+                                @click.stop="removeImage"
+                                class="bg-white text-rose-500 rounded-full p-2 shadow-lg hover:bg-rose-50 transform scale-0 group-hover/preview:scale-100 transition-all duration-200 cursor-pointer"
+                                title="Remove image"
+                            >
+                                <X class="h-5 w-5" />
+                            </button>
+                        </div>
                     </div>
                 </template>
             </div>

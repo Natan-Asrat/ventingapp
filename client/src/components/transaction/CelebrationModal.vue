@@ -10,7 +10,7 @@
         leave-from="opacity-100"
         leave-to="opacity-0"
       >
-        <div class="fixed inset-0 bg-black/50 transition-opacity" />
+        <div class="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm transition-opacity" />
       </TransitionChild>
 
       <div class="fixed inset-0 z-10 overflow-y-auto">
@@ -24,35 +24,38 @@
             leave-from="opacity-100 translate-y-0 sm:scale-100"
             leave-to="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
           >
-            <DialogPanel class="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6">
+            <DialogPanel class="relative transform overflow-hidden rounded-2xl bg-white px-4 pb-6 pt-6 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-sm sm:p-6 border border-zinc-100">
               <div>
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                  <PartyPopper class="h-6 w-6 text-green-600" />
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-violet-100 ring-4 ring-violet-50">
+                  <PartyPopper class="h-8 w-8 text-violet-600" />
                 </div>
-                <div class="mt-3 text-center sm:mt-5">
-                  <DialogTitle as="h3" class="text-base font-semibold leading-6 text-gray-900">
+                <div class="mt-5 text-center">
+                  <DialogTitle as="h3" class="text-xl font-bold leading-6 text-zinc-900">
                     Congratulations! 🎉
                   </DialogTitle>
-                  <div class="mt-2">
-                    <p class="text-sm text-gray-500">
+                  <div class="mt-3">
+                    <p class="text-sm text-zinc-500">
                       <template v-if="transaction">
-                        You received {{ transaction.connects }} connects
+                        You successfully received <span class="font-bold text-zinc-800">{{ transaction.connects }} connects</span>
                         <template v-if="transaction.subscription_id">
-                          this month
+                          for your subscription renewal
                         </template>
                         <br>
-                        <span class="text-xs text-gray-400">
+                        <span class="text-xs text-zinc-400 mt-2 block font-medium uppercase tracking-wide">
                           {{ transaction.formatted_created_at }}
                         </span>
+                      </template>
+                      <template v-else>
+                          Operation successful!
                       </template>
                     </p>
                   </div>
                 </div>
               </div>
-              <div class="mt-5 sm:mt-6">
+              <div class="mt-6">
                 <button
                   type="button"
-                  class="inline-flex w-full justify-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 cursor-pointer"
+                  class="inline-flex w-full justify-center rounded-full bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:bg-violet-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600 cursor-pointer transition-all hover:-translate-y-0.5"
                   @click="closeModal"
                 >
                   Continue
@@ -87,14 +90,13 @@ const emit = defineEmits(['close']);
 
 const closeModal = () => {
   transactionStore.celebrate();
-  
   emit('close');
 };
 
 // Close modal when transaction is cleared
 watch(() => props.transaction, (newVal) => {
   if (!newVal) {
-    closeModal();
+    emit('close');
   }
 });
 </script>

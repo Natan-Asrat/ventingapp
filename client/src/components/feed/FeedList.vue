@@ -1,21 +1,31 @@
 <template>
   <div>
-    <main :class="[ user_id == null && 'pb-16 md:pt-0 md:pb-0', user_id == null && postStore.searchProfileResults.length == 0 && 'pt-16']">
-      <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:max-w-4xl lg:px-8 py-6">
+    <main :class="[ user_id == null && 'pb-24 md:pt-0 md:pb-0', user_id == null && postStore.searchProfileResults.length == 0 && 'pt-16 md:pt-6']">
+      <div class="max-w-xl mx-auto px-0 sm:px-4 py-6">
         <!-- Posts Feed -->
-        <div v-if="loading" class="flex justify-center py-8">
-          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div v-if="loading" class="flex flex-col items-center justify-center py-20 space-y-4">
+          <div class="animate-spin rounded-full h-8 w-8 border-[3px] border-violet-100 border-t-violet-500"></div>
+          <span class="text-sm font-medium text-zinc-400 animate-pulse tracking-wide">Listening for voices...</span>
         </div>
         
-        <div v-else-if="posts.length === 0" class="text-center py-12">
-          <p class="text-gray-500">{{ noPostPlaceholder }}</p>
+        <div v-else-if="posts.length === 0" class="flex flex-col items-center justify-center py-24 px-6 text-center">
+            <div class="bg-zinc-100 rounded-full p-6 mb-4">
+                <svg class="w-10 h-10 text-zinc-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+            </div>
+            <p class="text-zinc-500 font-medium text-lg">{{ noPostPlaceholder }}</p>
+            <p class="text-zinc-400 text-sm mt-2">Be the first to share your story.</p>
         </div>
         
         <div v-else class="space-y-6" id="post-list">
-            <h2 v-if="postStore.isInSearch" class="text-lg font-medium text-gray-900">
-                Search Results
-                <span v-if="postStore.searchQuery" class="text-indigo-600">"{{ postStore.searchQuery }}"</span>
-            </h2>          
+            <div v-if="postStore.isInSearch" class="px-4 sm:px-0 mb-6">
+                <h2 class="text-lg font-medium text-zinc-800 tracking-tight flex items-center gap-2">
+                    Finding results for
+                    <span v-if="postStore.searchQuery" class="text-violet-600 bg-violet-50 px-3 py-0.5 rounded-full font-semibold">"{{ postStore.searchQuery }}"</span>
+                </h2>
+            </div>
+                      
             <FeedItem
                 v-for="post in posts"
                 :key="post.id"
@@ -33,13 +43,16 @@
             />
           
             <!-- Load More Button -->
-            <div v-if="hasNextPage || postStore.showRecommended" class="flex justify-center py-4">
+            <div v-if="hasNextPage || postStore.showRecommended" class="flex justify-center py-10 pb-16">
                 <button 
                     @click="loadMore" 
                     :disabled="loadingMore"
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    class="cursor-pointer group relative px-8 py-3 bg-white border border-zinc-200 text-zinc-600 font-medium rounded-full shadow-sm hover:shadow hover:border-violet-200 hover:text-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
                 >
-                    {{ loadingMore ? 'Loading...' : 'Load More' }}
+                    <span class="flex items-center gap-2.5">
+                        <span v-if="loadingMore" class="animate-spin h-4 w-4 border-2 border-violet-500 border-t-transparent rounded-full"></span>
+                        <span class="tracking-wide text-sm">{{ loadingMore ? 'Loading stories...' : 'Read More Stories' }}</span>
+                    </span>
                 </button>
           </div>
         </div>

@@ -1,27 +1,28 @@
 <template>
     <!-- Connection Details -->
-    <div v-if="reportDecision?.report?.reported_connection" class="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div class="p-4 border-b border-gray-200">
-            <h4 class="text-sm font-medium text-gray-500 mb-3">Reported Connection</h4>
-            
+    <div v-if="reportDecision?.report?.reported_connection" class="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm">
+        <div class="px-4 py-3 bg-zinc-50 border-b border-zinc-100">
+            <h4 class="text-xs font-bold text-zinc-500 uppercase tracking-wide">Reported Connection</h4>
+        </div>
+        <div class="p-5">
             <!-- Initiating User -->
-            <div class="flex items-start space-x-3 mb-4">
-                <div v-if="connectionStore.getOtherUser(reportDecision.report.reported_connection, userStore.user).profile_picture" class="flex-shrink-0 h-10 w-10 rounded-full overflow-hidden">
+            <div class="flex items-center space-x-3 mb-4">
+                <div v-if="connectionStore.getOtherUser(reportDecision.report.reported_connection, userStore.user).profile_picture" class="flex-shrink-0 h-12 w-12 rounded-full overflow-hidden ring-2 ring-zinc-50">
                     <img 
                         :src="connectionStore.getOtherUser(reportDecision.report.reported_connection, userStore.user).profile_picture" 
                         :alt="connectionStore.getOtherUser(reportDecision.report.reported_connection, userStore.user).name || 'User'"
                         class="h-full w-full object-cover"
                     />
                 </div>
-                <div v-else class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-sm text-gray-600">
+                <div v-else class="h-12 w-12 rounded-full bg-violet-100 flex items-center justify-center text-base font-bold text-violet-600 ring-2 ring-zinc-50">
                     {{ (connectionStore.getOtherUser(reportDecision.report.reported_connection, userStore.user)?.name || 'U').charAt(0).toUpperCase() }}
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900">
+                    <p class="text-base font-bold text-zinc-900">
                         {{ connectionStore.getOtherUser(reportDecision.report.reported_connection, userStore.user)?.name || 'User' }}
-                        <span class="text-xs font-normal text-gray-500">
+                    </p>
+                    <p class="text-sm font-medium text-zinc-500">
                         @{{ connectionStore.getOtherUser(reportDecision.report.reported_connection, userStore.user)?.username }}
-                        </span>
                     </p>
                 </div>
             </div>

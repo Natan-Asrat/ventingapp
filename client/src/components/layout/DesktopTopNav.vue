@@ -1,81 +1,89 @@
 <template>
-  <nav class="hidden md:block bg-white shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <nav class="hidden md:block bg-white/90 backdrop-blur-md border-b border-zinc-100 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
-        <div class="flex-shrink-0 flex items-center">
-          <h1 class="text-xl font-bold text-indigo-600">VentingApp</h1>
+        <div class="flex-shrink-0 flex items-center gap-2 cursor-pointer" @click="$router.push({name: 'Feed'})">
+           <div class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center text-violet-600 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+           </div>
+           <h1 class="text-xl font-bold text-zinc-800 tracking-tight">Venting<span class="text-violet-600">App</span></h1>
         </div>
         
-        <div class="flex items-center space-x-6">
+        <div class="flex items-center space-x-2 lg:space-x-4">
           <!-- Search Bar -->
-          <div class="flex-1 max-w-xl px-4">
-            <div class="relative">
+          <div class="flex-1 w-64 lg:w-80 px-2">
+            <div class="relative group">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search class="h-5 w-5 text-gray-400" />
+                <Search class="h-4 w-4 text-zinc-400 group-focus-within:text-violet-500 transition-colors" />
               </div>
               <input
                 type="text"
                 v-model="searchQuery"
                 @keyup.enter="handleSearch"
-                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="Search..."
+                class="block w-full pl-9 pr-8 py-2 border border-zinc-200 rounded-full leading-5 bg-zinc-50/50 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 focus:bg-white transition-all sm:text-sm"
+                placeholder="Find stories or people..."
               />
               <button
                 v-if="postStore.isInSearch"
                 @click="closeSearch"
                 class="absolute cursor-pointer inset-y-0 right-0 pr-3 flex items-center"
               >
-                <X class="h-5 w-5 text-gray-400 hover:text-gray-500" />
+                <X class="h-4 w-4 text-zinc-400 hover:text-zinc-600" />
               </button>
             </div>
           </div>
-          <router-link
-            :to="{name: 'Feed'}"
-            class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors"
-            active-class="text-indigo-600 border-b-2 border-indigo-600"
-          >
-            Home
-          </router-link>
-          
-          <router-link
-            :to="{name: 'Notifications'}"
-            class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors flex items-center"
-            active-class="text-indigo-600 border-b-2 border-indigo-600"
-          >
-            <Bell class="h-5 w-5 mr-1" />
-            Notifications
-          </router-link>
-          
-          <router-link
-            :to="{name: 'History'}"
-            class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors flex items-center"
-            active-class="text-indigo-600 border-b-2 border-indigo-600"
-          >
-            <Clock class="h-5 w-5 mr-1" />
-            History
-          </router-link>
-          
-          <router-link
-            :to="{name: 'Chat'}"
-            class="px-3 py-2 text-sm font-medium text-gray-700 hover:text-indigo-600 transition-colors flex items-center"
-            active-class="text-indigo-600 border-b-2 border-indigo-600"
-          >
-            <MessageCircleMore class="h-5 w-5 mr-1" />
-            Messages
-          </router-link>
+
+          <div class="flex items-center space-x-1 border-r border-zinc-100 pr-4 mr-1">
+             <router-link
+                :to="{name: 'Feed'}"
+                class="p-2 rounded-full text-zinc-400 hover:text-violet-600 hover:bg-violet-50 transition-all cursor-pointer"
+                active-class="text-violet-600 bg-violet-50"
+                title="Home"
+              >
+                <Home class="h-5 w-5" />
+              </router-link>
+              
+              <router-link
+                :to="{name: 'Notifications'}"
+                class="p-2 rounded-full text-zinc-400 hover:text-violet-600 hover:bg-violet-50 transition-all cursor-pointer relative"
+                active-class="text-violet-600 bg-violet-50"
+                title="Notifications"
+              >
+                <Bell class="h-5 w-5" />
+              </router-link>
+              
+              <router-link
+                :to="{name: 'History'}"
+                class="p-2 rounded-full text-zinc-400 hover:text-violet-600 hover:bg-violet-50 transition-all cursor-pointer"
+                active-class="text-violet-600 bg-violet-50"
+                title="History"
+              >
+                <Clock class="h-5 w-5" />
+              </router-link>
+              
+              <router-link
+                :to="{name: 'Chat'}"
+                class="p-2 rounded-full text-zinc-400 hover:text-violet-600 hover:bg-violet-50 transition-all cursor-pointer"
+                active-class="text-violet-600 bg-violet-50"
+                title="Messages"
+              >
+                <MessageCircleMore class="h-5 w-5" />
+              </router-link>
+          </div>
           
           <router-link
             :to="{name: 'NewPost'}"
-            class="flex items-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors"
+            class="flex items-center px-4 py-2 text-sm font-semibold text-white bg-zinc-900 rounded-full hover:bg-violet-600 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer"
           >
-            <Plus class="h-5 w-5 mr-1" />
+            <Plus class="h-4 w-4 mr-1.5" />
             New Post
           </router-link>
           
           <!-- Support Button -->
           <button
             @click.stop="supportStore.open()"
-            class="p-2 cursor-pointer rounded-full text-gray-600 hover:text-indigo-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            class="p-2 cursor-pointer rounded-full text-zinc-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
+            title="Support"
           >
             <Headset class="h-5 w-5" />
           </button>
@@ -84,37 +92,35 @@
           <div class="relative">
             <button
               @click="openConnectsModal"
-              class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 cursor-pointer"
+              class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full border border-zinc-200 bg-white hover:border-violet-200 hover:shadow-sm transition-all cursor-pointer group"
             >
-              <Wallet class="h-5 w-5 text-amber-600" />
-              <span class="text-sm font-medium text-gray-700">{{ currentConnects }}</span>
+              <Wallet class="h-4 w-4 text-amber-500 group-hover:scale-110 transition-transform" />
+              <span class="text-sm font-semibold text-zinc-600 group-hover:text-zinc-900">{{ currentConnects }}</span>
             </button>
           </div>
 
-          <div class="relative ml-3">
-            <div class="flex items-center space-x-4">
-              <button
+          <div class="relative ml-2">
+            <button
                 @click="toggleProfileMenu"
-                class="relative flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 cursor-pointer"
+                class="relative flex items-center p-0.5 rounded-full ring-2 ring-transparent hover:ring-zinc-100 transition-all cursor-pointer"
                 id="user-menu"
                 aria-expanded="false"
                 aria-haspopup="true"
               >
                 <div class="relative">
-                  <div v-if="profilePicture" class="h-8 w-8 rounded-full overflow-hidden bg-indigo-100">
+                  <div v-if="profilePicture" class="h-9 w-9 rounded-full overflow-hidden ring-1 ring-zinc-100 shadow-sm">
                     <img :src="profilePicture" alt="Profile" class="h-full w-full object-cover" />
                   </div>
-                  <div v-else class="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                    <span class="text-indigo-600 font-medium">{{ userStore.userInitials }}</span>
+                  <div v-else class="h-9 w-9 rounded-full bg-violet-100 flex items-center justify-center ring-1 ring-zinc-100 shadow-sm">
+                    <span class="text-violet-600 font-bold text-sm">{{ userStore.userInitials }}</span>
                   </div>
                   <BadgeCheck 
                     v-if="hasActiveSubscription"
-                    class="h-4 w-4 text-white absolute -top-1 -right-1.5 bg-white rounded-full"
-                    fill="#4f39f6"
+                    class="h-4 w-4 text-white absolute -bottom-1 -right-1 bg-white rounded-full"
+                    fill="#7c3aed"
                   />
                 </div>
               </button>
-            </div>
             
             <transition
               enter-active-class="transition ease-out duration-200"
@@ -126,25 +132,40 @@
             >
               <div 
                 v-if="isProfileMenuOpen" 
-                class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50"
+                class="origin-top-right absolute right-0 mt-2 w-56 rounded-xl shadow-xl py-2 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 divide-y divide-zinc-100"
                 role="menu"
                 aria-orientation="vertical"
                 aria-labelledby="user-menu"
               >
-                <router-link
-                  to="/profile"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  role="menuitem"
-                >
-                  Your Profile
-                </router-link>
-                <button
-                  @click="handleLogout"
-                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                  role="menuitem"
-                >
-                  Sign out
-                </button>
+                <div class="px-4 py-3">
+                  <p class="text-xs font-medium text-zinc-400">Signed in as</p>
+                  <p class="text-sm font-bold text-zinc-900 truncate">{{ userStore.user?.name }}</p>
+                </div>
+                <div class="py-1">
+                  <router-link
+                    to="/profile"
+                    class="group flex items-center px-4 py-2 text-sm text-zinc-600 hover:bg-violet-50 hover:text-violet-600 transition-colors"
+                    role="menuitem"
+                  >
+                    Your Profile
+                  </router-link>
+                   <router-link
+                    :to="{name: 'History'}"
+                    class="group flex items-center px-4 py-2 text-sm text-zinc-600 hover:bg-violet-50 hover:text-violet-600 transition-colors"
+                    role="menuitem"
+                  >
+                    History
+                  </router-link>
+                </div>
+                <div class="py-1">
+                  <button
+                    @click="handleLogout"
+                    class="w-full text-left px-4 py-2 text-sm text-rose-500 hover:bg-rose-50 cursor-pointer transition-colors"
+                    role="menuitem"
+                  >
+                    Sign out
+                  </button>
+                </div>
               </div>
             </transition>
           </div>
@@ -165,11 +186,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { Search, X } from 'lucide-vue-next';
+import { Search, X, Home, Wallet, BadgeCheck, Bell, Headset, Clock, MessageCircleMore, Plus } from 'lucide-vue-next';
 import { usePostStore } from '@/stores/post';
 import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
-import { Wallet, BadgeCheck, Bell, Headset, Clock, MessageCircleMore, Plus } from 'lucide-vue-next';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import { useConnectsStore } from '@/stores/connect';
 const userStore = useUserStore();

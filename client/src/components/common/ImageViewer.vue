@@ -11,7 +11,7 @@
           leave-from="opacity-100"
           leave-to="opacity-0"
         >
-          <DialogOverlay class="fixed inset-0 bg-black/75 transition-opacity" />
+          <DialogOverlay class="fixed inset-0 bg-black/90 backdrop-blur-sm transition-opacity" />
         </TransitionChild>
 
         <span class="inline-block h-screen align-middle" aria-hidden="true">
@@ -28,20 +28,21 @@
           leave-to="opacity-0 scale-95"
         >
           <div 
-            class="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-transparent shadow-xl rounded-2xl"
-            
+            class="inline-block w-full max-w-5xl my-8 overflow-hidden text-left align-middle transition-all transform bg-transparent rounded-2xl"
           >
-            <div class="relative">
+            <div class="relative flex items-center justify-center">
               <img
                 ref="imageViewer"
                 :src="src"
                 :alt="alt"
-                class="w-full max-h-[80vh] object-contain cursor-zoom-out"
+                class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                :class="zoomLevel > 1 ? 'cursor-grab active:cursor-grabbing' : 'cursor-zoom-in'"
                 :style="{
                   transform: `scale(${zoomLevel})`,
                   transformOrigin: `${transformOriginX}% ${transformOriginY}%`,
-                  transition: zoomLevel === 1 ? 'transform 0.2s ease' : 'none'
+                  transition: zoomLevel === 1 ? 'transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)' : 'none'
                 }"
+                @click="zoomLevel === 1 ? zoomIn() : null"
                 @wheel.prevent="handleWheel"
                 @mousedown="startDrag"
                 @mousemove="handleDrag"
@@ -52,50 +53,50 @@
               <!-- Close Button -->
               <button
                 @click="close"
-                class="absolute top-4 left-4 p-2 bg-black bg-opacity-50 rounded-full text-white hover:bg-opacity-75 transition-all focus:outline-none focus:ring-2 focus:ring-white cursor-pointer"
+                class="absolute top-4 left-4 p-3 bg-black/50 hover:bg-black/70 rounded-full text-white backdrop-blur-md transition-all focus:outline-none cursor-pointer group"
                 title="Close (Esc)"
               >
-                <X :size="24" />
+                <X :size="20" class="group-hover:rotate-90 transition-transform duration-300" />
               </button>
               
               <!-- Zoom Controls -->
-              <div class="absolute bottom-4 right-4 flex flex-col space-y-2">
-                <button
-                  @click.stop="zoomIn"
-                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer"
-                  title="Zoom In (Mouse Wheel Up)"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                </button>
+              <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
                 <button
                   @click.stop="zoomOut"
-                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer"
-                  :class="{'opacity-50 cursor-not-allowed': zoomLevel <= 1}"
+                  class="p-2 text-white/80 hover:text-white transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   :disabled="zoomLevel <= 1"
-                  title="Zoom Out (Mouse Wheel Down)"
+                  title="Zoom Out"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
                   </svg>
                 </button>
+                
+                <span class="text-white font-mono text-sm w-12 text-center">{{ Math.round(zoomLevel * 100) }}%</span>
+                
+                <button
+                  @click.stop="zoomIn"
+                  class="p-2 text-white/80 hover:text-white transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                  :disabled="zoomLevel >= 5"
+                  title="Zoom In"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                </button>
+                
+                <div class="w-px h-4 bg-white/20 mx-2"></div>
+                
                 <button
                   @click.stop="resetZoom"
-                  class="p-2 bg-white bg-opacity-80 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer"
-                  :class="{'opacity-50 cursor-not-allowed': zoomLevel === 1}"
+                  class="p-2 text-white/80 hover:text-white transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
                   :disabled="zoomLevel === 1"
-                  title="Reset Zoom (R)"
+                  title="Reset Zoom"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </button>
-              </div>
-              
-              <!-- Zoom Level Indicator -->
-              <div v-if="zoomLevel > 1" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 px-3 py-1 bg-black bg-opacity-50 text-white text-sm rounded-full">
-                {{ Math.round(zoomLevel * 100) }}%
               </div>
             </div>
           </div>
