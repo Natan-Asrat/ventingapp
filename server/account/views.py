@@ -258,15 +258,21 @@ class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
                 {"message": "Reconnection request sent successfully."},
                 status=status.HTTP_200_OK
             )
+        if initiating_user.connects < 1:
+            return Response(
+                {"error": "You don't have any connects left."},
+                status=status.HTTP_402_PAYMENT_REQUIRED
+            )
 
         # No existing connection — create new
         Connection.objects.create(
             initiating_user=initiating_user,
             connected_user=user_to_connect,
-            message=message
+            message=message,
+            connectSpent=user_to_connect.connects_needed_for_connection
         )
 
-        initiating_user.connects += 1
+        initiating_user.connections += 1
         user_to_connect.connections += 1
         initiating_user.save()
         user_to_connect.save()
