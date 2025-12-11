@@ -252,7 +252,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
 
         qs = Post.objects.filter(pk__in=id_list)
         posts = get_posts_queryset(qs, user)
-        existing_qs = PostView.objects.filter(user=user, post__in=posts)
+        existing_qs = PostView.objects.filter(user=user, post__in=posts).select_related('post', 'post__posted_by')
         existing = set(
             existing_qs.values_list("post_id", flat=True)
         )
