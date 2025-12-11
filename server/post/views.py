@@ -292,7 +292,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     
     @action(detail=False, methods=['get'])
     def post_count(self, request):
-        count = Post.objects.count()
+        count = Post.objects.filter(archived=False, banned=False).count()
         show_recommended = count > settings.START_RECOMMENDATION_AT_POST_COUNT
         return Response({"count": count, "show_recommended": show_recommended}, status=status.HTTP_200_OK)
 
