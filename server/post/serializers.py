@@ -26,7 +26,9 @@ class PostCreateSerializer(serializers.ModelSerializer):
         fields = ['description', 'image', 'payment_info']
 
     def validate_image(self, value):
-        return validate_and_clean_image(value)
+        if value:
+            return validate_and_clean_image(value)
+        return None
     def create(self, validated_data):
         payment_info_data = validated_data.pop('payment_info', [])
         post = Post.objects.create(**validated_data)

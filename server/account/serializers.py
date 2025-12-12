@@ -46,7 +46,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         
         return data
     def validate_profile_picture(self, value):
-        return validate_and_clean_image(value)
+        if value:
+            return validate_and_clean_image(value)
+        return None
 
     def create(self, validated_data):
         validated_data.pop('password2', None)
@@ -110,7 +112,9 @@ class EditProfileSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
     def validate_profile_picture(self, value):
-        return validate_and_clean_image(value)
+        if value:
+            return validate_and_clean_image(value)
+        return None
 
 class OtherProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()
