@@ -13,7 +13,7 @@ import AdminDashboard from '@/views/admin/DashboardView.vue';
 import HistoryView from '@/views/HistoryView.vue';
 import ChatView from '@/views/ChatView.vue';
 import ChatDetail from '@/views/ChatDetail.vue';
-
+import { FEED_PATH } from '@/constants';
 const routes = [
   {
     path: '/',
@@ -78,7 +78,7 @@ const routes = [
     meta: { requiresAuth: false }
   },
   {
-    path: '/home',
+    path: FEED_PATH,
     name: 'Feed',
     component: Feed,
     meta: { requiresAuth: true }

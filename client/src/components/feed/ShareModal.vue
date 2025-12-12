@@ -129,6 +129,7 @@
 import { ref, computed } from 'vue';
 import { Dialog, DialogPanel, DialogTitle, TransitionChild, TransitionRoot } from '@headlessui/vue';
 import { useRouter } from 'vue-router';
+import { FEED_PATH } from '@/constants';
 import ShowMore from '@/components/ShowMore.vue';
 import { Send } from 'lucide-vue-next';
 const props = defineProps({
@@ -154,7 +155,7 @@ const emit = defineEmits(['close']);
 const copyButtonText = ref('Copy Link');
 
 const shareableLink = computed(() => {
-  return `${window.location.origin}${window.location.pathname}?p=${props.post.id}`;
+  return `${window.location.origin}${FEED_PATH}?p=${props.post.id}`;
 });
 
 const closeModal = () => {
