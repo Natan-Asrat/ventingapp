@@ -119,12 +119,12 @@ const loadProfile = async () => {
   profileStore.resetProfileId();
   if (route.params.userId || route.params.username) {
       profileStore.setLoading(true);
-      await profileStore.fetchUserProfile();
+      await profileStore.fetchUserProfile(route);
       profileStore.setLoading(false);
   } else {
       profileStore.setLoading(false);
   }
-  profileStore.startProfilePolling();
+  profileStore.startProfilePolling(route);
 
 }
 watch(() => route.params.userId, async (newUserId, oldUserId) => {

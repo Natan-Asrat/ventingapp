@@ -162,7 +162,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     
     @action(detail=False, methods=["get"])
     def my_posts(self, request):
-        posts = Post.objects.filter(posted_by=request.user, archived=False).prefetch_related("payment_info_list").select_related("posted_by")
+        posts = Post.objects.filter(posted_by=request.user, archived=False).prefetch_related("payment_info_list").select_related("posted_by").order_by('-created_at')
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:
             serializer = MyPostSimpleSerializer(paginated_posts, many=True)
@@ -173,7 +173,7 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     def other_user_posts(self, request):
         user = request.query_params.get("user")
         filtered_posts = Post.objects.filter(posted_by_id=user, archived=False).prefetch_related("payment_info_list").select_related("posted_by")
-        posts = get_posts_queryset(filtered_posts, request.user)
+        posts = get_posts_queryset(filtered_posts, request.user).order_by('-created_at')
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:
             serializer = MyPostSimpleSerializer(paginated_posts, many=True)

@@ -1,10 +1,8 @@
 import { defineStore } from "pinia";
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
 import api from '@/api/axios';
 
 export const useNewPostStore = defineStore('newpost', () => {
-    const router = useRouter();
     const createEmptyPost = () => ({
         description: '',
         image: null,
@@ -96,7 +94,7 @@ export const useNewPostStore = defineStore('newpost', () => {
     };
 
     
-    const submitPost = async () => {
+    const submitPost = async (router) => {
         if (isLoading.value) return;
         
         try {
@@ -128,7 +126,7 @@ export const useNewPostStore = defineStore('newpost', () => {
 
                 }
                 
-                router.push('/home'); // Redirect to feed after successful post
+                router.push('/profile'); // Redirect to feed after successful post
             } else {
                 const response = await api.post('/post/posts/', post.value, {
                     headers: {
@@ -136,7 +134,7 @@ export const useNewPostStore = defineStore('newpost', () => {
                     },
                 });
                 console.log('Post created:', response.data);
-                router.push('/home'); // Redirect to feed after successful post
+                router.push('/profile'); // Redirect to feed after successful post
             }
         } catch (error) {
             console.error('Error creating post:', error);

@@ -74,7 +74,7 @@
             </span>
             <button 
               @click="handleLogout"
-              class="text-sm text-gray-600 hover:text-gray-900"
+              class="text-sm text-gray-600 hover:text-gray-900 cursor-pointer"
             >
               Sign out
             </button>
@@ -169,8 +169,7 @@ watch(
 
 const handleLogout = async () => {
   try {
-    await userStore.logout();
-    router.push('/login');
+    userStore.logout(router);
   } catch (error) {
     console.error('Logout error:', error);
   }

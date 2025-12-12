@@ -299,17 +299,8 @@
     <PostDetailModal
         :is-open="isPostModalOpen"
         :post-id="viewingPost?.id"
-        :liking="postStore.likingPostId === (viewingPost && viewingPost.id)"
-        :saving="postStore.savingPostId === (viewingPost && viewingPost.id)"
         @close="closePostModal"
-        @like="handlePostLike"
-        @save="handlePostSave"
-        @chat="handlePostChat"
-        @donate="handlePostDonate"
-        @follow="handlePostFollow"
         @update:post="handlePostUpdate"
-        @archive="handlePostArchive"
-        @restore="handlePostRestore"
     />
 
     <!-- Donation Modal (for FeedItem in modal) -->
@@ -355,7 +346,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, computed, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import ReportModal from '@/components/feed/ReportModal.vue';
 import SharedPostPreview from '@/components/chat/SharedPostPreview.vue';
@@ -365,7 +356,6 @@ import ConnectionRequestModal from '@/components/feed/ConnectionRequestModal.vue
 import { useUserStore } from '@/stores/user';
 import { usePostStore } from '@/stores/post';
 import { useMessageStore } from '@/stores/message';
-import { useMyProfileStore } from '@/stores/my_profile';
 import { X, Reply, Smile, EllipsisVertical, Send, ArrowLeft, MessageCircle, Forward, Check, ArrowDown, AlertTriangle } from 'lucide-vue-next';
 import { message } from 'ant-design-vue';
 
@@ -396,7 +386,6 @@ const router = useRouter();
 const userStore = useUserStore();
 const messageStore = useMessageStore();
 const postStore = usePostStore();
-const myProfileStore = useMyProfileStore();
 const currentUser = computed(() => userStore.user);
 
 const conversation = ref({});
@@ -413,9 +402,6 @@ let closeTimeout = null;
 const viewingPost = ref(null);
 const isPostModalOpen = ref(false);
 
-const isMyViewingPost = computed(() => {
-    return viewingPost.value && currentUser.value && viewingPost.value.posted_by?.id === currentUser.value.id;
-});
 
 const openPostModal = (post) => {
     if(!post) return;
@@ -428,33 +414,6 @@ const closePostModal = () => {
     viewingPost.value = null;
 };
 
-// Post Action Handlers
-const handlePostLike = (post) => postStore.handleLike(post);
-const handlePostSave = (post) => postStore.handleSave(post);
-const handlePostChat = (post) => postStore.handleChat(post);
-const handlePostDonate = (post) => postStore.openDonationModal(post);
-const handlePostFollow = async (post, showDonate) => {
-    await postStore.handleFollow(post, showDonate);
-    await userStore.checkAuth();
-};
-const handlePostArchive = async (post) => {
-    try {
-        await myProfileStore.archivePost(post.id);
-        message.success("Post archived");
-        closePostModal();
-    } catch(e) {
-        console.error("Archive failed", e);
-    }
-};
-const handlePostRestore = async (post) => {
-    try {
-        await myProfileStore.restorePost(post.id);
-        message.success("Post restored");
-        closePostModal();
-    } catch(e) {
-        console.error("Restore failed", e);
-    }
-};
 const handlePostUpdate = (updatedPost) => {
     viewingPost.value = updatedPost;
 };
@@ -896,7 +855,29 @@ const stopNewMessagesPolling = () => {
   if (newMessagesInterval) clearInterval(newMessagesInterval);
 };
 
-onMounted(async () => {
+watch(
+  () => route.params.id,
+  async (newId, oldId) => {
+    if (!newId || newId === oldId) return;
+
+    // Reset state
+    isPostModalOpen.value=false;
+    messages.value = [];
+    conversation.value = {};
+    pagination.value = { next: null, previous: null, count: 0, isLoading: false };
+    firstNewMessageIndex.value = -1;
+    showNewMessagesIndicator.value = false;
+    newMessagesCount.value = 0;
+
+    // Cleanup previous chat
+    unmount_chat();
+
+    // Initialize new chat
+    await initialize_chat();
+  }
+);
+
+const initialize_chat = async () => {
   loadingMessages.value = true
   await fetchConversation();
   loadingMessages.value = false
@@ -907,13 +888,20 @@ onMounted(async () => {
   if (messagesContainer.value) {
     messagesContainer.value.addEventListener('scroll', handleScroll);
   }
-});
+}
 
-onUnmounted(() => {
+const unmount_chat = () => {
   stopVisibleMessagesPolling();
   stopNewMessagesPolling();
   if (messagesContainer.value) {
     messagesContainer.value.removeEventListener('scroll', handleScroll);
   }
+}
+onMounted(async () => {
+  await initialize_chat();
+});
+
+onUnmounted(() => {
+  unmount_chat();
 });
 </script>

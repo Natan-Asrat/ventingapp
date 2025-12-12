@@ -2,11 +2,8 @@ import { defineStore } from "pinia";
 import { ref, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import api from '@/api/axios';
-import { useRouter, useRoute } from 'vue-router';
 
 export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
-    const router = useRouter();
-    const route = useRoute();
 
     // State
     const profileId = ref(null);
@@ -45,7 +42,7 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
         showConnectionProfileModal.value = value;
     }
 
-    const fetchUserProfile = async () => {
+    const fetchUserProfile = async (route) => {
         if (route.params.userId) {
             profileId.value = route.params.userId;
             try {            
@@ -123,7 +120,7 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
     };
 
 
-    const handleChat = async (post) => {
+    const handleChat = async (post, router) => {
         try {
             // If connected, start a chat
             const chatResponse = await api.post('chat/conversations/chat_with_user/', {
@@ -423,7 +420,7 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
     };
 
     // Check URL for post ID and handle post loading
-    const checkUrlForPost = async () => {
+    const checkUrlForPost = async (route) => {
         const postId = route.query.p;
         if (!postId) return;
 
@@ -536,11 +533,11 @@ export const useOtherProfilePostStore = defineStore('otherProfilePost', () => {
     };
 
     let profilePollingInterval = null;
-    const startProfilePolling = () => {
+    const startProfilePolling = (route) => {
         if (profilePollingInterval) clearInterval(profilePollingInterval);
         profilePollingInterval = setInterval(async () => {
             if (route.params.userId) {
-                await fetchUserProfile();
+                await fetchUserProfile(route);
             }
         }, 5000);
     }

@@ -2,12 +2,8 @@ import { defineStore } from "pinia";
 import { ref, computed } from 'vue';
 import { message } from 'ant-design-vue';
 import api from '@/api/axios';
-import { useRouter, useRoute } from 'vue-router';
 
 export const usePostStore = defineStore('post', () => {
-    const router = useRouter();
-    const route = useRoute();
-
     const showRecommended = ref(false);
     const hasLoadedCount = ref(false);
     const isInSearch = ref(false);
@@ -195,7 +191,7 @@ export const usePostStore = defineStore('post', () => {
     }
 
 
-    const handleChat = async (post) => {
+    const handleChat = async (post, router) => {
         try {
             // If connected, start a chat
             const chatResponse = await api.post('chat/conversations/chat_with_user/', {
@@ -221,10 +217,10 @@ export const usePostStore = defineStore('post', () => {
         showDonationModal.value = true;
     };
 
-    const closeDonationModal = async (connected = false) => {
+    const closeDonationModal = async (connected = false, router) => {
         if (connected && selectedPost.value) {
             // If user just connected, start a chat
-            await handleChat(selectedPost.value);
+            await handleChat(selectedPost.value, router);
         }
         showDonationModal.value = false;
         setTimeout(() => {
@@ -450,7 +446,7 @@ export const usePostStore = defineStore('post', () => {
     };
 
     // Check URL for post ID and handle post loading
-    const checkUrlForPost = async () => {
+    const checkUrlForPost = async (route) => {
         const postId = route.query.p;
         if (!postId) return;
 
@@ -564,7 +560,7 @@ export const usePostStore = defineStore('post', () => {
 
 
     // Search posts
-    const search = async (query) => {
+    const search = async (query, route, router) => {
         try {
             searchQuery.value = query;
             loading.value = true;

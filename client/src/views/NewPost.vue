@@ -17,7 +17,7 @@
             </div>
           </div>
           
-          <form @submit.prevent="newPostStore.submitPost" class="px-6 py-6">
+          <form @submit.prevent="submit" class="px-6 py-6">
             <div class="space-y-8">
               <NewPostDescription />
               <NewPostImageUpload />
@@ -60,8 +60,13 @@ import MobileTopNav from '@/components/layout/MobileTopNav.vue';
 import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
 import PaymentMethodModal from '@/components/PaymentMethodModal.vue';
 import { useNewPostStore } from '@/stores/new_post';
+import { useRouter } from 'vue-router';
 import NewPostDescription from '@/components/new_post/NewPostDescription.vue';
 import NewPostImageUpload from '@/components/new_post/NewPostImageUpload.vue';
 import NewPostDonations from '@/components/new_post/NewPostDonations.vue';
 const newPostStore = useNewPostStore();
+const router = useRouter();
+const submit = () => {
+  newPostStore.submitPost(router);
+}
 </script>

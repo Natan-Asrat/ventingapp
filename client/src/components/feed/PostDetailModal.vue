@@ -73,7 +73,8 @@ import { X, Loader2 } from 'lucide-vue-next';
 import FeedItem from '@/components/feed/FeedItem.vue';
 import { usePostStore } from '@/stores/post';
 import { useUserStore } from '@/stores/user';
-
+import { useRouter } from 'vue-router';
+const router = useRouter();
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -137,7 +138,7 @@ const handleSave = async (p) => {
 };
 
 const handleChat = async (p) => {
-    await postStore.handleChat(p);
+    await postStore.handleChat(p, router);
     await fetchPost(true);
 };
 

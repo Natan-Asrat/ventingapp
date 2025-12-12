@@ -98,11 +98,13 @@ import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import { useConnectsStore } from '@/stores/connect';
 import { usePostStore } from '@/stores/post';
 import { useOtherProfilePostStore } from '@/stores/profile';
+import { useRouter, useRoute } from 'vue-router';
 const connectsStore = useConnectsStore();
 const userStore = useUserStore();
 const postStore = usePostStore();
 const profileStore = useOtherProfilePostStore();
-
+const router = useRouter();
+const route = useRoute();
 const props = defineProps({
     user_id: {
         type: String,
@@ -157,9 +159,9 @@ const openDonationModal = (post) => {
 }
 const handleChat = async (post) => {
     if (props.user_id == null) {
-        await postStore.handleChat(post);
+        await postStore.handleChat(post, router);
     } else {
-        await profileStore.handleChat(post);
+        await profileStore.handleChat(post, router);
     }
 }
 
@@ -266,7 +268,7 @@ onMounted(async () => {
     if (props.user_id == null) {
         await postStore.fetchPosts();
         // After loading posts, check if we need to load a specific post from URL
-        await postStore.checkUrlForPost();
+        await postStore.checkUrlForPost(route);
         postStore.observePostVisibility();
             
         // Start polling after initial load
@@ -276,7 +278,7 @@ onMounted(async () => {
     } else {
         await profileStore.fetchUserPosts();
         // After loading posts, check if we need to load a specific post from URL
-        await profileStore.checkUrlForPost();
+        await profileStore.checkUrlForPost(route);
         profileStore.observePostVisibility();
             
         // Start polling after initial load

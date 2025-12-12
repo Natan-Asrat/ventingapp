@@ -18,7 +18,6 @@
 
 <script setup>
 import { computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import DesktopTopNav from '@/components/layout/DesktopTopNav.vue';
 import MobileTopNav from '@/components/layout/MobileTopNav.vue';
@@ -26,29 +25,11 @@ import MobileBottomNav from '@/components/layout/MobileBottomNav.vue';
 import MyProfileDetail from '@/components/my_profile/MyProfileDetail.vue';
 import MyProfilePosts from '@/components/my_profile/MyProfilePosts.vue';
 import { useMyProfileStore } from '@/stores/my_profile';
-const router = useRouter();
 const userStore = useUserStore();
 const myProfileStore = useMyProfileStore();
 
 // Get user data from the store
 const user = computed(() => userStore.user);
-
-// Format user initials for avatar
-const userInitials = computed(() => {
-  if (!user.value?.name) return 'U';
-  return user.value.name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
-});
-
-// Handle logout
-const handleLogout = () => {
-  userStore.logout();
-  router.push('/login');
-};
 
 // Fetch user data and posts when component mounts
 onMounted(async () => {

@@ -1,10 +1,8 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
 import api from '@/api/axios';
 
 export const useAuthStore = defineStore('auth', () => {
-  const router = useRouter();
   
   // State
   const user = ref(null);
@@ -47,7 +45,7 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem('refresh_token');
       
       // Redirect to login
-      router.push('/login');
+      window.location.href = '/login';
     }
   };
   

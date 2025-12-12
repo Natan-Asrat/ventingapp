@@ -162,7 +162,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
 import { usePostStore } from '@/stores/post';
@@ -170,6 +170,7 @@ import { Wallet, Headset, Menu, X, MessageCircleMore, Search } from 'lucide-vue-
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import { useConnectsStore } from '@/stores/connect';
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 const postStore = usePostStore();
 const supportStore = useSupportStore();
@@ -194,7 +195,7 @@ const closeSearch = () => {
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
-    postStore.search(searchQuery.value.trim());
+    postStore.search(searchQuery.value.trim(), route, router);
     showSearch.value = false;
   }
 };
@@ -208,7 +209,7 @@ const closeMenu = () => {
 };
 
 const handleLogout = async () => {
-  userStore.logout();
+  userStore.logout(router);
 };
 
 // Close menu when route changes

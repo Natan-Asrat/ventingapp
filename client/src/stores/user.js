@@ -2,14 +2,12 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { api } from '../main';
 import { message } from 'ant-design-vue';
-import { useRouter } from 'vue-router';
 
 export const useUserStore = defineStore('user', () => {
   const user = ref(null);
   const loading = ref(false);
   const error = ref(null);
   const subscriptions = ref([]);
-  const router = useRouter();
 
 
   const userInitials = computed(() => {
@@ -118,7 +116,7 @@ export const useUserStore = defineStore('user', () => {
   };
 
   // Logout user
-  const logout = () => {
+  const logout = (router) => {
     try {
       clearAuth();
       message.success('Successfully logged out');

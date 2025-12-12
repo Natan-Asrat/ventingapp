@@ -192,10 +192,12 @@ import { useUserStore } from '@/stores/user';
 import { useSupportStore } from '@/stores/support';
 import ConnectsModal from '@/components/connects/ConnectsModal.vue';
 import { useConnectsStore } from '@/stores/connect';
+import { useRoute, useRouter } from 'vue-router';
 const userStore = useUserStore();
 const connectsStore = useConnectsStore();
 const supportStore = useSupportStore();
-
+const router = useRouter();
+const route = useRoute();
 const profilePicture = computed(() => {
   return userStore.user?.profile_picture;
 });
@@ -205,7 +207,7 @@ const searchQuery = ref('');
 
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
-    postStore.search(searchQuery.value.trim());
+    postStore.search(searchQuery.value.trim(), route, router);
   }
 };
 const closeSearch = () => {
@@ -226,7 +228,7 @@ const toggleProfileMenu = () => {
 };
 
 const handleLogout = async () => {
-  userStore.logout();
+  userStore.logout(router);
 };
 
 // Handle click outside to close the dropdown
