@@ -3,8 +3,8 @@ from .models import User, Connection
 from urllib.parse import urljoin
 from django.conf import settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth import authenticate, get_user_model
-from django.db.models import Q
+from server.image import validate_and_clean_image
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
@@ -45,6 +45,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
             })
         
         return data
+    def validate_profile_picture(self, value):
+        return validate_and_clean_image(value)
 
     def create(self, validated_data):
         validated_data.pop('password2', None)
@@ -107,6 +109,8 @@ class EditProfileSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+    def validate_profile_picture(self, value):
+        return validate_and_clean_image(value)
 
 class OtherProfileSerializer(serializers.ModelSerializer):
     profile_picture = serializers.SerializerMethodField()

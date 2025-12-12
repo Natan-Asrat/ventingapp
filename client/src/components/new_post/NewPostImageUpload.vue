@@ -34,7 +34,7 @@
                                 name="file-upload"
                                 type="file"
                                 class="sr-only"
-                                accept="image/*"
+                                accept="image/png, image/jpeg"
                                 @change="newPostStore.handleImageUpload"
                             />
                             </label>

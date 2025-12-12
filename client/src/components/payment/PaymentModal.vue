@@ -131,7 +131,7 @@
                                  ref="fileInput"
                                  type="file"
                                  class="hidden"
-                                 accept="image/*"
+                                 accept="image/png, image/jpeg"
                                  @change="handleFileUpload"
                              />
                          </div>

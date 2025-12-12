@@ -3,6 +3,7 @@ from .models import Post, PaymentInfo, Comment, Like, Save
 from account.serializers import UserSimpleSerializer
 from django.conf import settings
 from urllib.parse import urljoin
+from server.image import validate_and_clean_image
 
 class PaymentInfoSerializer(serializers.ModelSerializer):    
     class Meta:
@@ -24,6 +25,8 @@ class PostCreateSerializer(serializers.ModelSerializer):
         model = Post
         fields = ['description', 'image', 'payment_info']
 
+    def validate_image(self, value):
+        return validate_and_clean_image(value)
     def create(self, validated_data):
         payment_info_data = validated_data.pop('payment_info', [])
         post = Post.objects.create(**validated_data)

@@ -17,7 +17,7 @@
             <input
                 ref="fileInput"
                 type="file"
-                accept="image/*"
+                accept="image/png, image/jpeg"
                 class="hidden"
                 @change="handleProfilePictureChange"
             />

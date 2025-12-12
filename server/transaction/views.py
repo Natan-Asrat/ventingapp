@@ -30,7 +30,7 @@ from django.db import transaction as db_transaction, OperationalError
 
 from rest_framework.permissions import IsAdminUser
 from account.pagination import CustomPagination
-
+from server.image import validate_and_clean_image
 # Create your views here.
 def get_amount_by_product_id(product_id):
     for option in settings.POLAR_ORDER_OPTIONS.values():
@@ -334,6 +334,10 @@ class ManualPaymentViewSet(viewsets.ModelViewSet):
         screenshot = request.FILES.get('screenshot')
         if not screenshot:
             return Response({"error": "Screenshot is required"}, status=400)
+        try:
+            screenshot = validate_and_clean_image(screenshot)
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)
         exchange_rate = manual_payment_option.exchange_rate
         print("exchange rate", exchange_rate)
         print("what should be ", int(exchange_rate * amount_transferred))

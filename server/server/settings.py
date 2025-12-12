@@ -262,3 +262,8 @@ COSINE_THRESHOLD = 0.3
 START_RECOMMENDATION_AT_POST_COUNT = 1000
 
 EMBEDDING_MODEL_NAME = "gemini-embedding-001"
+
+
+ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png"]
+ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png"]
+MAX_FILE_SIZE_MB = 20

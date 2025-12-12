@@ -19,7 +19,7 @@
                 ref="fileInput"
                 @change="handleFileChange"
                 class="hidden"
-                accept="image/*"
+                accept="image/png, image/jpeg"
             />
         </div>
     </div>
