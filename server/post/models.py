@@ -6,7 +6,7 @@ from pgvector.django import IvfflatIndex, VectorField
 class Post(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     posted_by = models.ForeignKey('account.User', on_delete=models.CASCADE)
-    description = models.CharField(max_length=1000)
+    description = models.CharField(max_length=63206)
     image = models.ImageField(upload_to='post_images', null=True, blank=True) # keep it as one image per post
     archived = models.BooleanField(default=False)
     banned = models.BooleanField(default=False)
@@ -105,7 +105,7 @@ class Comment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     post = models.ForeignKey('post.Post', on_delete=models.CASCADE, related_name='comments_list')
     commented_by = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='commented_posts')
-    message = models.CharField(max_length=1000)
+    message = models.CharField(max_length=8000)
     reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies_list')
     reply_to_username = models.CharField(max_length=255, null=True, blank=True)
     archived = models.BooleanField(default=False)
