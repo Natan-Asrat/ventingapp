@@ -36,6 +36,8 @@ After=network.target
 
 [Service]
 Type=simple
+User=ec2-user
+Group=ec2-user
 ExecStart=$PROJECT_DIR/run.sh
 WorkingDirectory=$PROJECT_DIR
 Restart=always
