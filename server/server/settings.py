@@ -33,7 +33,8 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get("DEBUG", "false") != "false"
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
-
+if not ALLOWED_HOSTS:
+    raise ValueError("ALLOWED_HOSTS must be set in the environment")
 # Application definition
 
 INSTALLED_APPS = [
@@ -192,7 +193,29 @@ EMAIL_HOST_USER = os.getenv('GMAIL_ACCOUNT')
 EMAIL_HOST_PASSWORD = os.getenv('GMAIL_APP_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+if not CORS_ALLOWED_ORIGINS:
+    raise ValueError("CORS_ALLOWED_ORIGINS must be set in the environment")
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
+
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 POLAR_ACCESS_TOKEN = os.getenv('POLAR_ACCESS_TOKEN')
