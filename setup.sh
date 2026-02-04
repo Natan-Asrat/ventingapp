@@ -19,7 +19,7 @@ source server/environment
 set +a
 
 # Run Django development server
-exec gunicorn --bind 0.0.0.0:8008 --chdir server server.wsgi:application
+exec gunicorn --bind 0.0.0.0:8020 --chdir server server.wsgi:application
 
 EOL
 
