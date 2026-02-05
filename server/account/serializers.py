@@ -4,7 +4,7 @@ from urllib.parse import urljoin
 from django.conf import settings
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from server.image import validate_and_clean_image
-
+from server.utils import generate_cloudfront_signed_url
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
@@ -67,6 +67,9 @@ class UserSimpleSerializer(serializers.ModelSerializer):
         fields = ["id", "email", "username", "name", "connects", "profile_picture", "date_joined", "formatted_date_joined", "date_joined_since", "is_staff"]
     def get_profile_picture(self, obj):
         if obj.profile_picture:
+            if settings.FROM_S3:
+                absolute_url = generate_cloudfront_signed_url(obj.profile_picture)
+                return absolute_url
             absolute_url =  urljoin(settings.BACKEND_URL, obj.profile_picture.url)
             return absolute_url
         return None
@@ -144,6 +147,9 @@ class OtherProfileSerializer(serializers.ModelSerializer):
         ]
     def get_profile_picture(self, obj):
         if obj.profile_picture:
+            if settings.FROM_S3:
+                absolute_url = generate_cloudfront_signed_url(obj.profile_picture)
+                return absolute_url
             absolute_url =  urljoin(settings.BACKEND_URL, obj.profile_picture.url)
             return absolute_url
         return None

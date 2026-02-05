@@ -221,8 +221,6 @@ CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
 if not CSRF_TRUSTED_ORIGINS or CSRF_TRUSTED_ORIGINS == [""]:
     raise ValueError("CSRF_TRUSTED_ORIGINS is not set or empty")
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 POLAR_ACCESS_TOKEN = os.getenv('POLAR_ACCESS_TOKEN')
 POLAR_SERVER = os.getenv('POLAR_SERVER')
 if not POLAR_ACCESS_TOKEN or not POLAR_SERVER:
@@ -299,3 +297,45 @@ EMBEDDING_MODEL_NAME = "gemini-embedding-001"
 ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png"]
 ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png"]
 MAX_FILE_SIZE_MB = 20
+
+PERSIST_DB_CONN = os.environ.get("PERSIST_DB_CONN", "false").lower() == "true"
+if PERSIST_DB_CONN:
+    CONN_MAX_AGE = 60
+else:
+    CONN_MAX_AGE = 0
+
+
+FROM_S3 = os.environ.get("FROM_S3", "false").lower() == "true"
+
+if FROM_S3:
+    # 1. Credentials & Bucket
+    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+    AWS_S3_REGION_NAME = os.environ.get("AWS_S3_REGION_NAME", "us-east-1")
+    
+    # 2. CloudFront Link
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get("AWS_S3_CUSTOM_DOMAIN") # e.g. 'd123.cloudfront.net'
+    CLOUDFRONT_KEY_PAIR_ID = os.environ.get("CLOUDFRONT_KEY_PAIR_ID")
+    CLOUDFRONT_PRIVATE_KEY_PATH=os.path.join(BASE_DIR, "cloudfront_private_key.pem")
+    # 3. Storage Config
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+    AWS_QUERYSTRING_AUTH = False
+    # Important: Setting MEDIA_ROOT to empty in S3 mode
+    MEDIA_ROOT = "" 
+    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
+    CLOUDFRONT_REQUIRES_KEY = os.environ.get("CLOUDFRONT_REQUIRES_KEY", "false") != "false"
+
+    INSTALLED_APPS += ['storages']
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        # 2. Static stays with WhiteNoise
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+else:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Transaction, Subscription, ManualPaymentOption
 from django.conf import settings
 from urllib.parse import urljoin
+from server.utils import generate_cloudfront_signed_url
 class TransactionsSimpleSerializer(serializers.ModelSerializer):
     screenshot_url = serializers.SerializerMethodField()    
     class Meta:
@@ -39,6 +40,9 @@ class TransactionsSimpleSerializer(serializers.ModelSerializer):
     
     def get_screenshot_url(self, obj):
         if obj.screenshot:
+            if settings.FROM_S3:
+                absolute_url = generate_cloudfront_signed_url(obj.screenshot)
+                return absolute_url
             absolute_url =  urljoin(settings.BACKEND_URL, obj.screenshot.url)
             return absolute_url
         return None

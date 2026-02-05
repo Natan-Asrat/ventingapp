@@ -191,7 +191,7 @@
                     <input
                       v-model="newComment"
                       type="text"
-                      maxlength="8000"
+                      maxlength="400"
                       placeholder="Share your thoughts..."
                       class="block w-full rounded-full border border-zinc-200 bg-zinc-50 pl-5 pr-12 py-2.5 text-sm text-zinc-800 placeholder-zinc-400 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 focus:bg-white transition-all"
                       @keyup.enter="addComment"

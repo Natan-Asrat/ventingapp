@@ -72,7 +72,7 @@
                 ref="replyInput"
                 v-model="replyContent"
                 type="text"
-                maxlength="8000"
+                maxlength="400"
                 placeholder="Write a reply..."
                 class="w-full text-sm border border-zinc-200 bg-zinc-50 rounded-full px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all placeholder-zinc-400"
                 @keyup.enter="submitReply"

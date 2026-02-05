@@ -13,7 +13,7 @@
                 rows="6"
                 :value="newPostStore.post.description"
                 required
-                maxlength="63206"
+                maxlength="1500"
                 @invalid="e => e.target.setCustomValidity('This field is required')"
                 @input="e => {e.target.setCustomValidity(''); newPostStore.setPostDescription(e.target.value)}"
                 class="block w-full rounded-xl border-zinc-200 bg-zinc-50 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 sm:text-sm p-4 placeholder-zinc-400 transition-all resize-y"

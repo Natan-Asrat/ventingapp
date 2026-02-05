@@ -4,6 +4,7 @@ from urllib.parse import urljoin
 from account.serializers import UserSimpleSerializer
 from .models import Conversation, Member, Message, Reaction
 from post.serializers import PostSimpleSerializer
+from server.utils import generate_cloudfront_signed_url
 class MemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
@@ -40,6 +41,9 @@ class ConversationSimpleSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'last_message', 'last_message_list', 'logo', 'is_group', 'my_membership_list', 'other_user_list', 'members_count', 'active', 'created_at', 'updated_at', 'new_messages_count']
     def get_logo(self, obj):
         if obj.logo:
+            if settings.FROM_S3:
+                absolute_url = generate_cloudfront_signed_url(obj.logo)
+                return absolute_url
             absolute_url =  urljoin(settings.BACKEND_URL, obj.logo.url)
             return absolute_url
         return None

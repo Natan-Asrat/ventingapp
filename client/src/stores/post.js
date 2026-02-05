@@ -517,6 +517,26 @@ export const usePostStore = defineStore('post', () => {
 
 
     const fetchVisiblePosts = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentPostId = urlParams.get('p');
+
+        if (currentPostId) {
+            console.log('Fetching single post:', currentPostId);
+            // fetch logic for single post
+            try {
+                const ids = [currentPostId];
+                const response = await api.get(`post/posts/get_bulk/?id=${ids}`);
+                const fetchedPosts = response.data.results; // array of conversation objects
+
+                // Update conversations in place
+                fetchedPosts.forEach((post) => {
+                updateOrAddPost(post);
+                });
+            } catch (error) {
+                console.error("Error fetching visible posts:", error);
+            }
+            return;
+        }
         if (!visiblePosts.value.length) return;
 
         try {

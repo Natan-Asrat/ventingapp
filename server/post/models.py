@@ -1,12 +1,10 @@
 from django.db import models
-import uuid
 from server.utils import get_readable_time_since
 from pgvector.django import IvfflatIndex, VectorField
 # Create your models here.
 class Post(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     posted_by = models.ForeignKey('account.User', on_delete=models.CASCADE)
-    description = models.CharField(max_length=63206)
+    description = models.CharField(max_length=1500)
     image = models.ImageField(upload_to='post_images', null=True, blank=True) # keep it as one image per post
     archived = models.BooleanField(default=False)
     banned = models.BooleanField(default=False)
@@ -17,6 +15,7 @@ class Post(models.Model):
     forwards = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    score = models.BigIntegerField(default=0)
     embedding = VectorField(
         dimensions=1536,
         null=True,
@@ -56,7 +55,6 @@ class PostView(models.Model):
         return f"Count: {self.count}, {self.user.email} views '{self.post.description}' - id {self.post.id} - {self.updated_at.strftime('%Y-%m-%d %H:%M:%S')}"
 
 class UserInterest(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name="clusters")
     centroid = VectorField(dimensions=1536)
     count = models.IntegerField(default=1)
@@ -102,10 +100,9 @@ class Like(models.Model):
         return get_readable_time_since(self.updated_at)
 
 class Comment(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     post = models.ForeignKey('post.Post', on_delete=models.CASCADE, related_name='comments_list')
     commented_by = models.ForeignKey('account.User', on_delete=models.CASCADE, related_name='commented_posts')
-    message = models.CharField(max_length=8000)
+    message = models.CharField(max_length=400)
     reply_to = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='replies_list')
     reply_to_username = models.CharField(max_length=255, null=True, blank=True)
     archived = models.BooleanField(default=False)

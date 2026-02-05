@@ -4,7 +4,7 @@ from account.serializers import UserSimpleSerializer
 from django.conf import settings
 from urllib.parse import urljoin
 from server.image import validate_and_clean_image
-
+from server.utils import generate_cloudfront_signed_url
 class PaymentInfoSerializer(serializers.ModelSerializer):    
     class Meta:
         model = PaymentInfo
@@ -56,6 +56,9 @@ class PostSimpleSerializer(serializers.ModelSerializer):
         fields = ['id', 'posted_by', 'connected', 'rejected_connection', 'banned_connection', 'pending_connection', 'removed_connection', 'description', 'image', 'image_url', 'liked', 'saved', 'likes', 'comments', 'saves', 'views', 'forwards', 'payment_info_list', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
     def get_image_url(self, obj):
         if obj.image:
+            if settings.FROM_S3:
+                absolute_url = generate_cloudfront_signed_url(obj.image)
+                return absolute_url
             absolute_url =  urljoin(settings.BACKEND_URL, obj.image.url)
             return absolute_url
         return None
@@ -75,6 +78,9 @@ class MyPostSimpleSerializer(serializers.ModelSerializer):
         fields = ['id', 'posted_by', 'connected', 'rejected_connection', 'pending_connection', 'removed_connection', 'description', 'image', 'image_url', 'liked', 'saved', 'likes', 'comments', 'saves', 'views', 'payment_info_list', 'formatted_created_at', 'formatted_updated_at', 'created_at', 'updated_at', 'archived']
     def get_image_url(self, obj):
         if obj.image:
+            if settings.FROM_S3:
+                absolute_url = generate_cloudfront_signed_url(obj.image)
+                return absolute_url
             absolute_url =  urljoin(settings.BACKEND_URL, obj.image.url)
             return absolute_url
         return None
