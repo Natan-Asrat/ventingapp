@@ -51,6 +51,13 @@
             <span v-else>Resend Code</span>
           </button>
         </p>
+
+        <div class="flex justify-center mt-2">
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-100 rounded-full text-amber-800 text-[11px] sm:text-xs font-semibold shadow-sm animate-in fade-in slide-in-from-bottom-1 duration-500">
+                <Info class="h-3.5 w-3.5 text-amber-600" />
+                <span>Please check your spam folder if you don't see it.</span>
+            </div>
+        </div>
       </div>
     </div>
   </div>
@@ -61,7 +68,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { message } from 'ant-design-vue';
 import { useRouter } from 'vue-router';
-import { Mail, Loader2 } from 'lucide-vue-next';
+import { Mail, Loader2, Info } from 'lucide-vue-next';
 
 const props = defineProps({
   email: {

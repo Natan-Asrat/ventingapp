@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     "conversation",
     "analytics",
 
+    "anymail",
+
     "rest_framework",
     "rest_framework_simplejwt",
     "django_filters",
@@ -184,14 +186,32 @@ REST_FRAMEWORK = {
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 465
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True
-EMAIL_HOST_USER = os.getenv('GMAIL_ACCOUNT')
-EMAIL_HOST_PASSWORD = os.getenv('GMAIL_APP_PASSWORD')
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
+import os
+from email.utils import formataddr
+
+SENDER_NAME_TO_BE_IN_QUOTES = os.getenv("SENDER_NAME_TO_BE_IN_QUOTES")
+FROM_EMAIL_WITHOUT_ANGLE_BRACKETS = os.getenv("FROM_EMAIL_WITHOUT_ANGLE_BRACKETS")
+if not FROM_EMAIL_WITHOUT_ANGLE_BRACKETS:
+    raise ValueError("FROM_EMAIL_WITHOUT_ANGLE_BRACKETS must be set in the environment")
+
+if SENDER_NAME_TO_BE_IN_QUOTES:  # Only add quotes if sender name exists
+    DEFAULT_FROM_EMAIL = f'"{SENDER_NAME_TO_BE_IN_QUOTES}" <{FROM_EMAIL_WITHOUT_ANGLE_BRACKETS}>'
+else:
+    DEFAULT_FROM_EMAIL = FROM_EMAIL_WITHOUT_ANGLE_BRACKETS
+
+if not DEFAULT_FROM_EMAIL:
+    raise ValueError("DEFAULT_FROM_EMAIL must be set in the environment")
+
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
+if not BREVO_API_KEY:
+    raise ValueError("BREVO_API_KEY must be set in the environment")
+
+ANYMAIL = {
+    "BREVO_API_KEY": BREVO_API_KEY
+}
+
 
 CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
 if not CORS_ALLOWED_ORIGINS:

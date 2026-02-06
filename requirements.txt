@@ -21,3 +21,4 @@ cryptography==46.0.4
 boto3==1.42.42
 django-storages==1.14.6
 redis==7.1.0
+django-anymail==14.0
