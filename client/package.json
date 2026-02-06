@@ -24,6 +24,7 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.15",
     "vue": "^3.5.22",
+    "vue-gtag": "^3.7.0",
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
