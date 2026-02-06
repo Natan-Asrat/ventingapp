@@ -63,6 +63,29 @@ class PostSimpleSerializer(serializers.ModelSerializer):
             return absolute_url
         return None
 
+
+class PostNoContextSerializer(serializers.ModelSerializer):
+    posted_by = UserSimpleSerializer()
+    payment_info_list = PaymentInfoSerializer(many=True, read_only=True)
+    image_url = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = Post
+        fields = [
+            'id', 'posted_by', 
+            'description', 'image', 'image_url', 
+            'likes', 'comments', 'saves', 'views', 
+            'forwards', 'payment_info_list', 
+            'formatted_created_at', 'formatted_updated_at', 
+            'created_at', 'updated_at', 'archived']
+    def get_image_url(self, obj):
+        if obj.image:
+            if settings.FROM_S3:
+                absolute_url = generate_cloudfront_signed_url(obj.image)
+                return absolute_url
+            absolute_url =  urljoin(settings.BACKEND_URL, obj.image.url)
+            return absolute_url
+        return None
+
 class MyPostSimpleSerializer(serializers.ModelSerializer):
     posted_by = UserSimpleSerializer()
     payment_info_list = MyPaymentInfoSerializer(many=True, read_only=True)

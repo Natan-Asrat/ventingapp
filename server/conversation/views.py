@@ -1,5 +1,5 @@
 from django.db.models.functions import Coalesce
-from rest_framework import viewsets, mixins
+from rest_framework import viewsets, mixins, status
 from rest_framework.permissions import IsAuthenticated
 
 from account.models import Connection, User
@@ -200,7 +200,6 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         if not connection_exists:
             return Response({"error": "Connection does not exist"}, status=400)
         existing_conversation = Conversation.objects.filter(members__user=request.user).filter(members__user=other_user).order_by("-updated_at").first()
-        print("existing", existing_conversation)
         if existing_conversation:
             existing_conversation_with_details = add_conversation_details(existing_conversation, request.user)
             serializer = ConversationSimpleSerializer(existing_conversation_with_details, many=True)

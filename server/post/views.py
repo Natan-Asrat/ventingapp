@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework import mixins
 from rest_framework.response import Response
 from rest_framework import status
-
+from django.db import transaction
 from .recommendation import get_top_post_ids, updated_post_view_count
 from .models import Post, Like, PostView, Save, Comment, LikeComment, PaymentInfo
 from .serializers import (
@@ -26,6 +26,11 @@ from django.db.models.functions import Coalesce
 from django.conf import settings
 from rest_framework.filters import SearchFilter
 from django.utils import timezone
+from .cache import get_cached_post_data
+import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     queryset = Post.objects.filter(archived=False, banned=False).prefetch_related("payment_info_list").select_related("posted_by")
@@ -55,9 +60,82 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         serializer = PostSimpleSerializer(qs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def list(self, request, *args, **kwargs):
+        # Start the total timer
+        start_total = time.perf_counter()
+
+        if not getattr(settings, 'CACHE_ENABLED', False):
+            start_db = time.perf_counter()
+            # Note: self.get_queryset() here is the heavy version with annotations
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            db_duration = (time.perf_counter() - start_db) * 1000
+
+            start_serialize = time.perf_counter()
+            if page is not None:
+                serializer = PostSimpleSerializer(page, many=True)
+                response = self.get_paginated_response(serializer.data)
+            else:
+                serializer = PostSimpleSerializer(queryset, many=True)
+                response = Response(serializer.data, status=status.HTTP_200_OK)
+            
+            serialize_duration = (time.perf_counter() - start_serialize) * 1000
+            total_duration = (time.perf_counter() - start_total) * 1000
+
+            logger.info(
+                f"--- Post List (NO CACHE) ---\n"
+                f"DB Query (Heavy): {db_duration:.2f}ms\n"
+                f"Serialization: {serialize_duration:.2f}ms\n"
+                f"Total Request: {total_duration:.2f}ms\n"
+                f"-----------------------------"
+            )
+            return response
+        # 1. Database Phase: Filtering and Pagination
+        start_db = time.perf_counter()
+        queryset = self.filter_queryset(self.get_queryset()).only('id')
+        page = self.paginate_queryset(queryset)
+        
+        if page is not None:
+            target_list = page
+        else:
+            target_list = list(queryset[:50])
+        
+        db_duration = (time.perf_counter() - start_db) * 1000
+
+        # 2. ID Extraction Phase
+        start_ids = time.perf_counter()
+        id_list = [post.id for post in target_list]
+        ids_duration = (time.perf_counter() - start_ids) * 1000
+        
+        if not id_list:
+            return self.get_paginated_response([]) if page is not None else Response([])
+
+        # 3. Redis Hydration Phase (The "Self-Healing" step)
+        start_cache = time.perf_counter()
+        data = get_cached_post_data(id_list, request.user)
+        cache_duration = (time.perf_counter() - start_cache) * 1000
+
+        # 4. Final Logs
+        total_duration = (time.perf_counter() - start_total) * 1000
+        
+        logger.info(
+            f"--- Post List Performance ---\n"
+            f"DB Query (IDs): {db_duration:.2f}ms\n"
+            f"ID Extraction: {ids_duration:.2f}ms\n"
+            f"Redis Hydration: {cache_duration:.2f}ms\n"
+            f"Total Request: {total_duration:.2f}ms\n"
+            f"-----------------------------"
+        )
+
+        if page is not None:
+            return self.get_paginated_response(data)
+        return Response(data)
     def get_queryset(self):
         if self.action in ['list', 'retrieve']:
-            return get_posts_queryset(self.queryset, self.request.user)
+            if settings.CACHE_ENABLED:
+                return Post.objects.filter(archived=False, banned=False)
+            else:
+                return get_posts_queryset(self.queryset, self.request.user)
         elif self.action in ['unarchive', 'comments']:
             return Post.objects.all()
         return super().get_queryset()
@@ -84,27 +162,31 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     def like(self, request, pk=None):
         post = self.get_object()
         if not Like.objects.filter(post=post, liked_by=request.user, active=True).exists():
-            like, created = Like.objects.get_or_create(post=post, liked_by=request.user)
-            if not like.active:
-                like.active = True
-                like.save()
-            post.likes = Like.objects.filter(post=post, active=True).count()
-            post.save()
-            post.posted_by.post_likes = Like.objects.filter(post__posted_by=post.posted_by, active=True).count()
-            post.posted_by.save()
+            with transaction.atomic():
+                like, created = Like.objects.get_or_create(post=post, liked_by=request.user)
+                if not like.active:
+                    like.active = True
+                    like.save()
+                post.likes = Like.objects.filter(post=post, active=True).count()
+                post.save()
+                post.posted_by.post_likes = Like.objects.filter(post__posted_by=post.posted_by, active=True).count()
+                post.posted_by.save()
             return Response({'message': 'Post liked successfully', 'likes': post.likes}, status=status.HTTP_200_OK)
         return Response({'message': 'Post already liked'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def unlike(self, request, pk=None):
         post = self.get_object()
-        if Like.objects.filter(post=post, liked_by=request.user, active=True).exists():
-            Like.objects.filter(post=post, liked_by=request.user).update(active=False)
-            post.likes = Like.objects.filter(post=post, active=True).count()
-            post.save()
-            post.posted_by.post_likes = Like.objects.filter(post__posted_by=post.posted_by, active=True).count()
-            post.posted_by.save()
-            return Response({'message': 'Post unliked successfully', 'likes': post.likes}, status=status.HTTP_200_OK)
+        with transaction.atomic():
+            like_obj = Like.objects.filter(post=post, liked_by=request.user, active=True).order_by('-updated_at').select_for_update().first()
+            if like_obj:
+                like_obj.active = False
+                like_obj.save()
+                post.likes = Like.objects.filter(post=post, active=True).count()
+                post.save()
+                post.posted_by.post_likes = Like.objects.filter(post__posted_by=post.posted_by, active=True).count()
+                post.posted_by.save()
+                return Response({'message': 'Post unliked successfully', 'likes': post.likes}, status=status.HTTP_200_OK)
         return Response({'message': 'Post not liked'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
@@ -112,9 +194,10 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         post = self.get_object()
         serializer = CommentCreateSerializer(data=request.data)
         if serializer.is_valid():
-            new_comment = serializer.save(post=post, commented_by=request.user)
-            post.comments += 1
-            post.save()
+            with transaction.atomic():
+                new_comment = serializer.save(post=post, commented_by=request.user)
+                post.comments += 1
+                post.save()
             return Response({"post_comments": post.comments, "comment": CommentsOnPostSerializer(new_comment).data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -122,23 +205,28 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
     def save(self, request, pk=None):
         post = self.get_object()
         if not Save.objects.filter(post=post, saved_by=request.user, active=True).exists():
-            save_obj, created = Save.objects.get_or_create(post=post, saved_by=request.user)
-            if not save_obj.active:
-                save_obj.active = True
-                save_obj.save()
-            post.saves += 1
-            post.save()
+            with transaction.atomic():
+                save_obj, created = Save.objects.get_or_create(post=post, saved_by=request.user)
+                if not save_obj.active:
+                    save_obj.active = True
+                    save_obj.save()
+                post.saves = Save.objects.filter(post=post, active=True).count()
+                post.save()
             return Response({'message': 'Post saved successfully', 'saves': post.saves}, status=status.HTTP_200_OK)
         return Response({'message': 'Post already saved'}, status=status.HTTP_400_BAD_REQUEST)
     
     @action(detail=True, methods=["post"])
     def unsave(self, request, pk=None):
         post = self.get_object()
-        if Save.objects.filter(post=post, saved_by=request.user, active=True).exists():
-            Save.objects.filter(post=post, saved_by=request.user).update(active=False)
-            post.saves -= 1
-            post.save()
-            return Response({'message': 'Post unsaved successfully', 'saves': post.saves}, status=status.HTTP_200_OK)
+
+        with transaction.atomic():
+            save_obj = Save.objects.filter(post=post, saved_by=request.user, active=True).order_by('-updated_at').select_for_update().first()
+            if save_obj:
+                save_obj.active = False
+                save_obj.save()
+                post.saves = Save.objects.filter(post=post, active=True).count()
+                post.save()
+                return Response({'message': 'Post unsaved successfully', 'saves': post.saves}, status=status.HTTP_200_OK)
         return Response({'message': 'Post not saved'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=["get"])
@@ -240,6 +328,8 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
 
     @action(detail=False, methods=["get"])
     def get_bulk(self, request):
+        start_total = time.perf_counter()
+
         ids = request.query_params.get("id", "")
 
         if not ids:
@@ -250,20 +340,32 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
         
         user = request.user
 
+        start_fetch = time.perf_counter()
+
         qs = Post.objects.filter(pk__in=id_list)
-        posts = get_posts_queryset(qs, user)
+        if settings.CACHE_ENABLED:
+            posts = qs
+        else:
+            posts = get_posts_queryset(qs, user)
         existing_qs = PostView.objects.filter(user=user, post__in=posts).select_related('post', 'post__posted_by')
         existing = set(
             existing_qs.values_list("post_id", flat=True)
         )
+        
+        fetch_init_duration = (time.perf_counter() - start_fetch) * 1000
+        
         to_create = [
             PostView(post=post, user=user)
             for post in posts
             if post.id not in existing
         ]
+        to_create_post_ids = [post_view.post_id for post_view in to_create]
         if to_create:
+            start_bulk_create = time.perf_counter()
             PostView.objects.bulk_create(to_create)
-
+            bulk_create_duration = (time.perf_counter() - start_bulk_create) * 1000
+            
+            start_view_update = time.perf_counter()
             post_view_counts = PostView.objects.filter(
                 post_id=OuterRef('id')
             ).values('post_id').annotate(
@@ -276,24 +378,93 @@ class PostViewSet(mixins.CreateModelMixin, mixins.ListModelMixin, mixins.Retriev
                     Value(0)
                 )
             )
-
+            view_sql_duration = (time.perf_counter() - start_view_update) * 1000
+            
+            if settings.CACHE_ENABLED:
+                start_loop = time.perf_counter()
+                from .cache import update_post_data
+                logger.info(f"[Cache] Updating {len(to_create_post_ids)} individual posts in Redis")
+                for post_id in to_create_post_ids:
+                    update_post_data(post_id)
+                loop_duration = (time.perf_counter() - start_loop) * 1000
+                logger.info(f"[Perf] Cache Invalidation Loop: {loop_duration:.2f}ms")
+        
+        start_interactions = time.perf_counter()
         PostView.objects.filter(
             user=user, post_id__in=id_list
         ).update(count=F("count") + Value(1), updated_at=timezone.now())
 
         for post_view in existing_qs:
             updated_post_view_count(post_view.post, user)
+        interaction_duration = (time.perf_counter() - start_interactions) * 1000
+        
+        if settings.CACHE_ENABLED:
+            start_db = time.perf_counter()
+            page = self.paginate_queryset(posts)
+        
+            if page is not None:
+                target_list = page
+            else:
+                target_list = list(posts[:50])
+            
+            db_duration = (time.perf_counter() - start_db) * 1000
+
+            # 2. ID Extraction Phase
+            start_ids = time.perf_counter()
+            id_list = [post.id for post in target_list]
+            ids_duration = (time.perf_counter() - start_ids) * 1000
+            
+            if not id_list:
+                return self.get_paginated_response([]) if page is not None else Response([])
+
+            # 3. Redis Hydration Phase (The "Self-Healing" step)
+            start_cache = time.perf_counter()
+            data = get_cached_post_data(id_list, request.user)
+            cache_duration = (time.perf_counter() - start_cache) * 1000
+
+            # 4. Final Logs
+            total_duration = (time.perf_counter() - start_total) * 1000
+            
+            logger.info(
+                f"--- Post List Performance Breakdown ---\n"
+                f"Initial Fetch:   {fetch_init_duration:.2f}ms\n"
+                f"Bulk Create:     {bulk_create_duration if to_create else 0:.2f}ms\n"
+                f"View SQL Update: {view_sql_duration if to_create else 0:.2f}ms\n"
+                f"Interactions:    {interaction_duration:.2f}ms\n"
+                f"Pagination/DB:   {db_duration:.2f}ms\n"
+                f"Redis Hydration: {cache_duration:.2f}ms\n"
+                f"TOTAL REQUEST:   {total_duration:.2f}ms\n"
+                f"----------------------------------------"
+            )
+
+            if page is not None:
+                return self.get_paginated_response(data)
+            return Response(data)
         
         paginated_posts = self.paginate_queryset(posts)
         if paginated_posts is not None:
+            start_serialize = time.perf_counter()
             serializer = PostSimpleSerializer(paginated_posts, many=True)
+            serialize_duration = (time.perf_counter() - start_serialize) * 1000
+            total_duration = (time.perf_counter() - start_total) * 1000
+        
+            logger.info(
+                f"--- Post List Performance (CACHE DISABLED - PAGINATED) ---\n"
+                f"Initial Fetch:   {fetch_init_duration:.2f}ms\n"
+                f"Bulk Create:     {bulk_create_duration if to_create else 0:.2f}ms\n"
+                f"View SQL Update: {view_sql_duration if to_create else 0:.2f}ms\n"
+                f"Interactions:    {interaction_duration:.2f}ms\n"
+                f"Serialization:   {serialize_duration:.2f}ms\n"
+                f"TOTAL REQUEST:   {total_duration:.2f}ms\n"
+                f"----------------------------------------------------------"
+            )
             return self.get_paginated_response(serializer.data)
         return Response(PostSimpleSerializer(posts, many=True).data, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['get'])
     def post_count(self, request):
         count = Post.objects.filter(archived=False, banned=False).count()
-        show_recommended = count > settings.START_RECOMMENDATION_AT_POST_COUNT
+        show_recommended = count > settings.START_RECOMMENDATION_AT_POST_COUNT and settings.ENABLE_RECOMMENDATION_AT_POST_COUNT
         return Response({"count": count, "show_recommended": show_recommended}, status=status.HTTP_200_OK)
 
 class CommentViewSet(viewsets.GenericViewSet):
@@ -319,18 +490,19 @@ class CommentViewSet(viewsets.GenericViewSet):
         post = replying_to_comment.post
         serializer = CommentCreateSerializer(data=request.data)
         if serializer.is_valid():
-            if replying_to_comment.reply_to:
-                replying_to_main = replying_to_comment.reply_to
-                replying_to_main.replies += 1
-                replying_to_main.save()
-            else:
-                replying_to_main = replying_to_comment
+            with transaction.atomic():
+                if replying_to_comment.reply_to:
+                    replying_to_main = replying_to_comment.reply_to
+                    replying_to_main.replies += 1
+                    replying_to_main.save()
+                else:
+                    replying_to_main = replying_to_comment
 
-            new_comment = serializer.save(post=post, commented_by=request.user, reply_to=replying_to_main, reply_to_username=replying_to_comment.commented_by.username)
-            replying_to_comment.replies += 1
-            replying_to_comment.save()
-            post.comments += 1
-            post.save()
+                new_comment = serializer.save(post=post, commented_by=request.user, reply_to=replying_to_main, reply_to_username=replying_to_comment.commented_by.username)
+                replying_to_comment.replies += 1
+                replying_to_comment.save()
+                post.comments += 1
+                post.save()
             new_comment_data = RepliesSerializer(new_comment).data
             return Response({'message': 'Comment added successfully', 'comment': new_comment_data, 'replies': replying_to_main.replies, 'post_comments': post.comments}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -339,26 +511,31 @@ class CommentViewSet(viewsets.GenericViewSet):
     def like_comment(self, request, pk=None):
         comment = self.get_object()
         if not LikeComment.objects.filter(comment=comment, liked_by=request.user, active=True).exists():
-            like, created = LikeComment.objects.get_or_create(comment=comment, liked_by=request.user)
-            if not like.active:
-                like.active = True
-                like.save()
-            comment.likes += 1
-            comment.save()
-            return Response({'message': 'Comment liked successfully', 'likes': comment.likes}, status=status.HTTP_200_OK)
+            with transaction.atomic():
+                like, created = LikeComment.objects.get_or_create(comment=comment, liked_by=request.user)
+                if not like.active:
+                    like.active = True
+                    like.save()
+                comment.likes += 1
+                comment.save()
+                return Response({'message': 'Comment liked successfully', 'likes': comment.likes}, status=status.HTTP_200_OK)
         return Response({'message': 'Comment already liked'}, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['post'])
     def unlike_comment(self, request, pk=None):
         comment = self.get_object()
-        if LikeComment.objects.filter(comment=comment, liked_by=request.user, active=True).exists():
-            LikeComment.objects.filter(comment=comment, liked_by=request.user).update(active=False)
-            comment.likes -= 1
-            comment.save()
-            return Response({'message': 'Comment unliked successfully', 'likes': comment.likes}, status=status.HTTP_200_OK)
+        with transaction.atomic():
+            like_comment_obj = LikeComment.objects.filter(comment=comment, liked_by=request.user, active=True).order_by('-updated_at').select_for_update().first()
+            if like_comment_obj:
+                like_comment_obj.active = False
+                like_comment_obj.save()
+                comment.likes -= 1
+                comment.save()
+                return Response({'message': 'Comment unliked successfully', 'likes': comment.likes}, status=status.HTTP_200_OK)
         return Response({'message': 'Comment not liked'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PaymentInfoViewSet(mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     queryset = PaymentInfo.objects.all()
+    serializer_class = MyPaymentInfoSerializer
     serializer_class = MyPaymentInfoSerializer

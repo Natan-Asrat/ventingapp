@@ -326,24 +326,29 @@ class ManualPaymentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def submit_payment(self, request, pk=None):
-        amount_transferred = Decimal(request.data.get('amount_transferred'))
-        connects_to_buy = Decimal(request.data.get('connects_to_buy'))        
-        manual_payment_option = self.get_object()
-        print("connects to buy", connects_to_buy)
-        print("amount transferred", amount_transferred)
+        try:
+            amount_transferred = Decimal(request.data.get('amount_transferred'))
+            connects_to_buy = Decimal(request.data.get('connects_to_buy'))        
+            manual_payment_option = self.get_object()
+        except Exception as e:
+            print("error", e)
+            return Response({"error": str(e)}, status=400)
         screenshot = request.FILES.get('screenshot')
         if not screenshot:
             return Response({"error": "Screenshot is required"}, status=400)
         try:
             screenshot = validate_and_clean_image(screenshot)
         except Exception as e:
+            print("error", e)
             return Response({"error": str(e)}, status=400)
         exchange_rate = manual_payment_option.exchange_rate
-        print("exchange rate", exchange_rate)
-        print("what should be ", int(exchange_rate * amount_transferred))
-        print("what is ", int(connects_to_buy))
-        if int(exchange_rate * connects_to_buy) != int( amount_transferred):
-            return Response({"error": "Amount transferred is not equal to connects to buy"}, status=400)
+        
+        try:
+            if int(exchange_rate * connects_to_buy) != int( amount_transferred):
+                return Response({"error": "Amount transferred is not equal to connects to buy"}, status=400)
+        except Exception as e:
+            print("error", e)
+            return Response({"error": str(e)}, status=400)
         currency = manual_payment_option.currency
         method = manual_payment_option.method
 

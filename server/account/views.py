@@ -21,6 +21,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .pagination import CustomPagination
 from .query import get_other_profile_queryset, annotate_user_qs
 from rest_framework.filters import SearchFilter
+from django.db import transaction
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -132,7 +133,6 @@ class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
             )
         
         refresh = RefreshToken.for_user(user)
-        print("refresh", refresh)
         access_token = str(refresh.access_token)
 
         return Response({"access": access_token}, status=status.HTTP_200_OK)
@@ -249,11 +249,11 @@ class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
                 )
 
             # Update all removed connections with reconnection request
-            removed_qs.update(
-                reconnection_requested=True,
-                reconnection_requested_by=initiating_user,
-                message=message
-            )
+            removed_conn = removed_qs.order_by('-updated_at').first()
+            removed_conn.reconnection_requested = True
+            removed_conn.reconnection_requested_by = initiating_user
+            removed_conn.message = message
+            removed_conn.save()
             return Response(
                 {"message": "Reconnection request sent successfully."},
                 status=status.HTTP_200_OK
@@ -273,11 +273,11 @@ class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
             message=message,
             connectSpent=connects_needed
         )
-
-        initiating_user.connections += 1
-        user_to_connect.connections += 1
-        initiating_user.save()
-        user_to_connect.save()
+        with transaction.atomic():
+            initiating_user.connections += 1
+            user_to_connect.connections += 1
+            initiating_user.save()
+            user_to_connect.save()
         return Response({"message": "Connection created successfully."}, status=status.HTTP_201_CREATED)
     
     @action(detail=True, methods=['post'])
@@ -290,11 +290,18 @@ class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
             removed=False
         ).exists():
             return Response({"error": "You are not connected to this user."}, status=status.HTTP_400_BAD_REQUEST)
-        Connection.objects.filter(
+        existing_conn = Connection.objects.filter(
             Q(initiating_user=initiating_user, connected_user=user_to_disconnect) |
             Q(initiating_user=user_to_disconnect, connected_user=initiating_user),
             removed=False
-        ).update(removed=True)
+        ).order_by('-updated_at').first()
+        if not existing_conn:
+            return Response(
+                {"error": "There are no requests to reconnect that you can accept."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        existing_conn.removed=True
+        existing_conn.save()
         # dont decrement connection count here
         return Response({"message": "Connection deleted successfully."}, status=status.HTTP_200_OK)
 
@@ -312,15 +319,24 @@ class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
             reconnection_rejected = False
         ).exists():
             return Response({"error": "There are no requests to reconnect that you can accept."}, status=status.HTTP_400_BAD_REQUEST)
-        Connection.objects.filter(
+        existing_conn = Connection.objects.filter(
             Q(initiating_user=initiating_user, connected_user=user_to_reconnect) |
             Q(initiating_user=user_to_reconnect, connected_user=initiating_user),
             removed=True,
             reconnection_requested = True,
             reconnection_requested_by = user_to_reconnect,
             reconnection_rejected = False
-        ).update(removed=False, reconnection_count=F('reconnection_count') + 1, reconnection_requested=False, reconnection_requested_by=None)
-
+        ).order_by('-updated_at').first()
+        if not existing_conn:
+            return Response(
+                {"error": "There are no requests to reconnect that you can accept."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        existing_conn.removed = False
+        existing_conn.reconnection_count += 1
+        existing_conn.reconnection_requested = False
+        existing_conn.reconnection_requested_by = None
+        existing_conn.save()
         # dont increment connection count here
         return Response({"message": "Connection reconnected successfully."}, status=status.HTTP_200_OK)
     
@@ -337,14 +353,20 @@ class UserViewset(ListModelMixin, CreateModelMixin, GenericViewSet):
             reconnection_rejected = False
         ).exists():
             return Response({"error": "There are no requests to reconnect that you can reject."}, status=status.HTTP_400_BAD_REQUEST)
-        Connection.objects.filter(
+        existing_conn = Connection.objects.filter(
             Q(initiating_user=initiating_user, connected_user=user_to_reconnect) |
             Q(initiating_user=user_to_reconnect, connected_user=initiating_user),
             removed=True,
             reconnection_requested = True,
             reconnection_requested_by = user_to_reconnect
-        ).update(reconnection_rejected=True)
-
+        )
+        if not existing_conn:
+            return Response(
+                {"error": "There are no requests to reconnect that you can accept."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        existing_conn.reconnection_rejected = True
+        existing_conn.save()
         # dont decrement connection count here
         return Response({"message": "Reconnection rejected successfully."}, status=status.HTTP_200_OK)
     

@@ -289,8 +289,8 @@ TOP_K_INTERESTS = 5
 TOP_K_INTERESTS_POST_RETURNED_COUNT = [5, 4, 3, 2, 1]
 TOP_POSTS_RECOMMENDED_COUNT = 20
 COSINE_THRESHOLD = 0.3
-START_RECOMMENDATION_AT_POST_COUNT = 1000
-
+START_RECOMMENDATION_AT_POST_COUNT = int(os.getenv('START_RECOMMENDATION_AT_POST_COUNT', '1000'))
+ENABLE_RECOMMENDATION_AT_POST_COUNT = os.getenv('ENABLE_RECOMMENDATION_AT_POST_COUNT', 'false').lower() == 'true'
 EMBEDDING_MODEL_NAME = "gemini-embedding-001"
 
 
@@ -304,9 +304,40 @@ if PERSIST_DB_CONN:
 else:
     CONN_MAX_AGE = 0
 
+CACHE_ENABLED = os.environ.get("CACHE_ENABLED", "false").lower() == "true"
+if CACHE_ENABLED:
+    REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
+    REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
+    REDIS_DB = int(os.environ.get("REDIS_DB", "0"))
+    REDIS_MAX_MEMORY = os.environ.get("REDIS_MAX_MEMORY", "300MB")
+    REDIS_MAX_MEMORY_POLICY = os.environ.get("REDIS_MAX_MEMORY_POLICY", "allkeys-lru")
+    REDIS_OBJECT_EXPIRY = int(os.environ.get("REDIS_OBJECT_EXPIRY", "86400"))
 
 FROM_S3 = os.environ.get("FROM_S3", "false").lower() == "true"
-
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        # 'post' should match the name of your Django app folder
+        'post': { 
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
 if FROM_S3:
     # 1. Credentials & Bucket
     AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
