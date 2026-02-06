@@ -10,18 +10,14 @@ import vClickOutside from "click-outside-vue3";
 // Import our configured axios instance
 import api from './api/axios';
 
-import VueGtag from "vue-gtag";
-
+import { createGtag } from "vue-gtag";
 // Create app
 const app = createApp(App);
 const pinia = createPinia();
-app.use(VueGtag, {
-  config: { 
-    id: "G-3CTKDGJ34R" 
-  },
-  // This automatically tracks page changes as users navigate
-  pageTrackerScreenviewEnabled: true 
-}, router);
+app.use(createGtag({
+  config: { id: "G-3CTKDGJ34R" },
+  pageTrackerScreenviewEnabled: true
+}, router));
 // Make axios available globally (optional)
 app.config.globalProperties.$http = api;
 
