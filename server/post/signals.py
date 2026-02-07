@@ -1,4 +1,4 @@
-from .models import Comment, Like, LikeComment, Post, PostView, Save
+from .models import Comment, Like, LikeComment, PaymentInfo, Post, PostView, Save
 from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from .embed import get_embedding
@@ -95,3 +95,8 @@ def handle_connection_change(sender, instance, **kwargs):
 def handle_post_update(sender, instance, **kwargs):
     if not settings.CACHE_ENABLED: return
     update_post_data(instance.id)
+
+@receiver([post_save, post_delete], sender=PaymentInfo)
+def handle_payment_info_update(sender, instance, **kwargs):
+    if not settings.CACHE_ENABLED: return
+    update_post_data(instance.post_id)
