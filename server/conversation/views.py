@@ -66,12 +66,12 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         after_id = request.query_params.get("after_id")
 
         if not after_id:
-            return Response({"error": "Missing 'after_id' query parameter"}, status=400)
+            return Response({"error": "Missing 'after_id' query parameter"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             after_id = int(after_id)
         except ValueError:
-            return Response({"error": "Invalid 'after_id' format"}, status=400)
+            return Response({"error": "Invalid 'after_id' format"}, status=status.HTTP_400_BAD_REQUEST)
 
         unoptimized_qs = prefetch_reactions(Message.objects.filter(
             conversation=conversation,
@@ -90,16 +90,16 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         conversation = self.get_object()
         connection = conversation.connection
         if connection.banned:
-            return Response({"error": "Your can no longer text this person! Connection Banned!"}, status=400)
+            return Response({"error": "Your can no longer text this person! Connection Banned!"}, status=status.HTTP_400_BAD_REQUEST)
         if connection.removed:
-            return Response({"error": "You need to be connected to text this person!"}, status=400)
+            return Response({"error": "You need to be connected to text this person!"}, status=status.HTTP_400_BAD_REQUEST)
         conversation.updated_at = timezone.now()
         conversation.save()
         user = request.user
         message = request.data.get("message")
         reply_to_id = request.data.get("reply_to")
         if not message:
-            return Response({"error": "Message is required"}, status=400)
+            return Response({"error": "Message is required"}, status=status.HTTP_400_BAD_REQUEST)
         if reply_to_id:
             reply_to = Message.objects.get(pk=reply_to_id)
         else:
@@ -116,7 +116,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         message_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=["get"], permission_classes=[IsActiveConversationMemberForConvBulk])
     def get_bulk(self, request):
@@ -126,15 +126,15 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         """
         ids = request.query_params.get("id", "")
         if not ids:
-            return Response({"error": "No IDs provided"}, status=400)
+            return Response({"error": "No IDs provided"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             id_list = [int(i) for i in ids.split(",") if i.isdigit()]
         except ValueError:
-            return Response({"error": "Invalid ID format"}, status=400)
+            return Response({"error": "Invalid ID format"}, status=status.HTTP_400_BAD_REQUEST)
 
         if not id_list:
-            return Response({"error": "No valid IDs found"}, status=400)
+            return Response({"error": "No valid IDs found"}, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
 
@@ -159,18 +159,18 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         category = request.query_params.get("category")
 
         if not after_id:
-            return Response({"error": "Missing 'after_id' query parameter"}, status=400)
+            return Response({"error": "Missing 'after_id' query parameter"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             after_id = int(after_id)
         except ValueError:
-            return Response({"error": "Invalid 'after_id' format"}, status=400)
+            return Response({"error": "Invalid 'after_id' format"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get the reference conversation
         try:
             reference_conv = Conversation.objects.get(pk=after_id)
         except Conversation.DoesNotExist:
-            return Response({"error": "Conversation not found"}, status=404)
+            return Response({"error": "Conversation not found"}, status=status.HTTP_404_NOT_FOUND)
 
         after_time = reference_conv.updated_at
 
@@ -186,11 +186,11 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     def chat_with_user(self, request):
         user_id = request.data.get("user_id")
         if not user_id:
-            return Response({"error": "User ID is required"}, status=400)
+            return Response({"error": "User ID is required"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             other_user = User.objects.get(pk=user_id)
         except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=404)
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         
         connection_exists = Connection.objects.filter(
             Q(initiating_user=self.request.user, connected_user=other_user) |
@@ -198,7 +198,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
             removed=False
         ).exists()
         if not connection_exists:
-            return Response({"error": "Connection does not exist"}, status=400)
+            return Response({"error": "Connection does not exist"}, status=status.HTTP_400_BAD_REQUEST)
         existing_conversation = Conversation.objects.filter(members__user=request.user).filter(members__user=other_user).order_by("-updated_at").first()
         if existing_conversation:
             existing_conversation_with_details = add_conversation_details(existing_conversation, request.user)
@@ -236,7 +236,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     def move_conversation(self, request, pk=None):
         category = request.data.get("category")
         if category not in [ConversationCategoryOptions.PRIMARY, ConversationCategoryOptions.SECONDARY]:
-            return Response({"error": "Invalid category"}, status=400)
+            return Response({"error": "Invalid category"}, status=status.HTTP_400_BAD_REQUEST)
         conversation = self.get_object()
         membership = conversation.members.filter(user=request.user)
         membership.update(category=category)
@@ -252,15 +252,15 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
     def share_post(self, request, pk=None):
         post_id = request.data.get("post_id")
         if not post_id:
-            return Response({"error": "Post ID is required"}, status=400)
+            return Response({"error": "Post ID is required"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             post = Post.objects.get(pk=post_id)
         except Post.DoesNotExist:
-            return Response({"error": "Post not found"}, status=404)
+            return Response({"error": "Post not found"}, status=status.HTTP_404_NOT_FOUND)
         conversation = self.get_object()
         connection = conversation.connection
         if connection.banned:
-            return Response({"error": "You can no longer share posts in this conversation! Connection banned!"}, status=403)
+            return Response({"error": "You can no longer share posts in this conversation! Connection banned!"}, status=status.HTTP_400_BAD_REQUEST) #changed to 400 intentionally for consistency
         conversation.updated_at = timezone.now()
         conversation.save()
         user = request.user
@@ -278,7 +278,7 @@ class ConversationViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, view
         message_with_prefetch = optimize_messages_queryset(unoptimized_qs).first()
         serializer = MessageSimpleSerializer(message_with_prefetch)
         
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 
@@ -292,11 +292,11 @@ class MessageViewSet(viewsets.GenericViewSet):
         message = self.get_object()
         connection = message.conversation.connection 
         if connection.banned:
-            return Response({"error": "You can no longer react to messages! Connection banned!"}, status=400)
+            return Response({"error": "You can no longer react to messages! Connection banned!"}, status=status.HTTP_400_BAD_REQUEST)
         user = request.user
         emoji = request.data.get("emoji")
         if not emoji:
-            return Response({"error": "Emoji is required"}, status=400)
+            return Response({"error": "Emoji is required"}, status=status.HTTP_400_BAD_REQUEST)
         existing_reaction = Reaction.objects.filter(message=message, user=user).first()
         if existing_reaction:
             existing_reaction.reaction = emoji
@@ -372,7 +372,7 @@ class MessageViewSet(viewsets.GenericViewSet):
         
         connection = message.conversation.connection 
         if connection.banned:
-            return Response({"error": "You can no longer forward messages! Connection banned!"}, status=400)
+            return Response({"error": "You can no longer forward messages! Connection banned!"}, status=status.HTTP_400_BAD_REQUEST)
 
         user = request.user
         if message.forwarded_from:

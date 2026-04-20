@@ -34,7 +34,7 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         report.save()
         qs = optimize_report_queryset(Report.objects.filter(pk=report.pk))
         serializer = ReportsWithDecisionsSerializer(qs.first())
-        return Response(serializer.data, status=200)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])
     def restore(self, request, pk=None):
@@ -45,7 +45,7 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         report.save()
         qs = optimize_report_queryset(Report.objects.filter(pk=report.pk))
         serializer = ReportsWithDecisionsSerializer(qs.first())
-        return Response(serializer.data, status=200)
+        return Response(serializer.data, status=status.HTTP_200_OK)
         
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -59,7 +59,7 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             rejected=False,
             reason=request.data.get('reason')
         )
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
@@ -73,24 +73,24 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             rejected=True,
             reason=request.data.get('reason')
         )
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def report_post(self, request):
         post_id = request.data.get('post_id')
         if not post_id:
-            return Response({'error': 'Post ID is required'}, status=400)
+            return Response({'error': 'Post ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             post = Post.objects.get(id=post_id)
         except Post.DoesNotExist:
-            return Response({'error': 'Post not found'}, status=404)
+            return Response({'error': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
         existing_report = Report.objects.filter(
             reported_by=request.user,
             reported_post=post,
             report_type=ReportTypes.POST,
         ).first()
         if existing_report:
-            return Response({'error': 'You have already reported this post'}, status=400)
+            return Response({'error': 'You have already reported this post'}, status=status.HTTP_400_BAD_REQUEST)
         
         Report.objects.create(
             reported_by=request.user,
@@ -99,24 +99,24 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             reason=request.data.get('reason'),
             report_type=ReportTypes.POST,
         )
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], permission_classes=[IsConnectedUser])
     def report_connection(self, request):
         connection_id = request.data.get('connection_id')
         if not connection_id:
-            return Response({'error': 'Connection ID is required'}, status=400)
+            return Response({'error': 'Connection ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             connection = Connection.objects.get(id=connection_id)
         except Connection.DoesNotExist:
-            return Response({'error': 'Connection not found'}, status=404)
+            return Response({'error': 'Connection not found'}, status=status.HTTP_404_NOT_FOUND)
         existing_report = Report.objects.filter(
             reported_by=request.user,
             reported_connection=connection,
             report_type=ReportTypes.CONNECTION,
         ).first()
         if existing_report:
-            return Response({'error': 'You have already reported this connection'}, status=400)
+            return Response({'error': 'You have already reported this connection'}, status=status.HTTP_400_BAD_REQUEST)
         
         Report.objects.create(
             reported_by=request.user,
@@ -125,24 +125,24 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             reason=request.data.get('reason'),
             report_type=ReportTypes.CONNECTION,
         )
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def report_message(self, request):
         message_id = request.data.get('message_id')
         if not message_id:
-            return Response({'error': 'Message ID is required'}, status=400)
+            return Response({'error': 'Message ID is required'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             message = Message.objects.get(id=message_id)
         except Message.DoesNotExist:
-            return Response({'error': 'Message not found'}, status=404)
+            return Response({'error': 'Message not found'}, status=status.HTTP_404_NOT_FOUND)
         existing_report = Report.objects.filter(
             reported_by=request.user,
             reported_message=message,
             report_type=ReportTypes.MESSAGE,
         ).first()
         if existing_report:
-            return Response({'error': 'You have already reported this message'}, status=400)
+            return Response({'error': 'You have already reported this message'}, status=status.HTTP_400_BAD_REQUEST)
         
         Report.objects.create(
             reported_by=request.user,
@@ -151,7 +151,7 @@ class ReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             reason=request.data.get('reason'),
             report_type=ReportTypes.MESSAGE,
         )
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
     
 
 # Create your views here.
@@ -178,21 +178,21 @@ class ReportDecisionViewSet(viewsets.GenericViewSet):
             report_decision = report_decision,
             message=message
         )
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'], permission_classes=[IsAdminUser])
     def appeals(self, request, pk=None):
         report_decision = self.get_object()
         appeals = Appeal.objects.filter(report_decision=report_decision).prefetch_related('decisions', 'decisions__decision_maker').select_related('submitted_by')
         serializer = AppealsAndDecisionsSerializer(appeals, many=True)
-        return Response(serializer.data, status=200)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['get'])
     def my_appeals(self, request, pk=None):
         report_decision = self.get_object()
         appeals = Appeal.objects.filter(report_decision=report_decision, submitted_by=request.user).prefetch_related('decisions', 'decisions__decision_maker').select_related('submitted_by')
         serializer = AppealsAndDecisionsSerializer(appeals, many=True)
-        return Response(serializer.data, status=200)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AppealViewSet(viewsets.GenericViewSet):
     queryset = Appeal.objects.all()
@@ -210,7 +210,7 @@ class AppealViewSet(viewsets.GenericViewSet):
             reason=request.data.get('reason')
         )
 
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
@@ -222,5 +222,5 @@ class AppealViewSet(viewsets.GenericViewSet):
             rejected=True,
             reason=request.data.get('reason')
         )
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
     

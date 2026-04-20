@@ -1,6 +1,7 @@
 from polar_sdk.models import SubscriptionStatus
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status
 
 from .utils import add_monthly_free_connects, safe_usd_equivalent
 from .models import (
@@ -58,7 +59,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         order_option = settings.POLAR_ORDER_OPTIONS.get(product)
         current_url = request.data.get('current_url')
         if not order_option:
-            return Response({"error": "Invalid product"}, status=400)
+            return Response({"error": "Invalid product"}, status=status.HTTP_400_BAD_REQUEST)
         checkout = polar.checkouts.create(request={
             "products": [order_option['product_id']],
             "success_url": current_url
@@ -129,7 +130,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         ).update(
             celebrated=True
         )
-        return Response({"updated": transactions_updated}, status=200)
+        return Response({"updated": transactions_updated}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def order_paid(self, request):
@@ -139,14 +140,14 @@ class TransactionViewSet(viewsets.ModelViewSet):
             secret=settings.POLAR_ORDER_PAID_WEBHOOK_SECRET,
         )
         if not event:
-            return Response({"error": "Invalid event"}, status=400)
+            return Response({"error": "Invalid event"}, status=status.HTTP_400_BAD_REQUEST)
         print("event", event.model_dump_json())
         product_id = event.data.product_id
         product_code_internal = get_key_by_product_id(product_id)
         print("prod code", product_code_internal)
         connects = get_amount_by_product_id(event.data.product_id)
         if not connects:
-            return Response({"error": "Invalid product"}, status=400)
+            return Response({"error": "Invalid product"}, status=status.HTTP_400_BAD_REQUEST)
         transaction = Transaction.objects.get(transaction_id=event.data.checkout_id)
         ## finance
         transaction.subtotal_amount = get_polar_amount_in_dollar(event.data.subtotal_amount)
@@ -216,7 +217,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
         transaction.product_code_internal = product_code_internal
         transaction.reason = event.data.billing_reason
         transaction.save()
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['get'])
     def my_subscriptions(self, request):
@@ -266,7 +267,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
             reason="Admin Approved Valid Manual Payment"
         )
 
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
     
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def reject_transaction(self, request, pk=None):
@@ -286,7 +287,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
             reason=reason
         )
 
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def my_transactions(self, request):
@@ -317,7 +318,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
         except OperationalError:
             # This triggers if the row is locked by another transaction
-            return Response({"message": "Please try again shortly, another process is updating your free connects."}, status=200)
+            return Response({"message": "Please try again shortly, another process is updating your free connects."}, status=status.HTTP_200_OK)
     
 
 class ManualPaymentViewSet(viewsets.ModelViewSet):
@@ -332,23 +333,23 @@ class ManualPaymentViewSet(viewsets.ModelViewSet):
             manual_payment_option = self.get_object()
         except Exception as e:
             print("error", e)
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         screenshot = request.FILES.get('screenshot')
         if not screenshot:
-            return Response({"error": "Screenshot is required"}, status=400)
+            return Response({"error": "Screenshot is required"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             screenshot = validate_and_clean_image(screenshot)
         except Exception as e:
             print("error", e)
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         exchange_rate = manual_payment_option.exchange_rate
         
         try:
             if int(exchange_rate * connects_to_buy) != int( amount_transferred):
-                return Response({"error": "Amount transferred is not equal to connects to buy"}, status=400)
+                return Response({"error": "Amount transferred is not equal to connects to buy"}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             print("error", e)
-            return Response({"error": str(e)}, status=400)
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         currency = manual_payment_option.currency
         method = manual_payment_option.method
 
@@ -376,4 +377,4 @@ class ManualPaymentViewSet(viewsets.ModelViewSet):
             status="pending"
         )
     
-        return Response(status=200)
+        return Response(status=status.HTTP_200_OK)
